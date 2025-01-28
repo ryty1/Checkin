@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>节点信息</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>节点信息</h2>
+        <div id="node-list" class="box"></div>
+        <button onclick="copyNodes()">一键复制</button>
+    </div>
+
+    <script>
+        async function fetchNodes() {
+            let res = await fetch('/api/node');
+            let data = await res.json();
+            document.getElementById("node-list").innerHTML = data.nodes.map(n => `<p>${n}</p>`).join("");
+        }
+
+        function copyNodes() {
+            let text = document.getElementById("node-list").innerText;
+            navigator.clipboard.writeText(text).then(() => alert("已复制！"));
+        }
+
+        fetchNodes();
+    </script>
+</body>
+</html>
