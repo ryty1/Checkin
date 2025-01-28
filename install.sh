@@ -66,17 +66,21 @@ fi
 # 解压 ZIP 到目标目录
 unzip "$PUBLIC_NODEJS_DIR/main.zip" -d "$PUBLIC_NODEJS_DIR/"
 
-# 处理 GitHub 释放的顶层文件夹（通常是 My-test-main）
+# 查找解压后的顶层文件夹（通常为 My-test-main）
 EXTRACTED_DIR="$PUBLIC_NODEJS_DIR/My-test-main"
 if [[ -d "$EXTRACTED_DIR" ]]; then
-    # 移动内容到 DOMAIN_DIR 并去除顶层文件夹
+    # 移动解压后的所有文件到目标目录
     mv "$EXTRACTED_DIR"/* "$DOMAIN_DIR/"
-    rm -rf "$EXTRACTED_DIR"
+    rm -rf "$EXTRACTED_DIR"  # 删除顶层文件夹
 fi
 
-# 删除不需要的文件
+# 删除不需要的 README 文件和压缩包
 rm -f "$DOMAIN_DIR/README.md"
 rm -f "$PUBLIC_NODEJS_DIR/main.zip"
+
+# 设置执行权限
+chmod 755 "$DOMAIN_DIR/app.js" > /dev/null 2>&1
+chmod 755 "$DOMAIN_DIR/hy2ip.sh" > /dev/null 2>&1
 
 # 赋予执行权限
 chmod 755 "$DOMAIN_DIR/app.js" > /dev/null 2>&1
