@@ -9,10 +9,8 @@ echo ""
 DOMAIN="$USERNAME_DOMAIN.serv00.net"
 NODE_PORT=3000
 DOMAIN_DIR="/home/$USERNAME/domains/$DOMAIN"
-APP_JS_PATH="$DOMAIN_DIR/public_nodejs/app.js"
-HY2_IP_PATH="$DOMAIN_DIR/public_nodejs/hy2ip.sh"
-APP_JS_URL="https://raw.githubusercontent.com/ryty1/htmlalive/main/app.js"
-HY2_SH_URL="https://raw.githubusercontent.com/ryty1/htmlalive/main/hy2ip.sh"
+DOWNLOAD_URL="https://github.com/ryty1/My-test/archive/refs/heads/main.zip"
+
 echo " ———————————————————————————————————————————————————————————— "
 cd && devil www del "$DOMAIN"  > /dev/null 2>&1
 if [[ $? -eq 0 ]]; then
@@ -39,16 +37,25 @@ else
     echo " [NO] 环境依赖 安装失败 "
     exit 1
 fi
-curl -s -o "$APP_JS_PATH" "$APP_JS_URL" && chmod 755 "$APP_JS_PATH" > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
-    print_status "配置文件 1 下载失败" 1
-    exit 1
-fi
-curl -s -o "$HY2_IP_PATH" "$HY2_SH_URL" && chmod 755 "$HY2_IP_PATH" > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
-    print_status "配置文件 2 下载失败" 1
-    exit 1
-fi
+# 下载 GitHub 仓库的 ZIP 文件到目标目录
+wget $DOWNLOAD_URL -O $DOMAIN/public_nodejs/main.zip
+
+# 解压到目标文件夹
+unzip $DOMAIN/public_nodejs/main.zip -d $DOMAIN/public_nodejs/
+
+# 移动文件并去除顶层文件夹
+find $DOMAIN/public_nodejs/repository-main -mindepth 2 -exec mv {} $DOMAIN/ \;
+
+# 删除解压后的顶层文件夹
+rm -rf $DOMAIN/public_nodejs/repository-main
+rm -f $DOMAIN/public_nodejs/README.md
+
+# 删除原始的压缩文件
+rm $DOMAIN/public_nodejs/main.zip
+chmod 755 "$DOMAIN/public_nodejs/app.js" > /dev/null 2>&1
+
+chmod 755 "$DOMAIN/public_nodejs/hy2ip.sh" > /dev/null 2>&1
+
 print_status "正在下载 配置文件" 0
 echo ""
 echo " 【 恭 喜 】： 网 页 保 活 一 键 部 署 已 完 成  "
