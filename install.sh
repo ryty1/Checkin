@@ -64,7 +64,7 @@ if [[ ! -f "$PUBLIC_NODEJS_DIR/main.zip" ]]; then
 fi
 
 # 解压 ZIP 到目标目录
-unzip "$PUBLIC_NODEJS_DIR/main.zip" -d "$PUBLIC_NODEJS_DIR/"
+unzip "$PUBLIC_NODEJS_DIR/main.zip" -d "$PUBLIC_NODEJS_DIR"
 
 # 查找解压后的顶层文件夹（通常为 My-test-main）
 EXTRACTED_DIR="$PUBLIC_NODEJS_DIR/My-test-main"
