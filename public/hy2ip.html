@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>HY2_IP 更新</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>HY2_IP 更新</h2>
+        <p>请输入“更新”以确认执行 IP 更新。</p>
+        <input type="text" id="confirmation" placeholder="更新">
+        <button onclick="updateHy2ip()">提交</button>
+        <p id="result"></p>
+    </div>
+
+    <script>
+        async function updateHy2ip() {
+            let input = document.getElementById("confirmation").value.trim();
+            if (input !== "更新") {
+                document.getElementById("result").innerText = "输入错误！请输入“更新”";
+                return;
+            }
+
+            let res = await fetch('/api/hy2ip', { method: "POST" });
+            let data = await res.json();
+            document.getElementById("result").innerText = data.success ? "更新成功!" : "更新失败";
+        }
+    </script>
+</body>
+</html>
