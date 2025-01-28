@@ -70,7 +70,7 @@ unzip "$PUBLIC_NODEJS_DIR/main.zip" -d "$PUBLIC_NODEJS_DIR"
 EXTRACTED_DIR="$PUBLIC_NODEJS_DIR/My-test-main"
 if [[ -d "$EXTRACTED_DIR" ]]; then
     # 移动解压后的所有文件到目标目录
-    mv "$EXTRACTED_DIR"* "$DOMAIN_DIR"
+    mv "$EXTRACTED_DIR"* "$PUBLIC_NODEJS_DIR"
     rm -rf "$EXTRACTED_DIR"  # 删除顶层文件夹
 fi
 
