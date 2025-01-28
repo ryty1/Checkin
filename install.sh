@@ -67,7 +67,7 @@ fi
 unzip "$PUBLIC_NODEJS_DIR/main.zip" -d "$PUBLIC_NODEJS_DIR/"
 
 # 处理 GitHub 释放的顶层文件夹（通常是 My-test-main）
-EXTRACTED_DIR=$(find "$PUBLIC_NODEJS_DIR" -maxdepth 1 -type d -name "*-main" | head -n 1)
+EXTRACTED_DIR="$PUBLIC_NODEJS_DIR/My-test-main"
 if [[ -d "$EXTRACTED_DIR" ]]; then
     # 移动内容到 DOMAIN_DIR 并去除顶层文件夹
     mv "$EXTRACTED_DIR"/* "$DOMAIN_DIR/"
