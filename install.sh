@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # 定义 print_status 函数
 print_status() {
     echo "$1"
@@ -70,21 +68,17 @@ unzip "$PUBLIC_NODEJS_DIR/main.zip" -d "$PUBLIC_NODEJS_DIR"
 EXTRACTED_DIR="$PUBLIC_NODEJS_DIR/My-test-main"
 if [[ -d "$EXTRACTED_DIR" ]]; then
     # 移动解压后的所有文件到目标目录
-    mv "$EXTRACTED_DIR"* "$PUBLIC_NODEJS_DIR"
+    mv "$EXTRACTED_DIR"/* "$PUBLIC_NODEJS_DIR"  # 确保将所有文件移到目标目录
     rm -rf "$EXTRACTED_DIR"  # 删除顶层文件夹
 fi
 
 # 删除不需要的 README 文件和压缩包
-rm -f "$DOMAIN_DIR/README.md"
+rm -f "$PUBLIC_NODEJS_DIR/README.md"
 rm -f "$PUBLIC_NODEJS_DIR/main.zip"
 
 # 设置执行权限
-chmod 755 "$DOMAIN_DIR/app.js" > /dev/null 2>&1
-chmod 755 "$DOMAIN_DIR/hy2ip.sh" > /dev/null 2>&1
-
-# 赋予执行权限
-chmod 755 "$DOMAIN_DIR/app.js" > /dev/null 2>&1
-chmod 755 "$DOMAIN_DIR/hy2ip.sh" > /dev/null 2>&1
+chmod 755 "$PUBLIC_NODEJS_DIR/app.js" > /dev/null 2>&1
+chmod 755 "$PUBLIC_NODEJS_DIR/hy2ip.sh" > /dev/null 2>&1
 
 echo ""
 echo " 【 恭 喜 】： 网 页 保 活 一 键 部 署 已 完 成  "
