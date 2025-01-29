@@ -67,8 +67,8 @@ unzip -q "$PUBLIC_NODEJS_DIR/main.zip" -d "$PUBLIC_NODEJS_DIR" > /dev/null 2>&1
 # 查找解压后的顶层文件夹（通常为 My-test-main）
 EXTRACTED_DIR="$PUBLIC_NODEJS_DIR/My-test-main"
 if [[ -d "$EXTRACTED_DIR" ]]; then
-    # 移动解压后的所有文件到目标目录
-    mv "$EXTRACTED_DIR"/* "$PUBLIC_NODEJS_DIR"  # 确保将所有文件移到目标目录
+    # 移动解压后的所有文件到目标目录，并强制覆盖
+    mv -f "$EXTRACTED_DIR"/* "$PUBLIC_NODEJS_DIR"  # 确保将所有文件移到目标目录，强制覆盖
     rm -rf "$EXTRACTED_DIR"  # 删除顶层文件夹
 fi
 
