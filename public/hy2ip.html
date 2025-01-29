@@ -4,7 +4,72 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HY2_IP 更新</title>
-    <link rel="stylesheet" href="css/style.css"> <!-- 引入全局样式 -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px; /* 最大宽度为 600px */
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            text-align: left;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        p {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #555;
+            line-height: 1.5;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            p {
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -13,9 +78,38 @@
         <input type="text" id="confirmation" placeholder="更新">
         <button id="submitButton">提交</button>
         <p id="responseMessage"></p>
-        <p>【注】：不同 IP 如成功更换，原线路会失效，请复制新信息食用。</p>
     </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const submitButton = document.getElementById("submitButton");
+            const confirmationInput = document.getElementById("confirmation");
+            const responseMessage = document.getElementById("responseMessage");
 
-    <script src="js/hy2ip.js"></script> <!-- 引入页面特定的 JavaScript -->
+            submitButton.addEventListener("click", async () => {
+                const confirmation = confirmationInput.value.trim();
+
+                if (confirmation === "") {
+                    responseMessage.innerText = "请输入确认信息！";
+                    return;
+                }
+
+                const response = await fetch("/hy2ip/execute", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ confirmation })
+                });
+
+                const data = await response.json();
+                responseMessage.innerText = data.message;
+
+                // 如果更新成功，则跳转到 /success 页面
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                }
+            });
+        });
+    </script>
 </body>
 </html>
