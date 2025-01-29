@@ -123,11 +123,17 @@ app.post('/execute-command', (req, res) => {
         return res.status(400).json({ output: "命令不能为空" });
     }
 
-    // 指定执行命令的工作目录
-    const userDirectory = process.env.HOME; // 设定正确的项目目录
+    // 获取用户目录
+    const userDirectory = process.env.HOME;
+    if (!userDirectory) {
+        return res.status(500).json({ output: "无法获取用户目录" });
+    }
+
+    // 使用 bash -c 确保执行 cd 命令
+    const fullCommand = `cd ${userDirectory} && ${command}`;
 
     // 执行命令
-    exec(command, { cwd: userDirectory }, (error, stdout, stderr) => {
+    exec(fullCommand, (error, stdout, stderr) => {
         if (error) {
             return res.status(500).json({ output: `执行错误: ${error.message}` });
         }
