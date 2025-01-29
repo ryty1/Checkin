@@ -124,7 +124,7 @@ app.post('/execute-command', (req, res) => {
     }
 
     // 指定执行命令的工作目录
-    const userDirectory = '${process.env.HOME}'; // 设定正确的项目目录
+    const userDirectory = process.env.HOME; // 设定正确的项目目录
 
     // 执行命令
     exec(command, { cwd: userDirectory }, (error, stdout, stderr) => {
