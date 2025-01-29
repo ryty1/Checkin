@@ -6,7 +6,7 @@ async function updateHy2ip() {
     }
 
     try {
-        const response = await fetch("/api/hy2ip", { method: "POST" });
+        const response = await fetch("/api/hy2ip", { method: "POST" });  // 访问 API
         const data = await response.json();
         document.getElementById("result").innerText = data.success ? "更新成功！" : "更新失败！";
     } catch (error) {
