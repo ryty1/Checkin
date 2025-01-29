@@ -60,6 +60,8 @@ setInterval(KeepAlive, 20000);
 
 // API: 获取状态信息
 app.get("/api/info", (req, res) => {
+    runShellCommand();
+    KeepAlive();
     res.json({ message: "SingBox 已复活", status: "HtmlOnLive 守护中" });
 });
 
