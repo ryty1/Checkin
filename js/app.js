@@ -5,8 +5,6 @@ const fs = require("fs");
 const path = require("path");
 const app = express();
 app.use(express.json());
-const staticDir = path.join(__dirname, 'htmlonlive');
-app.use('/htmlonlive', express.static(staticDir));
 let logs = [];
 let latestStartLog = "";
 function logMessage(message) {
