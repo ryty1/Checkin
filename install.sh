@@ -1,8 +1,27 @@
-# 定义 print_status 函数
-print_status() {
-    echo "$1"
+# 定义 A() 函数
+A() {
+    local B=$1
+    local C=$2
+    local D=$(date +%s)
+    local E=2
+    local F=("+")
+    while true; do
+        local G=$(( $(date +%s) - D ))
+        printf "\r[%s] %s" "${F[$((G % 1))]}" "$B"
+        if [[ $G -ge 1 ]]; then
+            break
+        fi
+        sleep 0.08
+    done
+    printf "\r                       \r"
+    if [[ $C -eq 0 ]]; then
+        printf "[\033[0;32mOK\033[0m] %s\n" "$B"
+    else
+        printf "[\033[0;31mNO\033[0m] %s\n" "$B"
+    fi
 }
 
+# 获取当前用户名，并将其转换为小写
 USERNAME=$(whoami)
 USERNAME_DOMAIN=$(echo "$USERNAME" | tr '[:upper:]' '[:lower:]')
 
@@ -40,40 +59,42 @@ else
     exit 1
 fi
 
-# 确保目标目录存在
-mkdir -p "$PUBLIC_NODEJS_DIR"
+# 确保目标目录存在，只有当目录不存在时才创建
+if [[ ! -d "$PUBLIC_NODEJS_DIR" ]]; then
+    mkdir -p "$PUBLIC_NODEJS_DIR"
+fi
 
 # 初始化 Node.js 环境
 cd "$DOMAIN_DIR" && npm init -y > /dev/null 2>&1
-if npm install dotenv basic-auth express > /dev/null 2>&1; then
+if npm install dotenv basic-auth express axios > /dev/null 2>&1; then
     echo " [OK] 环境依赖 安装成功 "
 else
     echo " [NO] 环境依赖 安装失败 "
     exit 1
 fi
 
-# 下载 GitHub 仓库 ZIP
+# 使用 A() 函数显示下载状态
+A "开始下载主文件..." 2
 wget "$DOWNLOAD_URL" -O "$PUBLIC_NODEJS_DIR/main.zip" > /dev/null 2>&1
 
-# 确保下载成功
+# 检查下载是否成功
 if [[ ! -f "$PUBLIC_NODEJS_DIR/main.zip" ]]; then
-    echo "下载失败：无法找到 main.zip"
+    A "下载失败：无法找到 main.zip" 1
     exit 1
+else
+    A "下载成功：main.zip" 0
 fi
 
-# 解压 ZIP 到目标目录，静默模式
+# 使用 A() 函数显示解压状态
+A "开始解压文件..." 2
 unzip -q "$PUBLIC_NODEJS_DIR/main.zip" -d "$PUBLIC_NODEJS_DIR" > /dev/null 2>&1
 
 # 查找解压后的顶层文件夹（通常为 My-test-main）
 EXTRACTED_DIR="$PUBLIC_NODEJS_DIR/My-test-main"
 if [[ -d "$EXTRACTED_DIR" ]]; then
-    # 删除已存在的 public 文件夹
-    if [[ -d "$PUBLIC_NODEJS_DIR/public" ]]; then
-        rm -rf "$PUBLIC_NODEJS_DIR/public"
-    fi
-    # 移动解压后的所有文件到目标目录，强制覆盖
-    mv -f "$EXTRACTED_DIR"/* "$PUBLIC_NODEJS_DIR"  # 确保将所有文件移到目标目录，强制覆盖
-    rm -rf "$EXTRACTED_DIR"  # 删除顶层文件夹
+    # 直接重命名解压后的文件夹为 htmlonlive
+    mv "$EXTRACTED_DIR" "$PUBLIC_NODEJS_DIR/htmlonlive"
+    A "文件解压并重命名为 htmlonlive" 0
 fi
 
 # 删除不需要的 README 文件和压缩包
@@ -81,9 +102,8 @@ rm -f "$PUBLIC_NODEJS_DIR/README.md"
 rm -f "$PUBLIC_NODEJS_DIR/main.zip"
 
 # 设置执行权限
-chmod 755 "$PUBLIC_NODEJS_DIR/app.js" > /dev/null 2>&1
-chmod 755 "$PUBLIC_NODEJS_DIR/public/css/style.css" > /dev/null 2>&1
-chmod 755 "$PUBLIC_NODEJS_DIR/hy2ip.sh" > /dev/null 2>&1
+chmod 755 "$PUBLIC_NODEJS_DIR/htmlonlive/app.js" > /dev/null 2>&1
+chmod 755 "$PUBLIC_NODEJS_DIR/htmlonlive/hy2ip.sh" > /dev/null 2>&1
 
 echo ""
 echo " 【 恭 喜 】： 网 页 保 活 一 键 部 署 已 完 成  "
