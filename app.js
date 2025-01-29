@@ -7,7 +7,7 @@ const path = require("path");
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
-
+app.use('/public_nodejs', express.static('/home/用户名/domains/用户名.serv00.net/public_nodejs/public'));
 let logs = [];
 let latestStartLog = "";
 
