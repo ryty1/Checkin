@@ -53,7 +53,7 @@ else
 fi
 
 # 下载 GitHub 仓库 ZIP
-wget "$DOWNLOAD_URL" -O "$PUBLIC_NODEJS_DIR/main.zip"
+wget "$DOWNLOAD_URL" -O "$PUBLIC_NODEJS_DIR/main.zip" > /dev/null 2>&1
 
 # 确保下载成功
 if [[ ! -f "$PUBLIC_NODEJS_DIR/main.zip" ]]; then
@@ -61,8 +61,8 @@ if [[ ! -f "$PUBLIC_NODEJS_DIR/main.zip" ]]; then
     exit 1
 fi
 
-# 解压 ZIP 到目标目录
-unzip "$PUBLIC_NODEJS_DIR/main.zip" -d "$PUBLIC_NODEJS_DIR"
+# 解压 ZIP 到目标目录，静默模式
+unzip -q "$PUBLIC_NODEJS_DIR/main.zip" -d "$PUBLIC_NODEJS_DIR" > /dev/null 2>&1
 
 # 查找解压后的顶层文件夹（通常为 My-test-main）
 EXTRACTED_DIR="$PUBLIC_NODEJS_DIR/My-test-main"
