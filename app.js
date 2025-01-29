@@ -72,31 +72,66 @@ app.get("/api/info", (req, res) => {
 
 
 
-// 提供 HY2_IP 更新页面
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// HY2_IP 页面
 app.get("/hy2ip", (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'hy2ip.html'));
+    res.sendFile(__dirname + "/public/hy2ip.html");  // 假设将 HTML 文件放在 public 文件夹下
 });
 
-// 处理 HY2_IP 更新请求
+// 执行 IP 更新
 app.post("/hy2ip/execute", (req, res) => {
-    const { confirmation } = req.body;
-    if (confirmation === "更新") {
-        // 执行更新操作
-        res.json({ message: "更新成功！", redirect: "/success" });
-    } else {
-        res.json({ message: "确认信息不正确！" });
-    }
-});
+    const confirmation = req.body.confirmation?.trim();
 
-// 返回成功页面的数据
-app.get("/success", (req, res) => {
-    res.json({
-        title: "更新成功",
-        message: "您的 IP 已成功更新！",
-        statusMessage: "【当前状态】已复活。",
-        buttonText: "返回信息中心",
-        buttonLink: "/info"
-    });
+    if (confirmation !== "更新") {
+        return res.status(400).json({
+            success: false,
+            message: "输入错误！请输入“更新”以确认。"
+        });
+    }
+
+    try {
+        let logMessages = [];
+
+        executeHy2ipScript(logMessages, (error, stdout, stderr) => {
+            if (error) {
+                logMessages.push(`Error: ${error.message}`);
+                return res.status(500).json({ success: false, message: "执行失败", logs: logMessages });
+            }
+
+            if (stderr) logMessages.push(`stderr: ${stderr}`);
+
+            let outputMessages = stdout.split("\n");
+            let updatedIp = "";
+
+            outputMessages.forEach(line => {
+                if (line.includes("SingBox 配置文件成功更新IP为")) {
+                    updatedIp = line.split("SingBox 配置文件成功更新IP为")[1].trim();
+                }
+                if (line.includes("Config 配置文件成功更新IP为")) {
+                    updatedIp = line.split("Config 配置文件成功更新IP为")[1].trim();
+                }
+            });
+
+            if (updatedIp) {
+                logMessages.push(`成功更新 IP: ${updatedIp}`);
+                res.json({
+                    success: true,
+                    updatedIp: updatedIp,
+                    logs: logMessages
+                });
+            } else {
+                logMessages.push("未能获取更新的 IP");
+                res.status(500).json({ success: false, message: "未能获取更新的 IP", logs: logMessages });
+            }
+        });
+    } catch (error) {
+        let logMessages = [];
+        logMessages.push("Error executing hy2ip.sh script:", error.message);
+
+        res.status(500).json({ success: false, message: error.message, logs: logMessages });
+    }
 });
 
 
