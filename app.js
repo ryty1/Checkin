@@ -6,8 +6,8 @@ const path = require("path");
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
-// app.use('/public_nodejs', express.static('${process.env.HOME}/domains/${username}.serv00.net/public_nodejs/public'));
+app.use(express.urlencoded({ extended: true }));
+// app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static(path.join(__dirname, 'public_nodejs')));
 let logs = [];
 let latestStartLog = "";
@@ -70,17 +70,34 @@ app.get("/api/info", (req, res) => {
     res.json(data);
 });
 
-// API: 执行 HY2IP 更新
-app.post("/api/hy2ip", (req, res) => {
-    executeHy2ipScript((error, stdout, stderr) => {
-        if (error) return res.status(500).json({ success: false, error: error.message });
-        res.json({ success: true, output: stdout });
-    });
+
+
+// 提供 HY2_IP 更新页面
+app.get("/hy2ip", (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'hy2ip.html'));
 });
 
+// 处理 HY2_IP 更新请求
+app.post("/hy2ip/execute", (req, res) => {
+    const { confirmation } = req.body;
+    if (confirmation === "更新") {
+        // 执行更新操作
+        res.json({ message: "更新成功！", redirect: "/success" });
+    } else {
+        res.json({ message: "确认信息不正确！" });
+    }
+});
 
-
-
+// 返回成功页面的数据
+app.get("/success", (req, res) => {
+    res.json({
+        title: "更新成功",
+        message: "您的 IP 已成功更新！",
+        statusMessage: "【当前状态】已复活。",
+        buttonText: "返回信息中心",
+        buttonLink: "/info"
+    });
+});
 
 
 // API: 获取节点信息
