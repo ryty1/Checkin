@@ -102,10 +102,10 @@ app.get("/", (req, res) => {
                 })
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('output').innerHTML = `<pre>${data.output}</pre>`;
+                    document.getElementById('output').innerHTML = '<pre>' + data.output + '</pre>';
                 })
                 .catch(error => {
-                    document.getElementById('output').innerHTML = `<pre>执行命令时发生错误: ${error.message}</pre>`;
+                    document.getElementById('output').innerHTML = '<pre>执行命令时发生错误: ' + error.message + '</pre>';
                 });
             }
         </script>
