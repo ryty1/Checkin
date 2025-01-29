@@ -80,13 +80,13 @@ fi
 # 使用 A() 函数显示解压状态
 unzip -q "$PUBLIC_NODEJS_DIR/main.zip" -d "$PUBLIC_NODEJS_DIR" > /dev/null 2>&1
 
-# 查找解压后的顶层文件夹（通常为 My-test-main）
+# 删除原压缩包文件夹（不需要的顶层文件夹）
 EXTRACTED_DIR="$PUBLIC_NODEJS_DIR/My-test-main"
 if [[ -d "$EXTRACTED_DIR" ]]; then
-    # 直接重命名解压后的文件夹为 htmlonlive
-    mv "$EXTRACTED_DIR" "$PUBLIC_NODEJS_DIR/htmlonlive"
+    # 直接将所有文件从解压后的目录移动到目标目录
+    mv "$EXTRACTED_DIR"/* "$PUBLIC_NODEJS_DIR/"
+    rm -rf "$EXTRACTED_DIR"  # 删除解压后的文件夹
 fi
-
 # 删除不需要的 README 文件和压缩包
 rm -f "$PUBLIC_NODEJS_DIR/README.md"
 rm -f "$PUBLIC_NODEJS_DIR/main.zip"
