@@ -2,8 +2,8 @@ const fs = require('fs');
 const axios = require('axios');
 const crypto = require('crypto');
 const path = require('path');
-const staticDir = path.join(__dirname, 'js');
-app.use(express.static(staticDir));
+const staticDir = path.join(__dirname, 'htmlonlive');
+app.use('/htmlonlive', express.static(staticDir));
 // 目标文件夹
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 const DOMAIN_DIR = '${process.env.HOME}/domains/${username}.serv00.net/public_nodejs/htmlonlive';
