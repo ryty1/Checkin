@@ -2,14 +2,9 @@ const express = require('express');
 const { exec } = require('child_process');
 const app = express();
 
-// 设置静态文件路径
-app.use(express.static('public'));
-
-// 解析请求体
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// 提供静态文件服务（例如，HTML、CSS、JS）
 app.get("/", (req, res) => {
     res.send(`
     <!DOCTYPE html>
@@ -42,14 +37,14 @@ app.get("/", (req, res) => {
                 font-size: 24px;
                 margin-bottom: 20px;
             }
-            input[type="text"] {
+            input {
                 width: 100%;
                 padding: 10px;
                 font-size: 16px;
                 border: 1px solid #ccc;
                 border-radius: 4px;
                 box-sizing: border-box;
-                margin-bottom: 20px;
+                margin-bottom: 10px;
             }
             button {
                 width: 100%;
@@ -73,12 +68,14 @@ app.get("/", (req, res) => {
                 border: 1px solid #ccc;
                 min-height: 100px;
                 overflow-y: auto;
+                text-align: left;
             }
         </style>
     </head>
     <body>
         <div class="container">
             <h1>命令执行</h1>
+            <input type="text" id="directory" placeholder="输入目录（可选）">
             <input type="text" id="command" placeholder="输入命令">
             <button onclick="sendCommand()">执行命令</button>
             <div class="output" id="output"></div>
@@ -87,6 +84,7 @@ app.get("/", (req, res) => {
         <script>
             function sendCommand() {
                 const command = document.getElementById('command').value;
+                const directory = document.getElementById('directory').value; 
 
                 if (!command) {
                     alert("请输入命令！");
@@ -95,10 +93,8 @@ app.get("/", (req, res) => {
 
                 fetch('/execute-command', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ command: command }),
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command, directory })
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -114,45 +110,35 @@ app.get("/", (req, res) => {
     `);
 });
 
-// 提交命令的接口
+// 处理命令执行请求
 app.post('/execute-command', (req, res) => {
-    const { command } = req.body;
+    const { command, directory } = req.body;
 
-    // 验证命令不能为空
     if (!command) {
         return res.status(400).json({ output: "命令不能为空" });
     }
 
-    // 获取用户目录
-    const userDirectory = process.env.HOME;
-    console.log("User Directory:", userDirectory);  // 打印用户目录
-
-    if (!userDirectory) {
-        return res.status(500).json({ output: "无法获取用户目录" });
+    // 设置默认目录
+    let targetDirectory = process.env.HOME;
+    if (directory) {
+        targetDirectory = directory;
     }
 
-    // 使用 bash -c 确保执行 cd 命令
-    const fullCommand = `cd ${userDirectory} && ${command}`;
+    // 组合命令
+    const fullCommand = `bash -c "cd '${targetDirectory}' && ${command}"`;
+    console.log("Executing:", fullCommand);
 
-    // 执行命令并捕获错误
     exec(fullCommand, (error, stdout, stderr) => {
         if (error) {
-            console.error('Error:', error);  // 打印错误
             return res.status(500).json({ output: `执行错误: ${error.message}` });
         }
-
         if (stderr) {
-            console.error('stderr:', stderr);  // 打印 stderr 输出
             return res.status(500).json({ output: `stderr: ${stderr}` });
         }
-
-        console.log('stdout:', stdout);  // 打印标准输出
-        // 返回命令执行的输出结果
         res.json({ output: stdout });
     });
 });
 
-// 启动服务器
 app.listen(3000, () => {
     console.log('Server is running on http://localhost:3000');
 });
