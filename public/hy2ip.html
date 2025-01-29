@@ -4,16 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HY2_IP 更新</title>
-    <link rel="stylesheet" href="/public_nodejs/public/css/style.css">
+    <link rel="stylesheet" href="css/style.css"> <!-- 引入全局样式 -->
 </head>
 <body>
     <div class="container">
         <h1>HY2_IP 更新</h1>
         <p>请输入“更新”以确认执行 IP 更新。</p>
         <input type="text" id="confirmation" placeholder="更新">
-        <button onclick="updateHy2ip()">提交</button>
-        <p id="result"></p>
+        <button id="submitButton">提交</button>
+        <p id="responseMessage"></p>
+        <p>【注】：不同 IP 如成功更换，原线路会失效，请复制新信息食用。</p>
     </div>
-    <script src="/public_nodejs/public/js/hy2ip.js"></script>
+
+    <script src="js/hy2ip.js"></script> <!-- 引入页面特定的 JavaScript -->
 </body>
 </html>
