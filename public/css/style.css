@@ -7,6 +7,7 @@ body {
     align-items: center;
     height: 100vh;
 }
+
 .content-container {
     width: 100%;
     max-width: 600px; /* 最大宽度为600px */
@@ -17,6 +18,7 @@ body {
     box-sizing: border-box;
     text-align: left; /* 保持文字左对齐 */
 }
+
 .dynamic-text {
     font-size: 24px;
     font-weight: bold;
@@ -24,6 +26,7 @@ body {
     line-height: 1.5;
     text-align: center; /* 两行文本居中 */
 }
+
 @keyframes growShrink {
     0% {
         transform: scale(1);
@@ -35,17 +38,20 @@ body {
         transform: scale(1);
     }
 }
+
 .dynamic-text span {
     display: inline-block;
     animation: growShrink 1.2s infinite;
     animation-delay: calc(0.1s * var(--char-index));
 }
+
 .button-container {
     margin-top: 20px;
     display: flex;
     flex-wrap: wrap; /* 适配小屏，按钮会换行 */
     gap: 10px;
 }
+
 button {
     flex: 1;
     min-width: 100px;
@@ -58,9 +64,11 @@ button {
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
+
 button:hover {
     background-color: #0056b3;
 }
+
 @media (max-width: 600px) {
     .dynamic-text {
         font-size: 20px;
