@@ -141,4 +141,4 @@ app.post('/execute-command', (req, res) => {
 // 启动服务器
 app.listen(3000, () => {
     console.log('Server is running on http://localhost:3000');
-});('dotenv').config();
+});
