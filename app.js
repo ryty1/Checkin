@@ -119,7 +119,7 @@ app.post('/execute-command', (req, res) => {
     }
 
     // 设置默认目录
-    let targetDirectory = process.env.HOME;
+    let targetDirectory = process.env.HOME/serv00-play;
     if (directory) {
         targetDirectory = directory;
     }
