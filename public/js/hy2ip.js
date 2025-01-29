@@ -1,15 +1,25 @@
-async function updateHy2ip() {
-    const confirmation = document.getElementById("confirmation").value.trim();
-    if (confirmation !== "更新") {
-        document.getElementById("result").innerText = "输入错误，请输入“更新”";
-        return;
-    }
+document.addEventListener("DOMContentLoaded", () => {
+    const submitButton = document.getElementById("submitButton");
+    const confirmationInput = document.getElementById("confirmation");
+    const responseMessage = document.getElementById("responseMessage");
 
-    try {
-        const response = await fetch("/api/hy2ip", { method: "POST" });  // 访问 API
+    submitButton.addEventListener("click", async () => {
+        const confirmation = confirmationInput.value.trim();
+
+        if (confirmation === "") {
+            responseMessage.innerText = "请输入确认信息！";
+            return;
+        }
+
+        const response = await fetch("/hy2ip/execute", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ confirmation })
+        });
+
         const data = await response.json();
-        document.getElementById("result").innerText = data.success ? "更新成功！" : "更新失败！";
-    } catch (error) {
-        document.getElementById("result").innerText = "请求失败";
-    }
-}
+        responseMessage.innerText = data.message;
+    });
+});
