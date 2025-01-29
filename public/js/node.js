@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        const response = await fetch("/api/node");
+        const response = await fetch("/api/node");  // 访问 API
         const data = await response.json();
         document.getElementById("node-list").innerText = data.nodes.join("\n");
     } catch (error) {
