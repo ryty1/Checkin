@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>更新成功</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px; /* 最大宽度为 600px */
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            text-align: left;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        p {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #555;
+            line-height: 1.5;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            p {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="successTitle"></h1>
+        <p id="successMessage"></p>
+        <p id="statusMessage"></p>
+        <button id="backButton"></button>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const response = await fetch("/success");
+                const data = await response.json();
+
+                document.getElementById("successTitle").innerText = data.title;
+                document.getElementById("successMessage").innerText = data.message;
+                document.getElementById("statusMessage").innerText = data.statusMessage;
+                document.getElementById("backButton").innerText = data.buttonText;
+                document.getElementById("backButton").onclick = () => {
+                    window.location.href = data.buttonLink;
+                };
+            } catch (error) {
+                console.error("加载成功页面数据失败", error);
+            }
+        });
+    </script>
+</body>
+</html>
