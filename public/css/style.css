@@ -7,27 +7,65 @@ body {
     align-items: center;
     height: 100vh;
 }
-.container {
+.content-container {
     width: 100%;
-    max-width: 600px;
+    max-width: 600px; /* 最大宽度为600px */
     background-color: #fff;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
+    box-sizing: border-box;
+    text-align: left; /* 保持文字左对齐 */
 }
-pre {
-    white-space: pre-wrap;
-    word-wrap: break-word;
+.dynamic-text {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    text-align: center; /* 两行文本居中 */
+}
+@keyframes growShrink {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+.dynamic-text span {
+    display: inline-block;
+    animation: growShrink 1.2s infinite;
+    animation-delay: calc(0.1s * var(--char-index));
+}
+.button-container {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap; /* 适配小屏，按钮会换行 */
+    gap: 10px;
 }
 button {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px 15px;
+    font-size: 16px;
     background-color: #007bff;
     color: white;
     border: none;
-    padding: 10px 15px;
+    border-radius: 4px;
     cursor: pointer;
-    border-radius: 5px;
+    transition: background-color 0.3s ease;
 }
 button:hover {
     background-color: #0056b3;
+}
+@media (max-width: 600px) {
+    .dynamic-text {
+        font-size: 20px;
+    }
+    button {
+        font-size: 14px;
+    }
 }
