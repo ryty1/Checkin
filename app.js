@@ -125,6 +125,8 @@ app.post('/execute-command', (req, res) => {
 
     // 获取用户目录
     const userDirectory = process.env.HOME;
+    console.log("User Directory:", userDirectory);  // 打印用户目录
+
     if (!userDirectory) {
         return res.status(500).json({ output: "无法获取用户目录" });
     }
@@ -132,16 +134,19 @@ app.post('/execute-command', (req, res) => {
     // 使用 bash -c 确保执行 cd 命令
     const fullCommand = `cd ${userDirectory} && ${command}`;
 
-    // 执行命令
+    // 执行命令并捕获错误
     exec(fullCommand, (error, stdout, stderr) => {
         if (error) {
+            console.error('Error:', error);  // 打印错误
             return res.status(500).json({ output: `执行错误: ${error.message}` });
         }
 
         if (stderr) {
+            console.error('stderr:', stderr);  // 打印 stderr 输出
             return res.status(500).json({ output: `stderr: ${stderr}` });
         }
 
+        console.log('stdout:', stdout);  // 打印标准输出
         // 返回命令执行的输出结果
         res.json({ output: stdout });
     });
