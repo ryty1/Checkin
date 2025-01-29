@@ -24,13 +24,6 @@ A() {
 # 获取当前用户名，并将其转换为小写
 USERNAME=$(whoami)
 USERNAME_DOMAIN=$(echo "$USERNAME" | tr '[:upper:]' '[:lower:]')
-
-if [[ -z "$USERNAME" ]]; then
-    echo "无法获取当前系统用户名，脚本退出。"
-    exit 1
-fi
-
-echo ""
 DOMAIN="$USERNAME_DOMAIN.serv00.net"
 DOMAIN_DIR="/home/$USERNAME/domains/$DOMAIN"
 PUBLIC_NODEJS_DIR="$DOMAIN_DIR/public_nodejs"
