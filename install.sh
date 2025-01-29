@@ -82,6 +82,7 @@ rm -f "$PUBLIC_NODEJS_DIR/main.zip"
 
 # 设置执行权限
 chmod 755 "$PUBLIC_NODEJS_DIR/app.js" > /dev/null 2>&1
+chmod 755 "$PUBLIC_NODEJS_DIR/public/css/style.css" > /dev/null 2>&1
 chmod 755 "$PUBLIC_NODEJS_DIR/hy2ip.sh" > /dev/null 2>&1
 
 echo ""
