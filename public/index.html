@@ -8,14 +8,15 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="content-container">
-        <div id="status-message" class="dynamic-text"></div>
-        <div class="button-container">
-            <button onclick="window.location.href='/hy2ip.html'">换HY2_IP</button>
-            <button onclick="window.location.href='/node.html'">节点信息</button>
-            <button onclick="window.location.href='/log.html'">查看日志</button>
-        </div>
-    </div>
+            <div class="content-container">
+                <div class="dynamic-text">
+                    ${"SingBox 已复活".split("").map((char, index) => 
+                        `<span style="--char-index: ${index};">${char}</span>`).join("")}
+                </div>
+                <div class="dynamic-text">
+                    ${"HtmlOnLive 守护中".split("").map((char, index) => 
+                        `<span style="--char-index: ${index + 10};">${char}</span>`).join("")}
+                </div>
 
     <!-- 引入 JavaScript 文件 -->
     <script src="js/app.js"></script>
