@@ -3,11 +3,11 @@ const express = require("express");
 const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
-
+const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
-app.use('/public_nodejs', express.static('/home/用户名/domains/用户名.serv00.net/public_nodejs/public'));
+app.use('/public_nodejs', express.static('${process.env.HOME}/domains/${username}.serv00.net/public_nodejs/public'));
 let logs = [];
 let latestStartLog = "";
 
@@ -44,7 +44,6 @@ function runShellCommand() {
 
 // 执行 HY2IP 更新
 function executeHy2ipScript(callback) {
-    const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
     const command = `cd ${process.env.HOME}/domains/${username}.serv00.net/public_nodejs/ && bash hy2ip.sh`;
     
     exec(command, (error, stdout, stderr) => {
