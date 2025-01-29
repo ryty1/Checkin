@@ -4,21 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>信息中心</title>
-    <!-- 确保引用 CSS 文件的路径正确 -->
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css"> <!-- 引入CSS文件 -->
 </head>
 <body>
-            <div class="content-container">
-                <div class="dynamic-text">
-                    ${"SingBox 已复活".split("").map((char, index) => 
-                        `<span style="--char-index: ${index};">${char}</span>`).join("")}
-                </div>
-                <div class="dynamic-text">
-                    ${"HtmlOnLive 守护中".split("").map((char, index) => 
-                        `<span style="--char-index: ${index + 10};">${char}</span>`).join("")}
-                </div>
-
-    <!-- 引入 JavaScript 文件 -->
-    <script src="js/app.js"></script>
+    <div class="content-container">
+        <div class="dynamic-text">
+            ${"SingBox 已复活".split("").map((char, index) => 
+                `<span style="--char-index: ${index};">${char}</span>`).join("")}
+        </div>
+        <div class="dynamic-text">
+            ${"HtmlOnLive 守护中".split("").map((char, index) => 
+                `<span style="--char-index: ${index + 10};">${char}</span>`).join("")}
+        </div>
+        <div class="button-container">
+            <button onclick="window.location.href='/hy2ip'">换HY2_IP</button>
+            <button onclick="window.location.href='/node'">节点信息</button>
+            <button onclick="window.location.href='/log'">查看日志</button>
+        </div>
+    </div>
+    <script src="js/app.js"></script> <!-- 引入JS文件 -->
 </body>
 </html>
