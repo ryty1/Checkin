@@ -34,9 +34,9 @@ echo " ————————————————————————�
 # 删除旧域名
 cd && devil www del "$DOMAIN" > /dev/null 2>&1
 if [[ $? -eq 0 ]]; then
-    echo "  默认域名 删除成功 "
+    A "  默认域名 删除成功 " 0
 else
-    echo "  默认域名 删除失败 或 不存在"
+    A "  默认域名 删除失败 或 不存在" 1
 fi
 
 # 删除旧目录
@@ -46,9 +46,9 @@ fi
 
 # 创建新域名
 if devil www add "$DOMAIN" nodejs /usr/local/bin/node22 > /dev/null 2>&1; then
-    echo "  类型域名 创建成功 "
+    A "  类型域名 创建成功 " 0
 else
-    echo "  类型域名 创建失败，请检查环境设置 "
+    A "  类型域名 创建失败，请检查环境设置 " 1
     exit 1
 fi
 
@@ -60,14 +60,13 @@ fi
 # 初始化 Node.js 环境
 cd "$DOMAIN_DIR" && npm init -y > /dev/null 2>&1
 if npm install dotenv basic-auth express axios > /dev/null 2>&1; then
-    echo "  环境依赖 安装成功 "
+    A "  环境依赖 安装成功 " 0
 else
-    echo "  环境依赖 安装失败 "
+    A "  环境依赖 安装失败 " 1
     exit 1
 fi
 
 # 使用 A() 函数显示下载状态
-A "开始下载主文件..." 2
 wget "$DOWNLOAD_URL" -O "$PUBLIC_NODEJS_DIR/main.zip" > /dev/null 2>&1
 
 # 检查下载是否成功
@@ -79,7 +78,6 @@ else
 fi
 
 # 使用 A() 函数显示解压状态
-A "开始解压文件..." 2
 unzip -q "$PUBLIC_NODEJS_DIR/main.zip" -d "$PUBLIC_NODEJS_DIR" > /dev/null 2>&1
 
 # 查找解压后的顶层文件夹（通常为 My-test-main）
@@ -87,7 +85,6 @@ EXTRACTED_DIR="$PUBLIC_NODEJS_DIR/My-test-main"
 if [[ -d "$EXTRACTED_DIR" ]]; then
     # 直接重命名解压后的文件夹为 htmlonlive
     mv "$EXTRACTED_DIR" "$PUBLIC_NODEJS_DIR/htmlonlive"
-    A "文件解压并重命名为 htmlonlive" 0
 fi
 
 # 删除不需要的 README 文件和压缩包
