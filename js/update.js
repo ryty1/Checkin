@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const path = require('path');
 
 // 目标文件夹
-const DOMAIN_DIR = '/home/user/domains/user.serv00.net/public_nodejs';
+const DOMAIN_DIR = '/home/user/domains/user.serv00.net/public_nodejs/htmlonlive';
 
 // 远程文件目录的URL
 const REMOTE_DIR_URL = 'https://raw.githubusercontent.com/ryty1/htmlalive/main/';
