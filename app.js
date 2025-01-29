@@ -7,7 +7,8 @@ const username = process.env.USER.toLowerCase(); // 获取当前用户名并转�
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
-app.use('/public_nodejs', express.static('${process.env.HOME}/domains/${username}.serv00.net/public_nodejs/public'));
+// app.use('/public_nodejs', express.static('${process.env.HOME}/domains/${username}.serv00.net/public_nodejs/public'));
+app.use(express.static(path.join(__dirname, 'public_nodejs')));
 let logs = [];
 let latestStartLog = "";
 
@@ -62,7 +63,11 @@ setInterval(KeepAlive, 20000);
 app.get("/api/info", (req, res) => {
     runShellCommand();
     KeepAlive();
-    res.json({ message: "SingBox 已复活", status: "HtmlOnLive 守护中" });
+        const data = {
+        message: "SingBox 已复活",
+        status: "HtmlOnLive 守护中"
+    };
+    res.json(data);
 });
 
 // API: 执行 HY2IP 更新
@@ -72,6 +77,11 @@ app.post("/api/hy2ip", (req, res) => {
         res.json({ success: true, output: stdout });
     });
 });
+
+
+
+
+
 
 // API: 获取节点信息
 app.get("/api/node", (req, res) => {
