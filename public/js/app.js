@@ -1,9 +1,20 @@
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        const response = await fetch("/api/info");  // 访问后端 API
+        // 从后端获取数据
+        const response = await fetch("/api/info");
         const data = await response.json();
-        document.getElementById("status-message").innerText = `${data.message} | ${data.status}`;
+
+        // 显示获取的消息
+        document.getElementById("singbox-text").innerHTML = data.message.split("").map((char, index) => 
+            `<span style="--char-index: ${index};">${char}</span>`
+        ).join("");
+
+        document.getElementById("htmlonlive-text").innerHTML = data.status.split("").map((char, index) => 
+            `<span style="--char-index: ${index + data.message.length};">${char}</span>`
+        ).join("");
     } catch (error) {
-        document.getElementById("status-message").innerText = "获取状态失败";
+        // 如果请求失败，显示错误信息
+        document.getElementById("singbox-text").innerText = "获取 SingBox 状态失败";
+        document.getElementById("htmlonlive-text").innerText = "获取 HtmlOnLive 状态失败";
     }
 });
