@@ -269,7 +269,7 @@ app.get("/info", (req, res) => {
                     flex-wrap: wrap;
                     gap: 10px;
                     justify-content: center;
-                    width: 40%; /* 设置按钮容器宽度 */
+                    width: 80%; /* 设置按钮容器宽度 */
                     box-sizing: border-box;
                 }
 
@@ -283,7 +283,7 @@ app.get("/info", (req, res) => {
                     border-radius: 4px;
                     cursor: pointer;
                     transition: background-color 0.3s ease, transform 0.1s;
-                    width: 38%;
+                    width: 48%; /* 按钮宽度调整为 48% */
                     min-width: 120px;
                     box-sizing: border-box;
                 }
@@ -300,12 +300,12 @@ app.get("/info", (req, res) => {
 
                     .button-container {
                         flex-direction: column;
-                        width: 40%;
+                        width: 100%;
                     }
 
                     button {
                         font-size: 18px;
-                        width: 40%;
+                        width: 100%; /* 小屏幕时按钮宽度为 100% */
                     }
 
                     .content-container {
