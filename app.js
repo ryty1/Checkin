@@ -733,39 +733,100 @@ app.get('/update', async (req, res) => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>文件更新检查</title>
             <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-                .container { max-width: 600px; margin: 0 auto; text-align: left; }
-                .result { padding: 10px; border-radius: 5px; margin: 5px 0; }
-                .success { background-color: #e0ffe0; border: 1px solid #8bc34a; }
-                .fail { background-color: #ffe0e0; border: 1px solid #f44336; }
-                .info { background-color: #e0e0ff; border: 1px solid #3f51b5; }
-                button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f9;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                }
+                .container {
+                    width: 80%;
+                    max-width: 800px;
+                    padding: 20px;
+                    background-color: #fff;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                }
+                h1 {
+                    text-align: center;
+                    color: #333;
+                }
+                button {
+                    display: block;
+                    margin: 20px auto;
+                    padding: 10px 20px;
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    transition: background-color 0.3s;
+                }
+                button:hover {
+                    background-color: #45a049;
+                }
+                #result {
+                    margin-top: 20px;
+                    font-size: 16px;
+                }
+                .result-item {
+                    padding: 10px;
+                    border-radius: 5px;
+                    margin-bottom: 10px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .success {
+                    background-color: #e7f9e7;
+                    color: #4CAF50;
+                }
+                .failure {
+                    background-color: #ffe6e6;
+                    color: #f44336;
+                }
+                .info {
+                    background-color: #e0f7fa;
+                    color: #0288d1;
+                }
             </style>
         </head>
         <body>
-            <h1>文件更新检查</h1>
-            <button onclick="checkForUpdates()">检查更新</button>
             <div class="container">
-                <h3>更新结果</h3>
+                <h1>文件更新检查</h1>
+                <button onclick="checkForUpdates()">检查更新</button>
                 <div id="result"></div>
             </div>
 
             <script>
                 async function checkForUpdates() {
-                    document.getElementById('result').innerHTML = '<p>🔄 检查更新中...</p>';
                     try {
                         const response = await fetch('/update', { headers: { 'Accept': 'application/json' } });
                         const data = await response.json();
+                        let resultHtml = '<h3>更新结果</h3>';
 
-                        let resultHtml = '';
+                        // 遍历并生成结果项
                         data.forEach(update => {
-                            let cssClass = update.success ? (update.file === "无" ? "info" : "success") : "fail";
-                            resultHtml += \`<div class="result \${cssClass}">\${update.message}</div>\`;
+                            let className = 'result-item';
+                            if (update.success) {
+                                className += ' success';
+                            } else {
+                                className += ' failure';
+                            }
+                            resultHtml += \`
+                            <div class="\${className}">
+                                <span>\${update.message}</span>
+                            </div>\`;
                         });
 
                         document.getElementById('result').innerHTML = resultHtml;
                     } catch (error) {
-                        document.getElementById('result').innerHTML = '<div class="result fail">❌ 检查更新时出错</div>';
+                        document.getElementById('result').innerHTML = '<p class="failure">检查更新时出错</p>';
                     }
                 }
             </script>
