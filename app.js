@@ -300,12 +300,12 @@ app.get("/info", (req, res) => {
 
                     .button-container {
                         flex-direction: column;
-                        width: 100%;
+                        width: 80%;
                     }
 
                     button {
                         font-size: 18px;
-                        width: 100%; /* 小屏幕时按钮宽度为 100% */
+                        width: 48%; /* 小屏幕时按钮宽度为 100% */
                     }
 
                     .content-container {
