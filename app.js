@@ -686,7 +686,12 @@ app.get('/update', async (req, res) => {
         console.log("🛠️ 正在检查更新...");
         const updateResults = await checkForUpdates();
 
-        // **返回网页（格式不变）**
+        // **如果请求是 AJAX（fetch），返回 JSON**
+        if (req.headers.accept && req.headers.accept.includes('application/json')) {
+            return res.json(updateResults);
+        }
+
+        // **否则，返回 HTML**
         res.send(`
         <!DOCTYPE html>
         <html lang="zh-CN">
@@ -717,18 +722,14 @@ app.get('/update', async (req, res) => {
                     resultDiv.style.display = 'none';
 
                     try {
-                        const response = await fetch('/update');
+                        const response = await fetch('/update', { headers: { 'Accept': 'application/json' } });
                         const data = await response.json();
 
                         resultDiv.style.display = 'block';
                         let resultHtml = '<h3>更新结果</h3>';
 
                         data.forEach(update => {
-                            if (update.success) {
-                                resultHtml += \`<p class="success">\${update.message}</p>\`;
-                            } else {
-                                resultHtml += \`<p class="error">\${update.message}</p>\`;
-                            }
+                            resultHtml += \`<p class="\${update.success ? 'success' : 'error'}">\${update.message}</p>\`;
                         });
 
                         resultDiv.innerHTML = resultHtml;
