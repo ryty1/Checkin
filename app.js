@@ -221,16 +221,21 @@ app.get("/info", (req, res) => {
                     height: 100vh;
                     padding: 0 10px; /* 防止屏幕两侧的内容被遮挡 */
                 }
+
                 .content-container {
                     width: 100%;
                     max-width: 900px; /* 设置最大宽度，防止容器过宽 */
+                    min-height: 300px; /* 设置最小高度，避免内容太少时容器过小 */
+                    height: auto; /* 高度自适应 */
                     background-color: #fff;
                     padding: 20px;
                     border-radius: 8px;
                     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
                     box-sizing: border-box;
                     text-align: left;
+                    overflow: auto; /* 允许内容滚动，防止溢出 */
                 }
+
                 .dynamic-text {
                     font-size: 24px;
                     font-weight: bold;
@@ -238,6 +243,7 @@ app.get("/info", (req, res) => {
                     line-height: 1.5;
                     text-align: center;
                 }
+
                 @keyframes growShrink {
                     0% {
                         transform: scale(1);
@@ -249,19 +255,22 @@ app.get("/info", (req, res) => {
                         transform: scale(1);
                     }
                 }
+
                 .dynamic-text span {
                     display: inline-block;
                     animation: growShrink 1.2s infinite;
                     animation-delay: calc(0.1s * var(--char-index));
                 }
+
                 .button-container {
                     margin-top: 20px;
                     display: flex;
                     flex-wrap: wrap;
                     gap: 10px;
                 }
+
                 button {
-                    flex: 1 1 45%;
+                    flex: 1 1 45%; /* 按钮占宽度的比例 */
                     min-width: 120px;
                     padding: 10px 15px;
                     font-size: 16px;
@@ -272,16 +281,25 @@ app.get("/info", (req, res) => {
                     cursor: pointer;
                     transition: background-color 0.3s ease;
                 }
+
                 button:hover {
                     background-color: #0056b3;
                 }
+
                 @media (max-width: 600px) {
                     .dynamic-text {
                         font-size: 20px;
                     }
+
                     button {
                         font-size: 14px;
-                        flex: 1 1 100%;
+                        flex: 1 1 100%; /* 在小屏幕上让按钮占满100%宽度 */
+                        min-width: unset; /* 去除最小宽度限制 */
+                    }
+
+                    .content-container {
+                        padding: 10px; /* 给内容容器增加更多的内边距，避免边界过紧 */
+                        min-height: 250px; /* 最小高度适配小屏幕 */
                     }
                 }
             </style>
