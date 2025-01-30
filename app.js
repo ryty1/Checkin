@@ -342,7 +342,7 @@ app.get("/hy2ip", (req, res) => {
         <html>
             <head>
                 <title>HY2_IP 更新</title>
-                <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 视口设置，确保页面在不同设备上自适应 -->
+                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
                 <style>
                     body {
                         font-family: Arial, sans-serif;
@@ -353,18 +353,18 @@ app.get("/hy2ip", (req, res) => {
                         justify-content: center;
                         align-items: center;
                         height: 100vh;
-                        overflow-x: hidden; /* 防止水平滚动条出现 */
+                        width: 100vw;
+                        overflow: hidden;
                     }
                     .container {
-                        width: 100%;
-                        max-width: 600px; /* 最大宽度为 600px */
+                        width: 95%;
+                        max-width: 600px;
                         background-color: #fff;
                         padding: 20px;
                         border-radius: 8px;
                         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
                         box-sizing: border-box;
-                        text-align: left;
-                        margin: 0 10px; /* 增加左右间距，减少过多的空白 */
+                        text-align: center;
                     }
                     h1 {
                         font-size: 24px;
@@ -379,25 +379,33 @@ app.get("/hy2ip", (req, res) => {
                     input[type="text"] {
                         width: 100%;
                         padding: 12px;
-                        font-size: 14px;
+                        font-size: 16px;
                         border: 1px solid #ccc;
                         border-radius: 4px;
                         box-sizing: border-box;
                         margin-bottom: 15px;
+                        text-align: center;
+                        transition: 0.3s;
+                    }
+                    input[type="text"]:focus {
+                        border-color: #007bff;
+                        outline: none;
+                        box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
                     }
                     button {
                         width: 100%;
                         padding: 12px;
-                        font-size: 16px;
+                        font-size: 18px;
                         background-color: #007bff;
                         color: white;
                         border: none;
                         border-radius: 4px;
                         cursor: pointer;
-                        transition: background-color 0.3s ease;
+                        transition: 0.3s;
                     }
                     button:hover {
                         background-color: #0056b3;
+                        transform: scale(1.05);
                     }
                     @media (max-width: 600px) {
                         .container {
@@ -415,12 +423,12 @@ app.get("/hy2ip", (req, res) => {
             <body>
                 <div class="container">
                     <h1>HY2_IP 更新</h1>
-                    <p>请输入“更新”以确认执行 IP 更新。</p>
+                    <p>请输入 <b>更新</b> 以确认执行 IP 更新。</p>
                     <form action="/hy2ip/execute" method="POST">
                         <input type="text" name="confirmation" placeholder="更新">
                         <button type="submit">提交</button>
                     </form>
-                    <p>【注】：不同 IP 如成功更换，原线路会失效，请复制新信息食用。</p>
+                    <p>⚠️ 更新后原线路会失效，请复制新信息使用。</p>
                 </div>
             </body>
         </html>
