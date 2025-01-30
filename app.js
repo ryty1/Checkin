@@ -340,6 +340,7 @@ app.get("/hy2ip", (req, res) => {
         <html>
             <head>
                 <title>HY2_IP 更新</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 视口设置，确保页面在不同设备上自适应 -->
                 <style>
                     body {
                         font-family: Arial, sans-serif;
@@ -350,10 +351,11 @@ app.get("/hy2ip", (req, res) => {
                         justify-content: center;
                         align-items: center;
                         height: 100vh;
+                        overflow-x: hidden; /* 防止水平滚动条出现 */
                     }
                     .container {
-                        width: 90%; /* 容器宽度调整为90% */
-                        max-width: 600px; /* 最大宽度为600px */
+                        width: 100%;
+                        max-width: 600px; /* 最大宽度为 600px */
                         background-color: #fff;
                         padding: 20px;
                         border-radius: 8px;
