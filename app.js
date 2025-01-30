@@ -224,9 +224,8 @@ app.get("/info", (req, res) => {
 
                 .content-container {
                     width: 100%;
-                    max-width: 900px; /* 设置最大宽度，防止容器过宽 */
-                    min-height: 300px; /* 设置最小高度，避免内容太少时容器过小 */
-                    height: auto; /* 高度自适应 */
+                    max-width: 900px; /* 最大宽度，防止容器过宽 */
+                    aspect-ratio: 3 / 4; /* 设置容器的纵横比为3:4 */
                     background-color: #fff;
                     padding: 20px;
                     border-radius: 8px;
@@ -299,7 +298,6 @@ app.get("/info", (req, res) => {
 
                     .content-container {
                         padding: 10px; /* 给内容容器增加更多的内边距，避免边界过紧 */
-                        min-height: 250px; /* 最小高度适配小屏幕 */
                     }
                 }
             </style>
