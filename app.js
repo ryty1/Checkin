@@ -275,7 +275,7 @@ app.get("/info", (req, res) => {
 
                 button {
                     padding: 15px 30px; /* 增大按钮内边距 */
-                    font-size: 20px; /* 增大按钮文字大小 */
+                    font-size: 24px; /* 增大按钮文字大小 */
                     background-color: #007bff;
                     color: white;
                     border: none;
@@ -299,7 +299,7 @@ app.get("/info", (req, res) => {
                     }
 
                     button {
-                        font-size: 18px; /* 在小屏幕下稍微调整按钮文字大小 */
+                        font-size: 22px; /* 增大按钮文字大小（手机端） */
                     }
 
                     .content-container {
