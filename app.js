@@ -225,14 +225,18 @@ app.get("/info", (req, res) => {
                 .content-container {
                     width: 100%;
                     max-width: 900px;
-                    aspect-ratio: 3 / 4;
+                    aspect-ratio: 4 / 3; /* 设置容器比例为4:3 */
                     background-color: #fff;
                     padding: 20px;
                     border-radius: 8px;
                     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
                     box-sizing: border-box;
-                    text-align: left;
+                    text-align: center; /* 内容居中 */
                     overflow: auto;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center; /* 内容在容器内垂直居中 */
+                    align-items: center; /* 内容在容器内水平居中 */
                 }
 
                 .dynamic-text {
@@ -262,10 +266,12 @@ app.get("/info", (req, res) => {
                 }
 
                 .button-container {
-                    margin-top: 40px; 
+                    margin-top: 40px;
                     display: grid;
-                    grid-template-columns: repeat(2, 1fr); /* 按钮分为两列 */
+                    grid-template-columns: repeat(2, auto); /* 按钮根据文字宽度自动调整宽度 */
                     gap: 15px;
+                    justify-items: center; /* 按钮居中 */
+                    width: 100%; /* 使按钮容器占满整个宽度 */
                 }
 
                 button {
@@ -277,6 +283,7 @@ app.get("/info", (req, res) => {
                     border-radius: 4px;
                     cursor: pointer;
                     transition: background-color 0.3s ease;
+                    width: auto; /* 让按钮宽度适应文字 */
                 }
 
                 button:hover {
