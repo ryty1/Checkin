@@ -266,10 +266,10 @@ app.get("/info", (req, res) => {
 
                 .button-container {
                     margin-top: 40px;
-                    display: grid;
-                    grid-template-columns: repeat(2, auto); /* 按钮根据文字宽度自动调整宽度 */
+                    display: flex;
+                    flex-wrap: wrap; /* 允许按钮换行 */
                     gap: 15px;
-                    justify-items: center; /* 按钮居中 */
+                    justify-content: center; /* 按钮居中 */
                     width: 100%; /* 使按钮容器占满整个宽度 */
                 }
 
@@ -282,7 +282,8 @@ app.get("/info", (req, res) => {
                     border-radius: 4px;
                     cursor: pointer;
                     transition: background-color 0.3s ease;
-                    width: auto; /* 让按钮宽度适应文字 */
+                    width: 35%; /* 每个按钮宽度为容器宽度的 48% */
+                    box-sizing: border-box; /* 确保按钮的宽度不受内边距影响 */
                 }
 
                 button:hover {
