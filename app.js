@@ -11,7 +11,6 @@ const username = process.env.USER.toLowerCase(); // 获取当前用户名并转�
 const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
 
 const REMOTE_DIR_URL = 'https://raw.githubusercontent.com/ryty1/My-test/main/';
-const REMOTE_FILE_LIST_URL = 'https://raw.githubusercontent.com/ryty1/My-test/main/file_list.txt'; // 远程 file_list.txt 文件 URL
 
 // 需要排除的文件名（例如 README 文件）
 const EXCLUDED_FILES = ['README.md'];
@@ -89,8 +88,8 @@ function getFilesInDirectory(dir) {
  */
 async function getRemoteFileList() {
     try {
-        const response = await axios.get(REMOTE_FILE_LIST_URL);
-        return response.data.split('\n').map(file => file.trim()).filter(file => file); // 解析文件列表
+        const response = await axios.get(REMOTE_DIR_URL + "file_list.txt"); // 远程仓库的文件列表
+        return response.data.split("\n").map(file => file.trim()).filter(file => file);
     } catch (error) {
         console.error(`❌ 无法获取远程文件列表: ${error.message}`);
         return null; // 返回 null，表示 file_list.txt 不存在，防止误删
@@ -143,7 +142,6 @@ async function checkForUpdates() {
     } else {
         console.log("📂 远程文件列表:", remoteFiles);  // 调试输出远程文件列表
 
-        // **检查本地文件**
         for (let filePath of localFiles) {
             const fileName = path.basename(filePath);
 
@@ -169,6 +167,11 @@ async function checkForUpdates() {
                 if (fs.existsSync(filePath)) {
                     const localHash = await getFileHash(filePath);
 
+                    // 打印调试信息，确保哈希比对正确
+                    console.log(`🔍 检查 ${fileName}`);
+                    console.log(`🔢 远程哈希: ${remoteHash}`);
+                    console.log(`🔢 本地哈希: ${localHash}`);
+
                     if (localHash !== remoteHash) {
                         console.log(`🔄 ${fileName} 需要更新`);
                         const response = await axios.get(remoteFileUrl);
@@ -178,25 +181,16 @@ async function checkForUpdates() {
                     } else {
                         result.push({ file: fileName, success: true, message: `✅ ${fileName} 已是最新版本` });
                     }
+                } else {
+                    console.log(`🆕 ${fileName} 文件不存在，正在下载...`);
+                    const response = await axios.get(remoteFileUrl);
+                    fs.writeFileSync(filePath, response.data);
+                    result.push({ file: fileName, success: true, message: `✅ ${fileName} 新文件下载成功` });
+                    updated = true;
                 }
             } catch (error) {
                 console.error(`❌ 处理 ${fileName} 时出错: ${error.message}`);
                 result.push({ file: fileName, success: false, message: `❌ 更新失败: ${error.message}` });
-            }
-        }
-
-        // **处理新增文件**
-        for (let remoteFile of remoteFiles) {
-            const remoteFilePath = path.join(DOMAIN_DIR, remoteFile);
-
-            // 如果远程文件不存在于本地，则下载
-            if (!localFiles.includes(remoteFile)) {
-                console.log(`🆕 新文件 ${remoteFile}，正在下载...`);
-                const remoteFileUrl = REMOTE_DIR_URL + remoteFile;
-                const response = await axios.get(remoteFileUrl);
-                fs.writeFileSync(remoteFilePath, response.data);
-                result.push({ file: remoteFile, success: true, message: `✅ ${remoteFile} 新文件下载成功` });
-                updated = true;
             }
         }
     }
