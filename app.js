@@ -221,9 +221,9 @@ app.get("/info", (req, res) => {
                     justify-content: center;
                     align-items: center;
                     height: 100vh;
-                    width: 100vw; /* 确保满屏 */
+                    width: 100vw;
                     padding: 0;
-                    overflow: hidden; /* 防止多余滚动 */
+                    overflow: hidden;
                 }
 
                 .content-container {
@@ -242,7 +242,7 @@ app.get("/info", (req, res) => {
                 }
 
                 .dynamic-text {
-                    font-size: max(25px, 4vw); /* 文字更大 */
+                    font-size: max(25px, 4vw);
                     font-weight: bold;
                     margin-bottom: 20px;
                     line-height: 1.3;
@@ -252,13 +252,13 @@ app.get("/info", (req, res) => {
 
                 @keyframes growShrink {
                     0% { transform: scale(1); }
-                    50% { transform: scale(1.15); } /* 增强放大效果 */
+                    50% { transform: scale(1.15); }
                     100% { transform: scale(1); }
                 }
 
                 .dynamic-text span {
                     display: inline-block;
-                    animation: growShrink 1s infinite; /* 动画更快 */
+                    animation: growShrink 1s infinite;
                     animation-delay: calc(0.08s * var(--char-index));
                 }
 
@@ -271,6 +271,7 @@ app.get("/info", (req, res) => {
                     width: 40%;
                 }
 
+                /* 修改按钮样式，使其和 /update 页面按钮一致 */
                 button {
                     padding: 12px 25px;
                     font-size: 20px;
