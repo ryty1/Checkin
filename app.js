@@ -262,14 +262,14 @@ app.get("/info", (req, res) => {
                     animation-delay: calc(0.08s * var(--char-index));
                 }
 
-                /* 修改 button-container */
+                /* 强制每行显示两个按钮 */
                 .button-container {
                     margin-top: 30px;
                     display: flex;
                     flex-wrap: wrap;
                     gap: 10px;
-                    justify-content: center;
-                    width: 80%; /* 设置按钮容器宽度 */
+                    justify-content: space-between; /* 让按钮两两分布 */
+                    width: 100%; /* 容器宽度设置为 100% */
                     box-sizing: border-box;
                 }
 
@@ -283,8 +283,8 @@ app.get("/info", (req, res) => {
                     border-radius: 4px;
                     cursor: pointer;
                     transition: background-color 0.3s ease, transform 0.1s;
-                    width: 48%; /* 按钮宽度调整为 48% */
-                    min-width: 120px;
+                    width: 45%; /* 保证每个按钮宽度为 48%，两列显示 */
+                    min-width: 150px; /* 保证按钮不会过窄 */
                     box-sizing: border-box;
                 }
 
@@ -293,19 +293,21 @@ app.get("/info", (req, res) => {
                     transform: scale(1.05);
                 }
 
+                /* 响应式调整 */
                 @media (max-width: 600px) {
                     .dynamic-text {
                         font-size: max(18px, 5vw);
                     }
 
                     .button-container {
-                        flex-direction: column;
-                        width: 80%;
+                        flex-direction: row; /* 保证按钮横向排列 */
+                        width: 100%; /* 保证容器宽度适配 */
                     }
 
                     button {
-                        font-size: 18px;
-                        width: 48%; /* 小屏幕时按钮宽度为 100% */
+                        font-size: 16px;
+                        width: 45%; /* 每行两个按钮 */
+                        min-width: 120px; /* 最小宽度保证 */
                     }
 
                     .content-container {
