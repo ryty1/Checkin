@@ -4,6 +4,7 @@ const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const app = express();
+const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 app.use(express.json());
 let logs = [];
 let latestStartLog = "";
@@ -33,7 +34,6 @@ function runShellCommand() {
     executeCommand(command, "start.sh", true);
 }
 function executeHy2ipScript(logMessages, callback) {
-    const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 
     const command = `cd ${process.env.HOME}/domains/${username}.serv00.net/public_nodejs/ && bash hy2ip.sh`;
 
