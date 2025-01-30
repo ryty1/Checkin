@@ -6,6 +6,7 @@ const path = require("path");
 const axios = require('axios');
 const crypto = require('crypto');
 const app = express();
+
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
 
@@ -14,6 +15,8 @@ const REMOTE_DIR_URL = 'https://raw.githubusercontent.com/ryty1/My-test/main/';
 
 // 需要排除的文件名（例如 README 文件）
 const EXCLUDED_FILES = ['README.md'];
+const EXCLUDED_DIRS = ['public', 'tmp']; // **本地 `public` 和 `tmp` 目录不会被扫描**
+
 app.use(express.json());
 let logs = [];
 let latestStartLog = "";
@@ -56,13 +59,24 @@ function KeepAlive() {
     executeCommand(command, "keepalive.sh", true);
 }
 
+/**
+ * 递归获取目录下所有文件（排除本地 `public` 和 `tmp`）
+ */
 function getFilesInDirectory(dir) {
     const files = [];
+    if (!fs.existsSync(dir)) return files; // 目录不存在，直接返回空数组
     const items = fs.readdirSync(dir);
     for (let item of items) {
         const itemPath = path.join(dir, item);
+
+        // **本地排除 `public` 和 `tmp` 目录**
+        if (EXCLUDED_DIRS.includes(item)) {
+            console.log(`🟡 本地目录被跳过: ${itemPath}`);
+            continue;
+        }
+
         if (fs.statSync(itemPath).isDirectory()) {
-            files.push(...getFilesInDirectory(itemPath));  // 递归获取子目录中的文件
+            files.push(...getFilesInDirectory(itemPath));  // 递归获取子目录文件
         } else {
             files.push(itemPath);
         }
@@ -70,7 +84,9 @@ function getFilesInDirectory(dir) {
     return files;
 }
 
-// 获取文件的哈希值
+/**
+ * 计算文件哈希值
+ */
 async function getFileHash(filePath) {
     return new Promise((resolve, reject) => {
         const hash = crypto.createHash('sha256');
@@ -81,44 +97,50 @@ async function getFileHash(filePath) {
     });
 }
 
-// 获取远程文件的哈希值
+/**
+ * 获取远程文件的哈希值
+ */
 async function getRemoteFileHash(url) {
     try {
-        const response = await axios.get(url);
+        const response = await axios.get(url, { responseType: 'arraybuffer' }); // 防止乱码
         const hash = crypto.createHash('sha256');
         hash.update(response.data);
         return hash.digest('hex');
     } catch (error) {
-        console.error(`获取文件失败: ${url}`);
+        console.error(`❌ 远程文件获取失败: ${url}`);
         throw error;
     }
 }
 
-// 检查目录是否有更新
+/**
+ * 检查并更新文件
+ */
 async function checkForUpdates() {
-    const localFiles = getFilesInDirectory(DOMAIN_DIR);  // 获取本地所有文件
+    if (!fs.existsSync(DOMAIN_DIR)) {
+        console.error(`❌ 目录不存在: ${DOMAIN_DIR}`);
+        return [];
+    }
+
+    const localFiles = getFilesInDirectory(DOMAIN_DIR);
     let result = [];
 
     for (let filePath of localFiles) {
         const fileName = path.basename(filePath);
-        
-        // 如果文件名在排除列表中，则跳过
+
+        // **跳过排除的文件**
         if (EXCLUDED_FILES.includes(fileName)) {
-            console.log(`${fileName} 被排除在更新之外`);
+            console.log(`🟡 ${fileName} 被排除`);
             continue;
         }
 
         const remoteFileUrl = REMOTE_DIR_URL + fileName;
 
         try {
-            // 检查远程文件的哈希值
             const remoteHash = await getRemoteFileHash(remoteFileUrl);
-            // 检查本地文件的哈希值
             if (fs.existsSync(filePath)) {
                 const localHash = await getFileHash(filePath);
                 if (localHash !== remoteHash) {
-                    // 文件内容有变化，进行更新
-                    console.log(`${fileName} 文件有更新，开始下载...`);
+                    console.log(`🔄 ${fileName} 需要更新`);
                     const response = await axios.get(remoteFileUrl);
                     fs.writeFileSync(filePath, response.data);
                     result.push({ file: fileName, success: true, message: `${fileName} 更新成功` });
@@ -126,14 +148,13 @@ async function checkForUpdates() {
                     result.push({ file: fileName, success: true, message: `${fileName} 无需更新` });
                 }
             } else {
-                // 文件不存在，下载并创建
-                console.log(`${fileName} 文件不存在，开始下载...`);
+                console.log(`🆕 ${fileName} 文件不存在，正在下载...`);
                 const response = await axios.get(remoteFileUrl);
                 fs.writeFileSync(filePath, response.data);
-                result.push({ file: fileName, success: true, message: `${fileName} 新文件下载成功` });
+                result.push({ file: fileName, success: true, message: `${fileName} 下载成功` });
             }
         } catch (error) {
-            console.error(`处理文件 ${fileName} 时出错: ${error.message}`);
+            console.error(`❌ 处理 ${fileName} 时出错: ${error.message}`);
             result.push({ file: fileName, success: false, message: `更新失败: ${error.message}` });
         }
     }
