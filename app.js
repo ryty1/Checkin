@@ -631,6 +631,8 @@ app.get("/node", (req, res) => {
         let htmlContent = `
             <html>
             <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+                <title>节点信息</title>
                 <style>
                     body {
                         margin: 0;
@@ -640,13 +642,14 @@ app.get("/node", (req, res) => {
                         display: flex;
                         justify-content: center;
                         align-items: center;
-                        height: 100vh;
+                        min-height: 100vh;
+                        padding: 10px;
                     }
                     .content-container {
                         width: 90%;
                         max-width: 600px;
                         background-color: #fff;
-                        padding: 20px;
+                        padding: 15px;
                         border-radius: 8px;
                         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
                         text-align: left;
@@ -655,22 +658,24 @@ app.get("/node", (req, res) => {
                     h3 {
                         font-size: 20px;
                         margin-bottom: 10px;
+                        text-align: center;
                     }
                     .config-box {
-                        max-height: 60vh;
+                        max-height: 65vh;
                         overflow-y: auto;
                         border: 1px solid #ccc;
-                        padding: 10px;
+                        padding: 8px;
                         background-color: #f9f9f9;
                         box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
                         border-radius: 5px;
                         white-space: pre-wrap;
                         word-break: break-word;
+                        font-size: 14px;
                     }
                     .copy-btn {
                         display: block;
                         width: 100%;
-                        padding: 10px;
+                        padding: 12px;
                         font-size: 16px;
                         background-color: #007bff;
                         color: white;
@@ -678,11 +683,23 @@ app.get("/node", (req, res) => {
                         border-radius: 5px;
                         cursor: pointer;
                         text-align: center;
-                        margin-top: 20px;
+                        margin-top: 15px;
                         transition: background-color 0.3s;
                     }
                     .copy-btn:hover {
                         background-color: #0056b3;
+                    }
+                    @media (max-width: 600px) {
+                        .content-container {
+                            padding: 12px;
+                        }
+                        .config-box {
+                            font-size: 13px;
+                        }
+                        .copy-btn {
+                            font-size: 15px;
+                            padding: 10px;
+                        }
                     }
                 </style>
             </head>
@@ -698,32 +715,21 @@ app.get("/node", (req, res) => {
 
         htmlContent += `
                     </div>
-                    <button class="copy-btn" onclick="copyToClipboard('#configBox')">一键复制</button>
+                    <button class="copy-btn" onclick="copyToClipboard()">一键复制</button>
                 </div>
 
                 <script>
-                    function copyToClipboard(id) {
-                        const element = document.querySelector(id);
-                        let text = "";
+                    function copyToClipboard() {
+                        const element = document.getElementById("configBox");
+                        let text = Array.from(element.children)
+                            .map(child => child.textContent.trim())
+                            .join("\\n");
 
-                        // 遍历每一行内容，去除首尾空格并拼接
-                        Array.from(element.children).forEach(child => {
-                            text += child.textContent.trim() + "\\n";
+                        navigator.clipboard.writeText(text).then(() => {
+                            alert("已复制到剪贴板！");
+                        }).catch(() => {
+                            alert("复制失败，请手动复制！");
                         });
-
-                        // 创建临时文本框进行复制
-                        const textarea = document.createElement('textarea');
-                        textarea.value = text.trim(); // 去除整体的多余空行
-                        document.body.appendChild(textarea);
-                        textarea.select();
-                        const success = document.execCommand('copy');
-                        document.body.removeChild(textarea);
-
-                        if (success) {
-                            alert('已复制到剪贴板！');
-                        } else {
-                            alert('复制失败，请手动复制！');
-                        }
                     }
                 </script>
             </body>
