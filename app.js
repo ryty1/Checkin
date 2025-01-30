@@ -98,6 +98,32 @@ async function getRemoteFileList() {
 }
 
 /**
+ * 获取远程文件的哈希值
+ */
+async function getRemoteFileHash(url) {
+    try {
+        const response = await axios.get(url, { responseType: 'arraybuffer' });
+        return crypto.createHash('sha256').update(response.data).digest('hex');
+    } catch (error) {
+        console.error(`❌ 获取远程文件哈希失败: ${error.message}`);
+        throw error;
+    }
+}
+
+/**
+ * 获取本地文件的哈希值
+ */
+function getFileHash(filePath) {
+    return new Promise((resolve, reject) => {
+        const hash = crypto.createHash('sha256');
+        const stream = fs.createReadStream(filePath);
+        stream.on('data', (data) => hash.update(data));
+        stream.on('end', () => resolve(hash.digest('hex')));
+        stream.on('error', (err) => reject(err));
+    });
+}
+
+/**
  * 检查并更新文件，同时删除本地多余文件
  */
 async function checkForUpdates() {
