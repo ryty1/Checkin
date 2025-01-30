@@ -7,7 +7,7 @@ const axios = require('axios');
 const crypto = require('crypto');
 const app = express();
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
-const DOMAIN_DIR = '${process.env.HOME}/domains/${username}.serv00.net/public_nodejs';
+const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
 
 // 远程文件目录的URL
 const REMOTE_DIR_URL = 'https://raw.githubusercontent.com/ryty1/My-test/main/';
