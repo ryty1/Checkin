@@ -813,18 +813,14 @@ app.get('/update', async (req, res) => {
                         data.forEach(update => {
                             let className = 'result-item';
                             if (update.success) {
-                                if (update.message.includes('删除')) {
-                                    className += ' failure';
-                                } else {
-                                    className += ' success';
-                                }
+                                className += ' success';
                             } else {
                                 className += ' failure';
                             }
                             resultHtml += \`
-                                <div class="\${className}">
-                                    <span>\${update.message}</span>
-                                </div>\`;
+                            <div class="\${className}">
+                                <span>\${update.message}</span>
+                            </div>\`;
                         });
 
                         document.getElementById('result').innerHTML = resultHtml;
