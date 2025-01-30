@@ -699,43 +699,25 @@ app.get('/update', async (req, res) => {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>文件更新检查</title>
-            <style>
-                body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; }
-                h1 { text-align: center; }
-                .container { max-width: 600px; margin: 0 auto; text-align: center; }
-                button { padding: 10px 20px; font-size: 16px; background-color: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 5px; transition: background-color 0.3s; }
-                button:hover { background-color: #45a049; }
-                .result { margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #fff; text-align: left; }
-                .success { color: green; }
-                .error { color: red; }
-            </style>
         </head>
         <body>
-            <div class="container">
-                <h1>文件更新检查</h1>
-                <button onclick="checkForUpdates()">检查更新</button>
-                <div id="result" class="result" style="display: none;"></div>
-            </div>
+            <h1>文件更新检查</h1>
+            <button onclick="checkForUpdates()">检查更新</button>
+            <div id="result"></div>
             <script>
                 async function checkForUpdates() {
-                    const resultDiv = document.getElementById('result');
-                    resultDiv.style.display = 'none';
-
                     try {
                         const response = await fetch('/update', { headers: { 'Accept': 'application/json' } });
                         const data = await response.json();
 
-                        resultDiv.style.display = 'block';
                         let resultHtml = '<h3>更新结果</h3>';
-
                         data.forEach(update => {
-                            resultHtml += \`<p class="\${update.success ? 'success' : 'error'}">\${update.message}</p>\`;
+                            resultHtml += \`<p>\${update.message}</p>\`;
                         });
 
-                        resultDiv.innerHTML = resultHtml;
+                        document.getElementById('result').innerHTML = resultHtml;
                     } catch (error) {
-                        resultDiv.style.display = 'block';
-                        resultDiv.innerHTML = \`<p class="error">检查更新时出错: \${error.message}</p>\`;
+                        document.getElementById('result').innerHTML = '<p>检查更新时出错</p>';
                     }
                 }
             </script>
