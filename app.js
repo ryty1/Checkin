@@ -123,6 +123,7 @@ async function checkForUpdates() {
 
     const localFiles = getFilesInDirectory(DOMAIN_DIR);
     let result = [];
+    let updated = false; // 记录是否有文件更新
 
     for (let filePath of localFiles) {
         const fileName = path.basename(filePath);
@@ -143,20 +144,27 @@ async function checkForUpdates() {
                     console.log(`🔄 ${fileName} 需要更新`);
                     const response = await axios.get(remoteFileUrl);
                     fs.writeFileSync(filePath, response.data);
-                    result.push({ file: fileName, success: true, message: `${fileName} 更新成功` });
+                    result.push({ file: fileName, success: true, message: `✅ ${fileName} 更新成功` });
+                    updated = true;
                 } else {
-                    result.push({ file: fileName, success: true, message: `${fileName} 无需更新` });
+                    result.push({ file: fileName, success: true, message: `✅ ${fileName} 已是最新版本` });
                 }
             } else {
                 console.log(`🆕 ${fileName} 文件不存在，正在下载...`);
                 const response = await axios.get(remoteFileUrl);
                 fs.writeFileSync(filePath, response.data);
-                result.push({ file: fileName, success: true, message: `${fileName} 下载成功` });
+                result.push({ file: fileName, success: true, message: `✅ ${fileName} 新文件下载成功` });
+                updated = true;
             }
         } catch (error) {
             console.error(`❌ 处理 ${fileName} 时出错: ${error.message}`);
-            result.push({ file: fileName, success: false, message: `更新失败: ${error.message}` });
+            result.push({ file: fileName, success: false, message: `❌ 更新失败: ${error.message}` });
         }
+    }
+
+    // **如果没有任何文件更新，添加 "所有文件均为最新" 提示**
+    if (!updated) {
+        result.push({ file: "无", success: true, message: "✅ 所有文件均为最新，无需更新" });
     }
 
     return result;
