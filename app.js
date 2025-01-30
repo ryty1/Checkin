@@ -210,7 +210,7 @@ app.get("/info", (req, res) => {
     res.type("html").send(`
         <html>
         <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
             <title>系统状态</title>
             <style>
                 body {
@@ -221,11 +221,13 @@ app.get("/info", (req, res) => {
                     justify-content: center;
                     align-items: center;
                     height: 100vh;
-                    padding: 0 10px;
+                    width: 100vw; /* 确保满屏 */
+                    padding: 0;
+                    overflow: hidden; /* 防止多余滚动 */
                 }
 
                 .content-container {
-                    width: 90%;
+                    width: 95%;
                     max-width: 900px;
                     background-color: #fff;
                     padding: 20px;
@@ -240,24 +242,24 @@ app.get("/info", (req, res) => {
                 }
 
                 .dynamic-text {
-                    font-size: max(18px, 3vw); /* 确保最小 18px，最大 3vw */
+                    font-size: max(20px, 4vw); /* 文字更大 */
                     font-weight: bold;
-                    margin-bottom: 25px; /* 减少间距，防止换行 */
+                    margin-bottom: 20px;
                     line-height: 1.3;
                     text-align: center;
-                    white-space: nowrap; /* 避免自动换行 */
+                    white-space: nowrap;
                 }
 
                 @keyframes growShrink {
                     0% { transform: scale(1); }
-                    50% { transform: scale(1.1); }
+                    50% { transform: scale(1.15); } /* 增强放大效果 */
                     100% { transform: scale(1); }
                 }
 
                 .dynamic-text span {
                     display: inline-block;
-                    animation: growShrink 1.2s infinite;
-                    animation-delay: calc(0.1s * var(--char-index));
+                    animation: growShrink 1s infinite; /* 动画更快 */
+                    animation-delay: calc(0.08s * var(--char-index));
                 }
 
                 .button-container {
@@ -277,7 +279,7 @@ app.get("/info", (req, res) => {
                     border: none;
                     border-radius: 4px;
                     cursor: pointer;
-                    transition: background-color 0.3s ease;
+                    transition: background-color 0.3s ease, transform 0.1s;
                     width: 48%;
                     min-width: 120px;
                     box-sizing: border-box;
@@ -285,11 +287,12 @@ app.get("/info", (req, res) => {
 
                 button:hover {
                     background-color: #0056b3;
+                    transform: scale(1.05);
                 }
 
                 @media (max-width: 600px) {
                     .dynamic-text {
-                        font-size: max(16px, 4vw); /* 移动端稍微缩小，避免换行 */
+                        font-size: max(18px, 5vw);
                     }
 
                     .button-container {
