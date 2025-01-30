@@ -430,14 +430,51 @@ app.post("/hy2ip/execute", (req, res) => {
         return res.send(`
             <html>
                 <head>
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
                     <title>HY2_IP 更新失败</title>
                     <style>
-                        body { font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
-                        .container { width: 100%; max-width: 800px; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); text-align: left; }
-                        h1 { font-size: 24px; margin-bottom: 20px; }
-                        p { font-size: 16px; color: red; }
-                        a { color: #007bff; text-decoration: none; }
-                        a:hover { text-decoration: underline; }
+                        body {
+                            font-family: Arial, sans-serif;
+                            background-color: #f4f4f4;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            height: 100vh;
+                            margin: 0;
+                            padding: 0 10px;
+                        }
+                        .container {
+                            width: 90%;
+                            max-width: 600px;
+                            background-color: #fff;
+                            padding: 20px;
+                            border-radius: 8px;
+                            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                            text-align: center;
+                        }
+                        h1 {
+                            font-size: 22px;
+                            margin-bottom: 15px;
+                        }
+                        p {
+                            font-size: 16px;
+                            color: red;
+                        }
+                        a {
+                            color: #007bff;
+                            text-decoration: none;
+                        }
+                        a:hover {
+                            text-decoration: underline;
+                        }
+                        @media (max-width: 600px) {
+                            .container {
+                                padding: 15px;
+                            }
+                            h1 {
+                                font-size: 20px;
+                            }
+                        }
                     </style>
                 </head>
                 <body>
@@ -467,25 +504,24 @@ app.post("/hy2ip/execute", (req, res) => {
                         updatedIp = line.split("Config 配置文件成功更新IP为")[1].trim();
                     }
                 });
-                // 去掉任何可能的 ANSI 颜色码
-            if (updatedIp) {
-                updatedIp = updatedIp.replace(/\x1B\[[0-9;]*m/g, "");  // 移除颜色控制字符
-            }
+                // 去掉 ANSI 颜色码
+                if (updatedIp) {
+                    updatedIp = updatedIp.replace(/\x1B\[[0-9;]*m/g, "");
+                }
 
-            if (updatedIp && updatedIp !== "未找到可用的 IP！") {
-                logMessages.push("命令执行成功");
-                logMessages.push(`SingBox 配置文件成功更新IP为 ${updatedIp}`);
-                logMessages.push(`Config 配置文件成功更新IP为 ${updatedIp}`);
-                logMessages.push("sing-box 已重启");
-                res.send(generateHtml("HY2_IP 更新", updatedIp, logMessages));
-            } else {
-                // 无论 error 是否存在，都统一显示 "命令执行成功"
-                logMessages.push("命令执行成功");
-                logMessages.push("没有找到有效 IP");
-                res.send(generateHtml("HY2_IP 更新", "无", logMessages, true));
+                if (updatedIp && updatedIp !== "未找到可用的 IP！") {
+                    logMessages.push("命令执行成功");
+                    logMessages.push(`SingBox 配置文件成功更新IP为 ${updatedIp}`);
+                    logMessages.push(`Config 配置文件成功更新IP为 ${updatedIp}`);
+                    logMessages.push("sing-box 已重启");
+                    res.send(generateHtml("HY2_IP 更新", updatedIp, logMessages));
+                } else {
+                    logMessages.push("命令执行成功");
+                    logMessages.push("没有找到有效 IP");
+                    res.send(generateHtml("HY2_IP 更新", "无", logMessages, true));
+                }
             }
-        }
-    });
+        });
     } catch (error) {
         let logMessages = ["命令执行成功", "没有找到有效 IP"];
         res.send(generateHtml("HY2_IP 更新", "无", logMessages, true));
@@ -500,14 +536,59 @@ function generateHtml(title, ip, logs, isError = false) {
     return `
         <html>
             <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
                 <title>${title}</title>
                 <style>
-                    body { font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
-                    .container { width: 100%; max-width: 800px; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); text-align: left; }
-                    h1 { font-size: 24px; margin-bottom: 20px; }
-                    p { font-size: 16px; }
-                    .scrollable { max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background-color: #f9f9f9; border-radius: 4px; }
-                    .ip { font-weight: bold; color: ${ipColor}; }
+                    body {
+                        font-family: Arial, sans-serif;
+                        background-color: #f4f4f4;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                        margin: 0;
+                        padding: 0 10px;
+                    }
+                    .container {
+                        width: 90%;
+                        max-width: 800px;
+                        background-color: #fff;
+                        padding: 20px;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                        text-align: left;
+                    }
+                    h1 {
+                        font-size: 24px;
+                        margin-bottom: 20px;
+                        text-align: center;
+                    }
+                    p {
+                        font-size: 16px;
+                    }
+                    .scrollable {
+                        max-height: 300px;
+                        overflow-y: auto;
+                        border: 1px solid #ccc;
+                        padding: 10px;
+                        background-color: #f9f9f9;
+                        border-radius: 4px;
+                    }
+                    .ip {
+                        font-weight: bold;
+                        color: ${ipColor};
+                    }
+                    @media (max-width: 600px) {
+                        .container {
+                            padding: 15px;
+                        }
+                        h1 {
+                            font-size: 22px;
+                        }
+                        .scrollable {
+                            max-height: 200px;
+                        }
+                    }
                 </style>
             </head>
             <body>
