@@ -82,6 +82,7 @@ async function checkForUpdates() {
 
     const localFiles = getFilesInDirectory(DOMAIN_DIR);
     let result = [];
+    let updated = false; // 记录是否有文件更新
 
     for (let filePath of localFiles) {
         const fileName = path.basename(filePath);
@@ -102,20 +103,27 @@ async function checkForUpdates() {
                     console.log(`🔄 ${fileName} 需要更新`);
                     const response = await axios.get(remoteFileUrl);
                     fs.writeFileSync(filePath, response.data);
-                    result.push({ file: fileName, success: true, message: `${fileName} 更新成功` });
+                    result.push({ file: fileName, success: true, message: `✅ ${fileName} 更新成功` });
+                    updated = true;
                 } else {
-                    result.push({ file: fileName, success: true, message: `${fileName} 无需更新` });
+                    result.push({ file: fileName, success: true, message: `✅ ${fileName} 已是最新版本` });
                 }
             } else {
                 console.log(`🆕 ${fileName} 文件不存在，正在下载...`);
                 const response = await axios.get(remoteFileUrl);
                 fs.writeFileSync(filePath, response.data);
-                result.push({ file: fileName, success: true, message: `${fileName} 下载成功` });
+                result.push({ file: fileName, success: true, message: `✅ ${fileName} 新文件下载成功` });
+                updated = true;
             }
         } catch (error) {
             console.error(`❌ 处理 ${fileName} 时出错: ${error.message}`);
-            result.push({ file: fileName, success: false, message: `更新失败: ${error.message}` });
+            result.push({ file: fileName, success: false, message: `❌ 更新失败: ${error.message}` });
         }
+    }
+
+    // **如果没有任何文件更新，添加 "所有文件均为最新" 提示**
+    if (!updated) {
+        result.push({ file: "无", success: true, message: "✅ 所有文件均为最新，无需更新" });
     }
 
     return result;
@@ -127,7 +135,12 @@ app.get('/update', async (req, res) => {
         console.log("🛠️ 正在检查更新...");
         const updateResults = await checkForUpdates();
 
-        // **返回网页（格式不变）**
+        // **如果请求是 AJAX（fetch），返回 JSON**
+        if (req.headers.accept && req.headers.accept.includes('application/json')) {
+            return res.json(updateResults);
+        }
+
+        // **否则，返回 HTML**
         res.send(`
         <!DOCTYPE html>
         <html lang="zh-CN">
@@ -158,18 +171,14 @@ app.get('/update', async (req, res) => {
                     resultDiv.style.display = 'none';
 
                     try {
-                        const response = await fetch('/update');
+                        const response = await fetch('/update', { headers: { 'Accept': 'application/json' } });
                         const data = await response.json();
 
                         resultDiv.style.display = 'block';
                         let resultHtml = '<h3>更新结果</h3>';
 
                         data.forEach(update => {
-                            if (update.success) {
-                                resultHtml += \`<p class="success">\${update.message}</p>\`;
-                            } else {
-                                resultHtml += \`<p class="error">\${update.message}</p>\`;
-                            }
+                            resultHtml += \`<p class="\${update.success ? 'success' : 'error'}">\${update.message}</p>\`;
                         });
 
                         resultDiv.innerHTML = resultHtml;
