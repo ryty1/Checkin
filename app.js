@@ -364,7 +364,7 @@ app.get("/hy2ip", (req, res) => {
                         border-radius: 8px;
                         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
                         box-sizing: border-box;
-                        text-align: center;
+                        text-align: left;
                     }
                     h1 {
                         font-size: 24px;
@@ -428,7 +428,7 @@ app.get("/hy2ip", (req, res) => {
                         <input type="text" name="confirmation" placeholder="更新">
                         <button type="submit">提交</button>
                     </form>
-                    <p>⚠️ 更新后原线路会失效，请复制新信息使用。</p>
+                    <p>⚠️ 不同 IP 更新后原线路会失效，请复制新信息使用。</p>
                 </div>
             </body>
         </html>
@@ -462,7 +462,7 @@ app.post("/hy2ip/execute", (req, res) => {
                             padding: 20px;
                             border-radius: 8px;
                             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-                            text-align: center;
+                            text-align: left;
                         }
                         h1 {
                             font-size: 22px;
