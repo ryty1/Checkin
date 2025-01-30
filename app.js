@@ -225,7 +225,6 @@ app.get("/info", (req, res) => {
                 .content-container {
                     width: 100%;
                     max-width: 900px;
-                    aspect-ratio: 4 / 3; /* 设置容器比例为4:3 */
                     background-color: #fff;
                     padding: 20px;
                     border-radius: 8px;
@@ -235,8 +234,8 @@ app.get("/info", (req, res) => {
                     overflow: auto;
                     display: flex;
                     flex-direction: column;
-                    justify-content: center; /* 内容在容器内垂直居中 */
-                    align-items: center; /* 内容在容器内水平居中 */
+                    justify-content: center; /* 内容垂直居中 */
+                    align-items: center; /* 内容水平居中 */
                 }
 
                 .dynamic-text {
@@ -275,8 +274,8 @@ app.get("/info", (req, res) => {
                 }
 
                 button {
-                    padding: 10px 20px;
-                    font-size: 16px;
+                    padding: 15px 30px; /* 增大按钮内边距 */
+                    font-size: 20px; /* 增大按钮文字大小 */
                     background-color: #007bff;
                     color: white;
                     border: none;
@@ -300,7 +299,7 @@ app.get("/info", (req, res) => {
                     }
 
                     button {
-                        font-size: 14px;
+                        font-size: 18px; /* 在小屏幕下稍微调整按钮文字大小 */
                     }
 
                     .content-container {
