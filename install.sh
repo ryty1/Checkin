@@ -93,8 +93,9 @@ rm -f "$PUBLIC_NODEJS_DIR/file_list.txt"
 rm -f "$PUBLIC_NODEJS_DIR/main.zip"
 
 # 设置执行权限
-chmod 755 "$PUBLIC_NODEJS_DIR/htmlonlive/app.js" > /dev/null 2>&1
-chmod 755 "$PUBLIC_NODEJS_DIR/htmlonlive/hy2ip.sh" > /dev/null 2>&1
+chmod 755 "$PUBLIC_NODEJS_DIR/app.js" > /dev/null 2>&1
+chmod 755 "$PUBLIC_NODEJS_DIR/hy2ip.sh" > /dev/null 2>&1
+chmod 755 "$PUBLIC_NODEJS_DIR/install.sh" > /dev/null 2>&1
 
 echo ""
 echo " 【 恭 喜 】： 网 页 保 活 一 键 部 署 已 完 成  "
