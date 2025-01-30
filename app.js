@@ -210,6 +210,8 @@ app.get("/info", (req, res) => {
     res.type("html").send(`
         <html>
         <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>系统状态</title>
             <style>
                 body {
                     margin: 0;
@@ -223,39 +225,32 @@ app.get("/info", (req, res) => {
                 }
 
                 .content-container {
-                    width: 100%;
+                    width: 90%;
                     max-width: 900px;
                     background-color: #fff;
                     padding: 20px;
                     border-radius: 8px;
                     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
                     box-sizing: border-box;
-                    text-align: center; /* 内容居中 */
-                    overflow: auto;
+                    text-align: center;
                     display: flex;
                     flex-direction: column;
-                    justify-content: center; /* 内容垂直居中 */
-                    align-items: center; /* 内容水平居中 */
+                    justify-content: center;
+                    align-items: center;
                 }
 
                 .dynamic-text {
-                    font-size: calc(2vw + 2vh); /* 动态字体大小根据容器大小自动调整 */
+                    font-size: calc(2vw + 2vh);
                     font-weight: bold;
-                    margin-bottom: 40px; /* 增加动态文字和按钮之间的间隔 */
+                    margin-bottom: 40px;
                     line-height: 1.5;
                     text-align: center;
                 }
 
                 @keyframes growShrink {
-                    0% {
-                        transform: scale(1);
-                    }
-                    50% {
-                        transform: scale(1.2);
-                    }
-                    100% {
-                        transform: scale(1);
-                    }
+                    0% { transform: scale(1); }
+                    50% { transform: scale(1.2); }
+                    100% { transform: scale(1); }
                 }
 
                 .dynamic-text span {
@@ -267,23 +262,24 @@ app.get("/info", (req, res) => {
                 .button-container {
                     margin-top: 40px;
                     display: flex;
-                    flex-wrap: wrap; /* 允许按钮换行 */
+                    flex-wrap: wrap;
                     gap: 15px;
-                    justify-content: center; /* 按钮居中 */
-                    width: 100%; /* 使按钮容器占满整个宽度 */
+                    justify-content: center;
+                    width: 100%;
                 }
 
                 button {
-                    padding: 15px 30px; /* 增大按钮内边距 */
-                    font-size: 24px; /* 增大按钮文字大小 */
+                    padding: 15px 30px;
+                    font-size: 24px;
                     background-color: #007bff;
                     color: white;
                     border: none;
                     border-radius: 4px;
                     cursor: pointer;
                     transition: background-color 0.3s ease;
-                    width: 35%; /* 每个按钮宽度为容器宽度的 48% */
-                    box-sizing: border-box; /* 确保按钮的宽度不受内边距影响 */
+                    width: 48%;
+                    min-width: 140px;
+                    box-sizing: border-box;
                 }
 
                 button:hover {
@@ -292,19 +288,21 @@ app.get("/info", (req, res) => {
 
                 @media (max-width: 600px) {
                     .dynamic-text {
-                        font-size: calc(4vw + 4vh); /* 调整动态文字在手机端的大小 */
+                        font-size: calc(4vw + 4vh);
                     }
 
                     .button-container {
-                        grid-template-columns: 1fr; /* 在小屏幕下按钮单列显示 */
+                        flex-direction: column;
+                        width: 100%;
                     }
 
                     button {
-                        font-size: 22px; /* 增大按钮文字大小（手机端） */
+                        font-size: 22px;
+                        width: 100%;
                     }
 
                     .content-container {
-                        padding: 10px;
+                        padding: 15px;
                     }
                 }
             </style>
