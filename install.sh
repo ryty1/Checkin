@@ -89,6 +89,7 @@ if [[ -d "$EXTRACTED_DIR" ]]; then
 fi
 # 删除不需要的 README 文件和压缩包
 rm -f "$PUBLIC_NODEJS_DIR/README.md"
+rm -f "$PUBLIC_NODEJS_DIR/file_list.txt"
 rm -f "$PUBLIC_NODEJS_DIR/main.zip"
 
 # 设置执行权限
