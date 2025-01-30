@@ -218,24 +218,24 @@ app.get("/info", (req, res) => {
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    min-height: 100vh; /* 使用min-height确保页面内容多时高度自适应 */
+                    height: 100vh;
                 }
                 .content-container {
-                    width: 100%;
-                    max-width: 700px; /* 增加最大宽度至700px */
+                    width: 80%;
+                    max-width: 800px; /* 与 /update 页面相同的宽度 */
                     background-color: #fff;
                     padding: 20px;
                     border-radius: 8px;
                     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
                     box-sizing: border-box;
-                    text-align: left; /* 保持文字左对齐 */
+                    text-align: left;
                 }
                 .dynamic-text {
-                    font-size: 28px; /* 调整字体大小，适合更大的屏幕 */
+                    font-size: 24px;
                     font-weight: bold;
                     margin-bottom: 20px;
                     line-height: 1.5;
-                    text-align: center; /* 两行文本居中 */
+                    text-align: center;
                 }
                 @keyframes growShrink {
                     0% {
@@ -261,7 +261,7 @@ app.get("/info", (req, res) => {
                 }
                 button {
                     flex: 1;
-                    min-width: 120px; /* 增加按钮宽度，确保按钮不太小 */
+                    min-width: 100px;
                     padding: 10px 15px;
                     font-size: 16px;
                     background-color: #007bff;
@@ -276,7 +276,7 @@ app.get("/info", (req, res) => {
                 }
                 @media (max-width: 600px) {
                     .dynamic-text {
-                        font-size: 22px; /* 手机端字体稍微减小 */
+                        font-size: 20px;
                     }
                     button {
                         font-size: 14px;
