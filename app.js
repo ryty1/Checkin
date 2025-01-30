@@ -352,14 +352,15 @@ app.get("/hy2ip", (req, res) => {
                         height: 100vh;
                     }
                     .container {
-                        width: 100%;
-                        max-width: 600px; /* 最大宽度为 600px */
+                        width: 90%; /* 容器宽度调整为90% */
+                        max-width: 600px; /* 最大宽度为600px */
                         background-color: #fff;
                         padding: 20px;
                         border-radius: 8px;
                         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
                         box-sizing: border-box;
                         text-align: left;
+                        margin: 0 10px; /* 增加左右间距，减少过多的空白 */
                     }
                     h1 {
                         font-size: 24px;
