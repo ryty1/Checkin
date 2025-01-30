@@ -236,9 +236,9 @@ app.get("/info", (req, res) => {
                 }
 
                 .dynamic-text {
-                    font-size: 24px;
+                    font-size: 30px; /* 增大动态文字的整体大小 */
                     font-weight: bold;
-                    margin-bottom: 20px;
+                    margin-bottom: 30px; /* 增大动态文字和按钮之间的间隔 */
                     line-height: 1.5;
                     text-align: center;
                 }
@@ -262,16 +262,17 @@ app.get("/info", (req, res) => {
                 }
 
                 .button-container {
-                    margin-top: 20px;
+                    margin-top: 40px; /* 增加按钮与其他元素之间的间隔 */
                     display: flex;
                     flex-wrap: wrap;
-                    gap: 10px;
+                    gap: 15px; /* 按钮之间增加间隔 */
+                    justify-content: center; /* 让按钮居中 */
                 }
 
                 button {
-                    flex: 1 1 45%; /* 按钮占宽度的比例 */
-                    min-width: 120px;
-                    padding: 10px 15px;
+                    flex: 1 1 auto; /* 让按钮宽度自适应内容 */
+                    min-width: 120px; /* 设置最小宽度 */
+                    padding: 10px 20px; /* 增加按钮的内边距 */
                     font-size: 16px;
                     background-color: #007bff;
                     color: white;
@@ -287,7 +288,7 @@ app.get("/info", (req, res) => {
 
                 @media (max-width: 600px) {
                     .dynamic-text {
-                        font-size: 20px;
+                        font-size: 26px; /* 调整手机端动态文字的大小 */
                     }
 
                     button {
