@@ -262,16 +262,18 @@ app.get("/info", (req, res) => {
                     animation-delay: calc(0.08s * var(--char-index));
                 }
 
+                /* 修改 button-container */
                 .button-container {
                     margin-top: 30px;
                     display: flex;
                     flex-wrap: wrap;
                     gap: 10px;
                     justify-content: center;
-                    width: 40%;
+                    width: 40%; /* 设置按钮容器宽度 */
+                    box-sizing: border-box;
                 }
 
-                /* 修改按钮样式，使其和 /update 页面按钮一致 */
+                /* 按钮样式 */
                 button {
                     padding: 12px 25px;
                     font-size: 20px;
@@ -281,7 +283,7 @@ app.get("/info", (req, res) => {
                     border-radius: 4px;
                     cursor: pointer;
                     transition: background-color 0.3s ease, transform 0.1s;
-                    width: 48%;
+                    width: 38%;
                     min-width: 120px;
                     box-sizing: border-box;
                 }
@@ -298,12 +300,12 @@ app.get("/info", (req, res) => {
 
                     .button-container {
                         flex-direction: column;
-                        width: 100%;
+                        width: 40%;
                     }
 
                     button {
                         font-size: 18px;
-                        width: 100%;
+                        width: 40%;
                     }
 
                     .content-container {
