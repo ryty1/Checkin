@@ -277,7 +277,7 @@ app.get("/info", (req, res) => {
                 button {
                     padding: 12px 25px;
                     font-size: 20px;
-                    background-color: #007bff;
+                    background-color: #4CAF50; /* 绿色背景 */
                     color: white;
                     border: none;
                     border-radius: 4px;
@@ -289,7 +289,7 @@ app.get("/info", (req, res) => {
                 }
 
                 button:hover {
-                    background-color: #0056b3;
+                    background-color: #45a049; /* 悬停时稍微深一点的绿色 */
                     transform: scale(1.05);
                 }
 
