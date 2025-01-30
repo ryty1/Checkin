@@ -240,16 +240,17 @@ app.get("/info", (req, res) => {
                 }
 
                 .dynamic-text {
-                    font-size: calc(2vw + 2vh);
+                    font-size: max(18px, 3vw); /* 确保最小 18px，最大 3vw */
                     font-weight: bold;
-                    margin-bottom: 40px;
-                    line-height: 1.5;
+                    margin-bottom: 25px; /* 减少间距，防止换行 */
+                    line-height: 1.3;
                     text-align: center;
+                    white-space: nowrap; /* 避免自动换行 */
                 }
 
                 @keyframes growShrink {
                     0% { transform: scale(1); }
-                    50% { transform: scale(1.2); }
+                    50% { transform: scale(1.1); }
                     100% { transform: scale(1); }
                 }
 
@@ -260,17 +261,17 @@ app.get("/info", (req, res) => {
                 }
 
                 .button-container {
-                    margin-top: 40px;
+                    margin-top: 30px;
                     display: flex;
                     flex-wrap: wrap;
-                    gap: 15px;
+                    gap: 10px;
                     justify-content: center;
                     width: 100%;
                 }
 
                 button {
-                    padding: 15px 30px;
-                    font-size: 24px;
+                    padding: 12px 25px;
+                    font-size: 20px;
                     background-color: #007bff;
                     color: white;
                     border: none;
@@ -278,7 +279,7 @@ app.get("/info", (req, res) => {
                     cursor: pointer;
                     transition: background-color 0.3s ease;
                     width: 48%;
-                    min-width: 140px;
+                    min-width: 120px;
                     box-sizing: border-box;
                 }
 
@@ -288,7 +289,7 @@ app.get("/info", (req, res) => {
 
                 @media (max-width: 600px) {
                     .dynamic-text {
-                        font-size: calc(4vw + 4vh);
+                        font-size: max(16px, 4vw); /* 移动端稍微缩小，避免换行 */
                     }
 
                     .button-container {
@@ -297,7 +298,7 @@ app.get("/info", (req, res) => {
                     }
 
                     button {
-                        font-size: 22px;
+                        font-size: 18px;
                         width: 100%;
                     }
 
@@ -310,7 +311,7 @@ app.get("/info", (req, res) => {
         <body>
             <div class="content-container">
                 <div class="dynamic-text">
-                    ${"SingBox 已复活".split("").map((char, index) => 
+                    ${"SingBox 已 复 活".split("").map((char, index) => 
                         `<span style="--char-index: ${index};">${char}</span>`).join("")}
                 </div>
                 <div class="dynamic-text">
