@@ -10,7 +10,7 @@ const username = process.env.USER.toLowerCase(); // 获取当前用户名并转�
 const DOMAIN_DIR = '${process.env.HOME}/domains/${username}.serv00.net/public_nodejs';
 
 // 远程文件目录的URL
-const REMOTE_DIR_URL = 'https://raw.githubusercontent.com/ryty1/htmlalive/main/';
+const REMOTE_DIR_URL = 'https://raw.githubusercontent.com/ryty1/My-test/main/';
 
 // 需要排除的文件名（例如 README 文件）
 const EXCLUDED_FILES = ['README.md'];
