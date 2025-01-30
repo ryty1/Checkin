@@ -10,7 +10,7 @@ const app = express();
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
 
-const REMOTE_DIR_URL = 'https://raw.githubusercontent.com/ryty1/serv00-save-me/main/';
+const REMOTE_DIR_URL = 'https://raw.githubusercontent.com/ryty1/My-test/main/';
 
 // 需要排除的文件名（例如 README 文件）
 const EXCLUDED_FILES = ['README.md'];
