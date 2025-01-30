@@ -141,6 +141,8 @@ async function checkForUpdates() {
     if (remoteFiles === null) {
         console.warn(`⚠️ 远程 file_list.txt 未找到，跳过删除本地多余文件`);
     } else {
+        console.log("📂 远程文件列表:", remoteFiles);  // 调试输出远程文件列表
+
         for (let filePath of localFiles) {
             const fileName = path.basename(filePath);
 
@@ -165,6 +167,12 @@ async function checkForUpdates() {
                 const remoteHash = await getRemoteFileHash(remoteFileUrl);
                 if (fs.existsSync(filePath)) {
                     const localHash = await getFileHash(filePath);
+
+                    // 打印调试信息，确保哈希比对正确
+                    console.log(`🔍 检查 ${fileName}`);
+                    console.log(`🔢 远程哈希: ${remoteHash}`);
+                    console.log(`🔢 本地哈希: ${localHash}`);
+
                     if (localHash !== remoteHash) {
                         console.log(`🔄 ${fileName} 需要更新`);
                         const response = await axios.get(remoteFileUrl);
