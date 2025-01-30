@@ -753,6 +753,8 @@ app.get("/log", (req, res) => {
         res.type("html").send(`
             <html>
                 <head>
+                    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+                    <title>日志与进程详情</title>
                     <style>
                         body {
                             font-family: Arial, sans-serif;
@@ -766,51 +768,62 @@ app.get("/log", (req, res) => {
                         }
 
                         .container {
-                            width: 90%;
-                            max-width: 1000px;
+                            width: 95%; /* 让内容接近屏幕边缘 */
+                            max-width: 1200px; /* 避免大屏过宽 */
                             background-color: #fff;
-                            padding: 20px;
+                            padding: 15px;
                             border-radius: 8px;
                             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
                             text-align: left;
                             box-sizing: border-box;
+                            min-height: 95vh; /* 适配 16:9，减少上下留白 */
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
                         }
 
                         /* 最近日志部分 */
                         pre.log {
-                            margin-bottom: 20px;
-                            white-space: pre-wrap;  /* 自动换行 */
-                            word-wrap: break-word;  /* 防止超出容器宽度 */
-                            overflow-wrap: break-word; /* 确保长单词不会溢出 */
+                            margin-bottom: 15px;
+                            white-space: pre-wrap; /* 自动换行 */
+                            word-wrap: break-word;
+                            overflow-wrap: break-word;
                             border: 1px solid #ccc;
                             padding: 10px;
                             background-color: #f9f9f9;
-                            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
                             border-radius: 5px;
                         }
 
                         /* 进程详情部分 */
                         .scrollable {
-                            max-height: 60vh; /* 设置进程详情框高 */
-                            overflow-x: auto; /* 横向滚动 */
-                            white-space: nowrap; /* 禁止换行 */
+                            max-height: 60vh;
+                            overflow-x: auto;
+                            white-space: nowrap;
                             border: 1px solid #ccc;
                             padding: 10px;
                             background-color: #f9f9f9;
-                            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
                             border-radius: 5px;
                         }
 
                         pre {
-                            margin: 0; /* 防止 pre 标签内的内容左右溢出 */
+                            margin: 0;
                         }
 
                         @media (max-width: 600px) {
                             .container {
-                                width: 95%;
+                                width: 98%; /* 在手机上更贴边 */
+                                min-height: 98vh; /* 贴合屏幕 */
                             }
                             .scrollable {
-                                max-height: 50vh; /* 手机屏幕时进程详情高度调整为50% */
+                                max-height: 50vh;
+                            }
+                        }
+
+                        @media (min-width: 1200px) {
+                            .container {
+                                max-width: 1000px; /* 避免超宽屏幕内容过散 */
                             }
                         }
                     </style>
