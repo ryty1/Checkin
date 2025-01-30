@@ -672,15 +672,13 @@ app.get("/log", (req, res) => {
         `);
     });
 });
-// 更新处理路由
+// **Express 路由**
 app.get('/update', async (req, res) => {
     try {
-        console.log("开始检查文件更新...");
-
-        // 检查并更新文件
+        console.log("🛠️ 正在检查更新...");
         const updateResults = await checkForUpdates();
 
-        // 返回前端页面和更新结果
+        // **返回网页（格式不变）**
         res.send(`
         <!DOCTYPE html>
         <html lang="zh-CN">
@@ -739,7 +737,6 @@ app.get('/update', async (req, res) => {
         res.status(500).json({ success: false, message: '更新过程中发生错误', error });
     }
 });
-
 
 app.use((req, res, next) => {
     const validPaths = ["/info", "/hy2ip", "/node", "/log", "/update"];
