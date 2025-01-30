@@ -562,7 +562,7 @@ function generateHtml(title, ip, logs, isError = false) {
                     h1 {
                         font-size: 24px;
                         margin-bottom: 20px;
-                        text-align: center;
+                        text-align: left;
                     }
                     p {
                         font-size: 16px;
