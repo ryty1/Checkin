@@ -34,9 +34,9 @@ echo " ————————————————————————�
 # 删除旧域名
 cd && devil www del "$DOMAIN" > /dev/null 2>&1
 if [[ $? -eq 0 ]]; then
-    A "  默认域名 删除成功 " 0
+    A " 删除 默认域名 " 0
 else
-    A "  默认域名 删除失败 或 不存在" 1
+    A " 默认域名 删除失败 或 不存在" 1
 fi
 
 # 删除旧目录
@@ -46,7 +46,7 @@ fi
 
 # 创建新域名
 if devil www add "$DOMAIN" nodejs /usr/local/bin/node22 > /dev/null 2>&1; then
-    A "  类型域名 创建成功 " 0
+    A " 创建 类型域名 " 0
 else
     A "  类型域名 创建失败，请检查环境设置 " 1
     exit 1
@@ -60,7 +60,7 @@ fi
 # 初始化 Node.js 环境
 cd "$DOMAIN_DIR" && npm init -y > /dev/null 2>&1
 if npm install dotenv basic-auth express axios > /dev/null 2>&1; then
-    A "  环境依赖 安装成功 " 0
+    A " 安装 环境依赖 " 0
 else
     A "  环境依赖 安装失败 " 1
     exit 1
@@ -74,7 +74,7 @@ if [[ ! -f "$PUBLIC_NODEJS_DIR/main.zip" ]]; then
     A "下载失败：无法找到 main.zip" 1
     exit 1
 else
-    A "下载成功：main.zip" 0
+    A " 下载 配置文件 " 0
 fi
 
 # 使用 A() 函数显示解压状态
