@@ -242,7 +242,7 @@ app.get("/info", (req, res) => {
                 }
 
                 .dynamic-text {
-                    font-size: max(20px, 4vw); /* 文字更大 */
+                    font-size: max(25px, 4vw); /* 文字更大 */
                     font-weight: bold;
                     margin-bottom: 20px;
                     line-height: 1.3;
@@ -268,7 +268,7 @@ app.get("/info", (req, res) => {
                     flex-wrap: wrap;
                     gap: 10px;
                     justify-content: center;
-                    width: 100%;
+                    width: 40%;
                 }
 
                 button {
