@@ -218,11 +218,11 @@ app.get("/info", (req, res) => {
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    height: 100vh;
+                    min-height: 100vh; /* 使用min-height确保页面内容多时高度自适应 */
                 }
                 .content-container {
                     width: 100%;
-                    max-width: 600px; /* 最大宽度为600px */
+                    max-width: 700px; /* 增加最大宽度至700px */
                     background-color: #fff;
                     padding: 20px;
                     border-radius: 8px;
@@ -231,7 +231,7 @@ app.get("/info", (req, res) => {
                     text-align: left; /* 保持文字左对齐 */
                 }
                 .dynamic-text {
-                    font-size: 24px;
+                    font-size: 28px; /* 调整字体大小，适合更大的屏幕 */
                     font-weight: bold;
                     margin-bottom: 20px;
                     line-height: 1.5;
@@ -256,12 +256,12 @@ app.get("/info", (req, res) => {
                 .button-container {
                     margin-top: 20px;
                     display: flex;
-                    flex-wrap: wrap; /* 适配小屏，按钮会换行 */
+                    flex-wrap: wrap;
                     gap: 10px;
                 }
                 button {
                     flex: 1;
-                    min-width: 100px;
+                    min-width: 120px; /* 增加按钮宽度，确保按钮不太小 */
                     padding: 10px 15px;
                     font-size: 16px;
                     background-color: #007bff;
@@ -276,7 +276,7 @@ app.get("/info", (req, res) => {
                 }
                 @media (max-width: 600px) {
                     .dynamic-text {
-                        font-size: 20px;
+                        font-size: 22px; /* 手机端字体稍微减小 */
                     }
                     button {
                         font-size: 14px;
