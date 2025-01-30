@@ -219,26 +219,26 @@ app.get("/info", (req, res) => {
                     justify-content: center;
                     align-items: center;
                     height: 100vh;
-                    padding: 0 10px; /* 防止屏幕两侧的内容被遮挡 */
+                    padding: 0 10px;
                 }
 
                 .content-container {
                     width: 100%;
-                    max-width: 900px; /* 最大宽度，防止容器过宽 */
-                    aspect-ratio: 3 / 4; /* 设置容器的纵横比为3:4 */
+                    max-width: 900px;
+                    aspect-ratio: 3 / 4;
                     background-color: #fff;
                     padding: 20px;
                     border-radius: 8px;
                     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
                     box-sizing: border-box;
                     text-align: left;
-                    overflow: auto; /* 允许内容滚动，防止溢出 */
+                    overflow: auto;
                 }
 
                 .dynamic-text {
-                    font-size: 30px; /* 增大动态文字的整体大小 */
+                    font-size: calc(2vw + 2vh); /* 动态字体大小根据容器大小自动调整 */
                     font-weight: bold;
-                    margin-bottom: 30px; /* 增大动态文字和按钮之间的间隔 */
+                    margin-bottom: 40px; /* 增加动态文字和按钮之间的间隔 */
                     line-height: 1.5;
                     text-align: center;
                 }
@@ -262,17 +262,14 @@ app.get("/info", (req, res) => {
                 }
 
                 .button-container {
-                    margin-top: 40px; /* 增加按钮与其他元素之间的间隔 */
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 15px; /* 按钮之间增加间隔 */
-                    justify-content: center; /* 让按钮居中 */
+                    margin-top: 40px; 
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr); /* 按钮分为两列 */
+                    gap: 15px;
                 }
 
                 button {
-                    flex: 1 1 auto; /* 让按钮宽度自适应内容 */
-                    min-width: 120px; /* 设置最小宽度 */
-                    padding: 10px 20px; /* 增加按钮的内边距 */
+                    padding: 10px 20px;
                     font-size: 16px;
                     background-color: #007bff;
                     color: white;
@@ -288,17 +285,19 @@ app.get("/info", (req, res) => {
 
                 @media (max-width: 600px) {
                     .dynamic-text {
-                        font-size: 26px; /* 调整手机端动态文字的大小 */
+                        font-size: calc(4vw + 4vh); /* 调整动态文字在手机端的大小 */
+                    }
+
+                    .button-container {
+                        grid-template-columns: 1fr; /* 在小屏幕下按钮单列显示 */
                     }
 
                     button {
                         font-size: 14px;
-                        flex: 1 1 100%; /* 在小屏幕上让按钮占满100%宽度 */
-                        min-width: unset; /* 去除最小宽度限制 */
                     }
 
                     .content-container {
-                        padding: 10px; /* 给内容容器增加更多的内边距，避免边界过紧 */
+                        padding: 10px;
                     }
                 }
             </style>
