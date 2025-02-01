@@ -59,6 +59,7 @@ function KeepAlive() {
 }
 setInterval(KeepAlive, 20000);
 
+/** 递归获取目录下所有文件（排除本地 `public` 和 `tmp`） */
 function getFilesInDirectory(dir) {
     const files = [];
     if (!fs.existsSync(dir)) return files; // 目录不存在，直接返回空数组
@@ -81,10 +82,17 @@ function getFilesInDirectory(dir) {
     return files;
 }
 
-// 获取远程仓库的文件列表
+/** 获取远程仓库的文件列表 */
 async function getRemoteFileList() {
     try {
-        const response = await axios.get(REMOTE_DIR_URL + "file_list.txt"); // 远程仓库的文件列表
+        const url = `${REMOTE_DIR_URL}file_list.txt?t=${Date.now()}`; // 加入时间戳绕过缓存
+        const response = await axios.get(url, {
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
         return response.data.split("\n").map(file => file.trim()).filter(file => file);
     } catch (error) {
         console.error(`❌ 无法获取远程文件列表: ${error.message}`);
@@ -92,10 +100,18 @@ async function getRemoteFileList() {
     }
 }
 
-// 获取远程文件的哈希值
-async function getRemoteFileHash(url) {
+/** 获取远程文件的哈希值 */
+async function getRemoteFileHash(fileName) {
     try {
-        const response = await axios.get(`${url}?_=${new Date().getTime()}`, { responseType: 'arraybuffer' });
+        const url = `${REMOTE_DIR_URL}${fileName}?t=${Date.now()}`; // 加入时间戳绕过缓存
+        const response = await axios.get(url, {
+            responseType: 'arraybuffer',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
         return crypto.createHash('sha256').update(response.data).digest('hex');
     } catch (error) {
         console.error(`❌ 获取远程文件哈希失败: ${error.message}`);
@@ -103,7 +119,7 @@ async function getRemoteFileHash(url) {
     }
 }
 
-// 获取本地文件的哈希值
+/** 获取本地文件的哈希值 */
 function getFileHash(filePath) {
     return new Promise((resolve, reject) => {
         const hash = crypto.createHash('sha256');
@@ -114,7 +130,7 @@ function getFileHash(filePath) {
     });
 }
 
-// 检查并更新文件，同时删除本地多余文件
+/** 检查并更新文件，同时删除本地多余文件 */
 async function checkForUpdates() {
     if (!fs.existsSync(DOMAIN_DIR)) {
         console.error(`❌ 目录不存在: ${DOMAIN_DIR}`);
@@ -122,28 +138,21 @@ async function checkForUpdates() {
     }
 
     const localFiles = getFilesInDirectory(DOMAIN_DIR);
-    const remoteFiles = await getRemoteFileList(); // 获取远程文件列表
+    const remoteFiles = await getRemoteFileList();
     let result = [];
     let updated = false; // 记录是否有文件更新
 
-    // **如果 `file_list.txt` 获取失败，不执行删除，避免误删**
     if (remoteFiles === null) {
         console.warn(`⚠️ 远程 file_list.txt 未找到，跳过删除本地多余文件`);
     } else {
-        console.log("📂 远程文件列表:", remoteFiles);  // 调试输出远程文件列表
-
         for (let filePath of localFiles) {
             const fileName = path.basename(filePath);
 
             // **跳过排除的文件**
-            if (EXCLUDED_FILES.includes(fileName)) {
-                console.log(`🟡 ${fileName} 被排除`);
-                continue;
-            }
+            if (EXCLUDED_FILES.includes(fileName)) continue;
 
             // **如果本地文件不在远程文件列表中，删除它**
             if (!remoteFiles.includes(fileName)) {
-                console.log(`🗑️ 本地文件 ${fileName} 不在远程仓库，删除中...`);
                 fs.unlinkSync(filePath);
                 result.push({ file: fileName, success: true, message: `🗑️ ${fileName} 已删除（远程不存在）` });
                 updated = true;
@@ -151,20 +160,13 @@ async function checkForUpdates() {
             }
 
             // **正常文件更新检查**
-            const remoteFileUrl = REMOTE_DIR_URL + fileName;
             try {
-                const remoteHash = await getRemoteFileHash(remoteFileUrl);
+                const remoteHash = await getRemoteFileHash(fileName);
                 if (fs.existsSync(filePath)) {
                     const localHash = await getFileHash(filePath);
-
-                    // 打印调试信息，确保哈希比对正确
-                    console.log(`🔍 检查 ${fileName}`);
-                    console.log(`🔢 远程哈希: ${remoteHash}`);
-                    console.log(`🔢 本地哈希: ${localHash}`);
-
                     if (localHash !== remoteHash) {
                         console.log(`🔄 ${fileName} 需要更新`);
-                        const response = await axios.get(`${remoteFileUrl}?_=${new Date().getTime()}`);
+                        const response = await axios.get(`${REMOTE_DIR_URL}${fileName}?t=${Date.now()}`, { responseType: 'arraybuffer' });
                         fs.writeFileSync(filePath, response.data);
                         result.push({ file: fileName, success: true, message: `✅ ${fileName} 更新成功` });
                         updated = true;
@@ -173,7 +175,7 @@ async function checkForUpdates() {
                     }
                 } else {
                     console.log(`🆕 ${fileName} 文件不存在，正在下载...`);
-                    const response = await axios.get(`${remoteFileUrl}?_=${new Date().getTime()}`);
+                    const response = await axios.get(`${REMOTE_DIR_URL}${fileName}?t=${Date.now()}`, { responseType: 'arraybuffer' });
                     fs.writeFileSync(filePath, response.data);
                     result.push({ file: fileName, success: true, message: `✅ ${fileName} 新文件下载成功` });
                     updated = true;
@@ -185,7 +187,6 @@ async function checkForUpdates() {
         }
     }
 
-    // **如果没有任何文件更新，添加 "所有文件均为最新" 提示**
     if (!updated) {
         result.push({ file: "无", success: true, message: "✅ 所有文件均为最新，无需更新" });
     }
