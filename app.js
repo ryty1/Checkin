@@ -81,7 +81,7 @@ async function getRemoteFileList() {
     try {
         const response = await axios.get(`${REMOTE_DIR_URL}file_list.txt?_=${Date.now()}`);
         const files = response.data.split("\n").map(file => file.trim()).filter(file => file);
-        return files.filter(file => !EXCLUDED_FILES.includes(file));  // 过滤掉排除的文件
+        return files.filter(file => !EXCLUDED_FILES.includes(file) && file !== 'version.txt');  // 排除 version.txt 和排除的文件
     } catch (error) {
         console.error(`❌ 获取远程文件列表失败: ${error.message}`);
         return null;
@@ -168,11 +168,11 @@ async function checkForUpdates() {
     fs.writeFileSync(LOCAL_VERSION_FILE, remoteVersion);
     console.log(`📢 版本更新完成，新版本号: ${remoteVersion}`);
     
-    // 返回更新结果并包含版本信息
+    // 返回更新结果并包含版本信息，排除 `version.txt`
     return [
         { file: "版本信息", success: true, message: `📌 本地版本: ${localVersion}` },
         { file: "版本信息", success: true, message: `📌 远程版本: ${remoteVersion}` },
-        ...results
+        ...results.filter(result => result.file !== 'version.txt') // 排除 version.txt 更新结果
     ];
 }
 
