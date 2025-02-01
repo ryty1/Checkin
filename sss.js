@@ -47,7 +47,7 @@ async function getRemoteFileList() {
 // 获取远程文件的哈希值
 async function getRemoteFileHash(url) {
     try {
-        const response = await axios.get(`${url}?_=${new Date().getTime()}`, { responseType: 'arraybuffer' });
+        const response = await axios.get(url, { responseType: 'arraybuffer' });
         return crypto.createHash('sha256').update(response.data).digest('hex');
     } catch (error) {
         console.error(`❌ 获取远程文件哈希失败: ${error.message}`);
@@ -64,6 +64,12 @@ function getFileHash(filePath) {
         stream.on('end', () => resolve(hash.digest('hex')));
         stream.on('error', (err) => reject(err));
     });
+}
+
+// 获取文件的修改时间并作为版本号
+function getFileVersion(filePath) {
+    const stats = fs.statSync(filePath);
+    return stats.mtime.getTime(); // 返回文件的最后修改时间作为版本号
 }
 
 // 检查并更新文件，同时删除本地多余文件
@@ -116,7 +122,7 @@ async function checkForUpdates() {
 
                     if (localHash !== remoteHash) {
                         console.log(`🔄 ${fileName} 需要更新`);
-                        const response = await axios.get(`${remoteFileUrl}?_=${new Date().getTime()}`);
+                        const response = await axios.get(`${remoteFileUrl}?version=${getFileVersion(filePath)}`);
                         fs.writeFileSync(filePath, response.data);
                         result.push({ file: fileName, success: true, message: `✅ ${fileName} 更新成功` });
                         updated = true;
@@ -125,7 +131,7 @@ async function checkForUpdates() {
                     }
                 } else {
                     console.log(`🆕 ${fileName} 文件不存在，正在下载...`);
-                    const response = await axios.get(`${remoteFileUrl}?_=${new Date().getTime()}`);
+                    const response = await axios.get(`${remoteFileUrl}?version=${getFileVersion(filePath)}`);
                     fs.writeFileSync(filePath, response.data);
                     result.push({ file: fileName, success: true, message: `✅ ${fileName} 新文件下载成功` });
                     updated = true;
@@ -187,90 +193,3 @@ app.get('/update', async (req, res) => {
                     color: #333;
                 }
                 button {
-                    display: block;
-                    margin: 20px auto;
-                    padding: 10px 20px;
-                    background-color: #4CAF50;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    font-size: 16px;
-                    transition: background-color 0.3s;
-                }
-                button:hover {
-                    background-color: #45a049;
-                }
-                #result {
-                    margin-top: 20px;
-                    font-size: 16px;
-                }
-                .result-item {
-                    padding: 10px;
-                    border-radius: 5px;
-                    margin-bottom: 10px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                .success {
-                    background-color: #e7f9e7;
-                    color: #4CAF50;
-                }
-                .failure {
-                    background-color: #ffe6e6;
-                    color: #f44336;
-                }
-                .info {
-                    background-color: #e0f7fa;
-                    color: #0288d1;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>文件更新检查</h1>
-                <button onclick="checkForUpdates()">检查更新</button>
-                <div id="result"></div>
-            </div>
-
-            <script>
-                async function checkForUpdates() {
-                    try {
-                        const response = await fetch('/update', { headers: { 'Accept': 'application/json' } });
-                        const data = await response.json();
-                        let resultHtml = '<h3>更新结果</h3>';
-
-                        // 遍历并生成结果项
-                        data.forEach(update => {
-                            let className = 'result-item';
-                            if (update.success) {
-                                className += ' success';
-                            } else {
-                                className += ' failure';
-                            }
-                            resultHtml += \`
-                            <div class="\${className}">
-                                <span>\${update.message}</span>
-                            </div>\`;
-                        });
-
-                        document.getElementById('result').innerHTML = resultHtml;
-                    } catch (error) {
-                        document.getElementById('result').innerHTML = '<p class="failure">检查更新时出错</p>';
-                    }
-                }
-            </script>
-        </body>
-        </html>
-        `);
-    } catch (error) {
-        res.status(500).json({ success: false, message: '更新过程中发生错误', error });
-    }
-});
-
-app.listen(3000, () => {
-    const timestamp = new Date().toLocaleString();
-    const startMsg = `${timestamp} 服务器已启动，监听端口 3000`;
-    console.log(startMsg);
-});
