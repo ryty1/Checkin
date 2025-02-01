@@ -2,7 +2,14 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const crypto = require('crypto');
+const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
+const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
 
+const REMOTE_DIR_URL = 'https://raw.githubusercontent.com/ryty1/serv00-save-me/main/';
+
+// 需要排除的文件名（例如 README 文件）
+const EXCLUDED_FILES = ['README.md'];
+const EXCLUDED_DIRS = ['public', 'tmp']; // **本地 `public` 和 `tmp` 目录不会被扫描**
 // 递归获取目录下所有文件（排除本地 `public` 和 `tmp`）
 function getFilesInDirectory(dir) {
     const files = [];
