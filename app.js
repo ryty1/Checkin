@@ -4,7 +4,6 @@ const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const axios = require('axios');
-const crypto = require('crypto');
 const app = express();
 
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
@@ -77,14 +76,12 @@ async function getRemoteVersion() {
     }
 }
 
-// **获取远程 `file_list.txt` 并排除指定文件**
+// **获取远程文件列表并排除指定文件**
 async function getRemoteFileList() {
     try {
         const response = await axios.get(`${REMOTE_DIR_URL}file_list.txt?_=${Date.now()}`);
         const files = response.data.split("\n").map(file => file.trim()).filter(file => file);
-
-        // 过滤掉排除的文件
-        return files.filter(file => !EXCLUDED_FILES.includes(file));
+        return files.filter(file => !EXCLUDED_FILES.includes(file));  // 过滤掉排除的文件
     } catch (error) {
         console.error(`❌ 获取远程文件列表失败: ${error.message}`);
         return null;
@@ -140,9 +137,13 @@ async function checkForUpdates() {
     const localVersion = getLocalVersion();
     console.log(`📌 本地版本: ${localVersion}, 远程版本: ${remoteVersion}`);
 
+    // **版本号相同，跳过更新**
     if (localVersion === remoteVersion) {
         console.log("✅ 文件已是最新，无需更新");
-        return [{ file: "无", success: true, message: "✅ 所有文件已是最新" }];
+        return [
+            { file: "版本信息", success: true, message: `📌 本地版本: ${localVersion}` },
+            { file: "版本信息", success: true, message: `📌 远程版本: ${remoteVersion}` }
+        ];
     }
 
     console.log("🔄 版本号不同，开始更新...");
@@ -151,15 +152,14 @@ async function checkForUpdates() {
 
     let results = [];
     for (const fileName of remoteFiles) {
-        results.push(await downloadFile(fileName));
+        results.push(await downloadFile(fileName));  // 下载文件时输出简洁的结果
     }
 
     // **删除本地多余的文件**
     const localFiles = getLocalFiles(DOMAIN_DIR);
     for (const fileName of localFiles) {
         if (!remoteFiles.includes(fileName) && !EXCLUDED_FILES.includes(fileName)) {
-            fs.unlinkSync(path.join(DOMAIN_DIR, fileName));
-            console.log(`🗑️ 删除多余文件: ${fileName}`);
+            fs.unlinkSync(path.join(DOMAIN_DIR, fileName));  // 删除文件但不输出
             results.push({ file: fileName, success: true, message: `🗑️ ${fileName} 被删除（远程不存在）` });
         }
     }
@@ -167,7 +167,13 @@ async function checkForUpdates() {
     // **更新本地 `version.txt`**
     fs.writeFileSync(LOCAL_VERSION_FILE, remoteVersion);
     console.log(`📢 版本更新完成，新版本号: ${remoteVersion}`);
-    return results;
+    
+    // 返回更新结果并包含版本信息
+    return [
+        { file: "版本信息", success: true, message: `📌 本地版本: ${localVersion}` },
+        { file: "版本信息", success: true, message: `📌 远程版本: ${remoteVersion}` },
+        ...results
+    ];
 }
 
 app.get("/info", (req, res) => {
