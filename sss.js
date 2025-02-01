@@ -268,3 +268,9 @@ app.get('/update', async (req, res) => {
         res.status(500).json({ success: false, message: '更新过程中发生错误', error });
     }
 });
+app.listen(3000, () => {
+    const timestamp = new Date().toLocaleString();
+    const startMsg = `${timestamp} 服务器已启动，监听端口 3000`;
+    logMessage(startMsg);
+    console.log(startMsg);
+});
