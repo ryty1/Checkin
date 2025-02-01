@@ -824,8 +824,141 @@ app.get("/log", (req, res) => {
 // **处理 `/update` 请求**
 app.get('/update', async (req, res) => {
     try {
+        console.log("🛠️ 正在检查更新...");
         const updateResults = await checkForUpdates();
-        res.json(updateResults);
+
+        // **如果请求是 AJAX（fetch），返回 JSON**
+        if (req.headers.accept && req.headers.accept.includes('application/json')) {
+            return res.json(updateResults);
+        }
+
+        // **否则，返回 HTML**
+        res.send(`
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>文件更新检查</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f9;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                }
+                .container {
+                    width: 80%;
+                    max-width: 800px;
+                    padding: 20px;
+                    background-color: #fff;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                }
+                h1 {
+                    text-align: center;
+                    color: #333;
+                }
+                button {
+                    display: block;
+                    margin: 20px auto;
+                    padding: 10px 20px;
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    transition: background-color 0.3s;
+                }
+                button:hover {
+                    background-color: #45a049;
+                }
+                #result {
+                    margin-top: 20px;
+                    font-size: 16px;
+                }
+                .result-item {
+                    padding: 10px;
+                    border-radius: 5px;
+                    margin-bottom: 10px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .success {
+                    background-color: #e7f9e7;
+                    color: #4CAF50;
+                }
+                .failure {
+                    background-color: #ffe6e6;
+                    color: #f44336;
+                }
+                .info {
+                    background-color: #e0f7fa;
+                    color: #0288d1;
+                }
+                #loading {
+                    text-align: center;
+                    font-size: 18px;
+                    color: #555;
+                    margin: 20px 0;
+                    display: none;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>文件更新检查</h1>
+                <button id="updateButton" onclick="checkForUpdates()">检查更新</button>
+                <div id="loading">正在检查更新...</div>
+                <div id="result"></div>
+            </div>
+
+            <script>
+                async function checkForUpdates() {
+                    const updateButton = document.getElementById('updateButton');
+                    updateButton.disabled = true;  // 禁用按钮，防止多次点击
+
+                    try {
+                        // 显示加载动画
+                        document.getElementById('loading').style.display = 'block';
+
+                        const response = await fetch('/update', { headers: { 'Accept': 'application/json' } });
+                        const data = await response.json();
+                        let resultHtml = '<h3>更新结果</h3>';
+
+                        // 遍历并生成结果项
+                        data.forEach(update => {
+                            let className = 'result-item';
+                            if (update.success) {
+                                className += ' success';
+                            } else {
+                                className += ' failure';
+                            }
+                            resultHtml += \`
+                            <div class="\${className}">
+                                <span>\${update.message}</span>
+                                <span class="icon">\${update.success ? '✔' : '✘'}</span>
+                            </div>\`;
+                        });
+
+                        document.getElementById('result').innerHTML = resultHtml;
+                    } catch (error) {
+                        document.getElementById('result').innerHTML = '<p class="failure">检查更新时出错</p>';
+                    }
+
+                    // 恢复按钮状态
+                    updateButton.disabled = false;
+                }
+            </script>
+        </body>
+        </html>
+        `);
     } catch (error) {
         res.status(500).json({ success: false, message: '更新过程中发生错误', error });
     }
