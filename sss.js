@@ -1,3 +1,8 @@
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
+const crypto = require('crypto');
+
 // 递归获取目录下所有文件（排除本地 `public` 和 `tmp`）
 function getFilesInDirectory(dir) {
     const files = [];
