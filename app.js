@@ -732,9 +732,9 @@ app.get('/ota', (req, res) => {
                 height: 100vh;
             }
             .container {
-                width: 100%;  /* 容器宽度增大 */
+                width: 90%;  /* 容器宽度增大 */
                 max-width: 800px;
-                padding: 10px;
+                padding: 20px;
                 background-color: #fff;
                 border-radius: 8px;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -742,7 +742,7 @@ app.get('/ota', (req, res) => {
             h1 {
                 text-align: center;
                 color: #333;
-                font-size: 18px;  /* 字体大小调整 */
+                font-size: 18px;
             }
             button {
                 display: block;
@@ -753,16 +753,16 @@ app.get('/ota', (req, res) => {
                 border: none;
                 border-radius: 5px;
                 cursor: pointer;
-                font-size: 15px;  /* 字体大小调整 */
+                font-size: 15px;
                 transition: background-color 0.3s;
             }
             button:hover {
                 background-color: #45a049;
             }
             #result {
-                margin-top: 14px;
-                font-size: 12px;  /* 字体大小调整 */
-                word-wrap: break-word;  /* 防止内容溢出 */
+                margin-top: 20px;
+                font-size: 12px;
+                word-wrap: break-word;
             }
             .result-item {
                 padding: 10px;
@@ -783,6 +783,35 @@ app.get('/ota', (req, res) => {
             .info {
                 background-color: #e0f7fa;
                 color: #0288d1;
+            }
+
+            /* Media queries for responsiveness */
+            @media (max-width: 768px) {
+                .container {
+                    width: 95%;  /* On smaller screens, container becomes wider */
+                    padding: 15px;
+                }
+                h1 {
+                    font-size: 16px;  /* Smaller font size for mobile */
+                }
+                button {
+                    font-size: 14px;  /* Smaller button text */
+                }
+                #result {
+                    font-size: 11px;  /* Smaller text in result */
+                }
+            }
+
+            @media (max-width: 480px) {
+                h1 {
+                    font-size: 14px;  /* Even smaller font size on very small screens */
+                }
+                button {
+                    font-size: 12px;  /* Smaller button text */
+                }
+                #result {
+                    font-size: 10px;  /* Smaller text in result */
+                }
             }
         </style>
     </head>
