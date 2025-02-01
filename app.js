@@ -622,16 +622,18 @@ app.get("/node", (req, res) => {
         }
 
         const cleanedData = data
-            .replace(/(vmess:\/\/|hysteria2:\/\/|proxyip:\/\/)/g, '\n$1')
+            .replace(/(vmess:\/\/|hysteria2:\/\/|proxyip:\/\/|https:\/\/)/g, '\n$1')
             .trim();
 
         const vmessPattern = /vmess:\/\/[^\n]+/g;
         const hysteriaPattern = /hysteria2:\/\/[^\n]+/g;
+        const httpsPattern = /https:\/\/[^\n]+/g;
         const proxyipPattern = /proxyip:\/\/[^\n]+/g;
         const vmessConfigs = cleanedData.match(vmessPattern) || [];
         const hysteriaConfigs = cleanedData.match(hysteriaPattern) || [];
+        const httpsConfigs = cleanedData.match(httpsPattern) || [];
         const proxyipConfigs = cleanedData.match(proxyipPattern) || [];
-        const allConfigs = [...vmessConfigs, ...hysteriaConfigs, ...proxyipConfigs];
+        const allConfigs = [...vmessConfigs, ...hysteriaConfigs, ...httpsConfigs, ...proxyipConfigs];
 
         let htmlContent = `
             <html>
