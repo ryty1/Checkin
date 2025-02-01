@@ -34,7 +34,7 @@ async function getRemoteFileList() {
     try {
         const response = await axios.get(`${REMOTE_DIR_URL}file_list.txt?_=${Date.now()}`);
         const files = response.data.split("\n").map(file => file.trim()).filter(file => file);
-        return files.filter(file => !EXCLUDED_FILES.includes(file));  // 过滤掉排除的文件
+        return files.filter(file => !EXCLUDED_FILES.includes(file) && file !== 'version.txt');  // 排除 version.txt 和排除的文件
     } catch (error) {
         console.error(`❌ 获取远程文件列表失败: ${error.message}`);
         return null;
@@ -121,11 +121,11 @@ async function checkForUpdates() {
     fs.writeFileSync(LOCAL_VERSION_FILE, remoteVersion);
     console.log(`📢 版本更新完成，新版本号: ${remoteVersion}`);
     
-    // 返回更新结果并包含版本信息
+    // 返回更新结果并包含版本信息，排除 `version.txt`
     return [
         { file: "版本信息", success: true, message: `📌 本地版本: ${localVersion}` },
         { file: "版本信息", success: true, message: `📌 远程版本: ${remoteVersion}` },
-        ...results
+        ...results.filter(result => result.file !== 'version.txt') // 排除 version.txt 更新结果
     ];
 }
 
@@ -223,38 +223,4 @@ app.get('/update', async (req, res) => {
                 async function checkForUpdates() {
                     try {
                         const response = await fetch('/update', { headers: { 'Accept': 'application/json' } });
-                        const data = await response.json();
-                        let resultHtml = '<h3>更新结果</h3>';
-
-                        // 遍历并生成结果项
-                        data.forEach(update => {
-                            let className = 'result-item';
-                            if (update.success) {
-                                className += ' success';
-                            } else {
-                                className += ' failure';
-                            }
-                            resultHtml += \`
-                            <div class="\${className}">
-                                <span>\${update.message}</span>
-                            </div>\`;
-                        });
-
-                        document.getElementById('result').innerHTML = resultHtml;
-                    } catch (error) {
-                        document.getElementById('result').innerHTML = '<p class="failure">检查更新时出错</p>';
-                    }
-                }
-            </script>
-        </body>
-        </html>
-        `);
-    } catch (error) {
-        res.status(500).json({ success: false, message: '更新过程中发生错误', error });
-    }
-});
-
-// **启动服务器**
-app.listen(3000, () => {
-    console.log(`🚀 服务器运行在 http://localhost:3000`);
-});
+                        const data = await response
