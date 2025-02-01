@@ -4,15 +4,18 @@ const axios = require('axios');
 const express = require('express');
 const app = express();
 
+// **环境变量**
 const username = process.env.USER.toLowerCase();
 const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
 const LOCAL_VERSION_FILE = path.join(DOMAIN_DIR, "version.txt");
 const REMOTE_VERSION_URL = 'https://raw.githubusercontent.com/ryty1/serv00-save-me/main/version.txt';
 const REMOTE_DIR_URL = 'https://raw.githubusercontent.com/ryty1/serv00-save-me/main/';
 
-// **本地要跳过的文件 & 文件夹**
-const EXCLUDED_FILES = ['README.md', 'config.json']; // 这些文件不会被删除
-const EXCLUDED_DIRS = ['logs', 'backup', 'cache']; // 这些文件夹不会被扫描或删除
+// **远程排除的文件**
+const EXCLUDED_FILES = ['README.md'];  // 这些文件不会被下载
+
+// **本地排除的目录**
+const EXCLUDED_DIRS = ['public', 'tmp'];  // 这些目录不会被扫描或删除
 
 // **获取本地版本号**
 function getLocalVersion() {
@@ -31,18 +34,21 @@ async function getRemoteVersion() {
     }
 }
 
-// **获取远程 `file_list.txt`**
+// **获取远程 `file_list.txt` 并排除指定文件**
 async function getRemoteFileList() {
     try {
         const response = await axios.get(`${REMOTE_DIR_URL}file_list.txt?_=${Date.now()}`);
-        return response.data.split("\n").map(file => file.trim()).filter(file => file);
+        const files = response.data.split("\n").map(file => file.trim()).filter(file => file);
+
+        // 过滤掉排除的文件
+        return files.filter(file => !EXCLUDED_FILES.includes(file));
     } catch (error) {
         console.error(`❌ 获取远程文件列表失败: ${error.message}`);
         return null;
     }
 }
 
-// **获取本地文件列表**
+// **获取本地文件列表并排除指定的文件夹**
 function getLocalFiles(dir) {
     let files = [];
     if (!fs.existsSync(dir)) return files;
@@ -242,8 +248,7 @@ app.get('/update', async (req, res) => {
         </html>
         `);
     } catch (error) {
-        res.status(500).json({ success: false, message: '更新过程中发生错误', error });
-    }
+        res.status(500).json({ success: false, message: '更新过程中发生错误', error
 });
 
 // **启动服务器**
