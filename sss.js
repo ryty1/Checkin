@@ -10,7 +10,7 @@ const REMOTE_DIR_URL = 'https://raw.githubusercontent.com/ryty1/serv00-save-me/m
 // 需要排除的文件名（例如 README 文件）
 const EXCLUDED_FILES = ['README.md'];
 const EXCLUDED_DIRS = ['public', 'tmp']; // **本地 `public` 和 `tmp` 目录不会被扫描**
-// 递归获取目录下所有文件（排除本地 `public` 和 `tmp`）
+
 function getFilesInDirectory(dir) {
     const files = [];
     if (!fs.existsSync(dir)) return files; // 目录不存在，直接返回空数组
@@ -47,7 +47,7 @@ async function getRemoteFileList() {
 // 获取远程文件的哈希值
 async function getRemoteFileHash(url) {
     try {
-        const response = await axios.get(url, { responseType: 'arraybuffer' });
+        const response = await axios.get(`${url}?_=${new Date().getTime()}`, { responseType: 'arraybuffer' });
         return crypto.createHash('sha256').update(response.data).digest('hex');
     } catch (error) {
         console.error(`❌ 获取远程文件哈希失败: ${error.message}`);
@@ -116,7 +116,7 @@ async function checkForUpdates() {
 
                     if (localHash !== remoteHash) {
                         console.log(`🔄 ${fileName} 需要更新`);
-                        const response = await axios.get(remoteFileUrl);
+                        const response = await axios.get(`${remoteFileUrl}?_=${new Date().getTime()}`);
                         fs.writeFileSync(filePath, response.data);
                         result.push({ file: fileName, success: true, message: `✅ ${fileName} 更新成功` });
                         updated = true;
@@ -125,7 +125,7 @@ async function checkForUpdates() {
                     }
                 } else {
                     console.log(`🆕 ${fileName} 文件不存在，正在下载...`);
-                    const response = await axios.get(remoteFileUrl);
+                    const response = await axios.get(`${remoteFileUrl}?_=${new Date().getTime()}`);
                     fs.writeFileSync(filePath, response.data);
                     result.push({ file: fileName, success: true, message: `✅ ${fileName} 新文件下载成功` });
                     updated = true;
@@ -268,9 +268,9 @@ app.get('/update', async (req, res) => {
         res.status(500).json({ success: false, message: '更新过程中发生错误', error });
     }
 });
+
 app.listen(3000, () => {
     const timestamp = new Date().toLocaleString();
     const startMsg = `${timestamp} 服务器已启动，监听端口 3000`;
-    logMessage(startMsg);
     console.log(startMsg);
 });
