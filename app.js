@@ -77,18 +77,21 @@ async function getRemoteVersion() {
     }
 }
 
-// **获取远程 `file_list.txt`**
+// **获取远程 `file_list.txt` 并排除指定文件**
 async function getRemoteFileList() {
     try {
         const response = await axios.get(`${REMOTE_DIR_URL}file_list.txt?_=${Date.now()}`);
-        return response.data.split("\n").map(file => file.trim()).filter(file => file);
+        const files = response.data.split("\n").map(file => file.trim()).filter(file => file);
+
+        // 过滤掉排除的文件
+        return files.filter(file => !EXCLUDED_FILES.includes(file));
     } catch (error) {
         console.error(`❌ 获取远程文件列表失败: ${error.message}`);
         return null;
     }
 }
 
-// **获取本地文件列表**
+// **获取本地文件列表并排除指定的文件夹**
 function getLocalFiles(dir) {
     let files = [];
     if (!fs.existsSync(dir)) return files;
