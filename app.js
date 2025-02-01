@@ -732,9 +732,9 @@ app.get('/ota', (req, res) => {
                 height: 100vh;
             }
             .container {
-                width: 115%;  /* 增加 15% */
-                max-width: 800px;  /* 保持最大宽度为 800px */
-                padding: 20px;
+                width: 100%;  /* 容器宽度增大 */
+                max-width: 800px;
+                padding: 10px;
                 background-color: #fff;
                 border-radius: 8px;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -742,6 +742,7 @@ app.get('/ota', (req, res) => {
             h1 {
                 text-align: center;
                 color: #333;
+                font-size: 18px;  /* 字体大小调整 */
             }
             button {
                 display: block;
@@ -752,18 +753,16 @@ app.get('/ota', (req, res) => {
                 border: none;
                 border-radius: 5px;
                 cursor: pointer;
-                font-size: 16px;
+                font-size: 15px;  /* 字体大小调整 */
                 transition: background-color 0.3s;
             }
             button:hover {
                 background-color: #45a049;
             }
             #result {
-                margin-top: 20px;
-                font-size: 14px;
-                word-wrap: break-word;
-                max-height: 60vh;
-                overflow-y: auto;
+                margin-top: 14px;
+                font-size: 12px;  /* 字体大小调整 */
+                word-wrap: break-word;  /* 防止内容溢出 */
             }
             .result-item {
                 padding: 10px;
@@ -785,16 +784,6 @@ app.get('/ota', (req, res) => {
                 background-color: #e0f7fa;
                 color: #0288d1;
             }
-            .result-box {
-                padding: 15px;
-                border-radius: 8px;
-                background-color: #f1f1f1;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                margin-top: 10px;
-                font-size: 12px;
-                white-space: nowrap;  /* 不换行 */
-                overflow-x: auto;     /* 如果文本过长，显示水平滚动条 */
-            }
         </style>
     </head>
     <body>
@@ -813,7 +802,7 @@ app.get('/ota', (req, res) => {
                     if (data.success) {
                         const resultHtml = \`
                             <h3>更新结果</h3>
-                            <div class="result-box">\${data.output}</div>
+                            <pre>\${data.output}</pre>
                         \`;
                         document.getElementById('result').innerHTML = resultHtml;
                     } else {
