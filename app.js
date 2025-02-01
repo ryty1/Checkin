@@ -830,6 +830,8 @@ app.get("/log", (req, res) => {
         `);
     });
 });
+// 其他代码保持不变
+
 // **处理 `/update` 请求**
 app.get('/update', async (req, res) => {
     try {
@@ -911,12 +913,28 @@ app.get('/update', async (req, res) => {
                     background-color: #e0f7fa;
                     color: #0288d1;
                 }
+                /* 新增的样式 */
+                .version-info {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 20px;
+                    font-size: 18px;
+                    font-weight: bold;
+                }
             </style>
         </head>
         <body>
             <div class="container">
                 <h1>文件更新检查</h1>
                 <button onclick="checkForUpdates()">检查更新</button>
+
+                <!-- 版本信息显示部分 -->
+                <div class="version-info">
+                    <span>📌 本地版本: ${updateResults.find(result => result.file === "版本信息" && result.message.startsWith("📌 本地版本:")).message}</span>
+                    <span>📌 远程版本: ${updateResults.find(result => result.file === "版本信息" && result.message.startsWith("📌 远程版本:")).message}</span>
+                </div>
+
+                <!-- 更新结果显示部分 -->
                 <div id="result"></div>
             </div>
 
