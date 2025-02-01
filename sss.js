@@ -10,8 +10,9 @@ const LOCAL_VERSION_FILE = path.join(DOMAIN_DIR, "version.txt");
 const REMOTE_VERSION_URL = 'https://raw.githubusercontent.com/ryty1/serv00-save-me/main/version.txt';
 const REMOTE_DIR_URL = 'https://raw.githubusercontent.com/ryty1/serv00-save-me/main/';
 
-// **要排除不删除的文件**
-const EXCLUDED_FILES = ['README.md'];
+// **本地要跳过的文件 & 文件夹**
+const EXCLUDED_FILES = ['README.md', 'config.json']; // 这些文件不会被删除
+const EXCLUDED_DIRS = ['logs', 'backup', 'cache']; // 这些文件夹不会被扫描或删除
 
 // **获取本地版本号**
 function getLocalVersion() {
@@ -49,13 +50,20 @@ function getLocalFiles(dir) {
     const items = fs.readdirSync(dir);
     for (const item of items) {
         const itemPath = path.join(dir, item);
+        
+        // **跳过指定的目录**
+        if (EXCLUDED_DIRS.includes(item)) {
+            console.log(`🟡 跳过文件夹: ${itemPath}`);
+            continue;
+        }
+
         if (fs.statSync(itemPath).isDirectory()) {
             files = files.concat(getLocalFiles(itemPath));
         } else {
-            files.push(itemPath);
+            files.push(path.relative(DOMAIN_DIR, itemPath));
         }
     }
-    return files.map(file => path.relative(DOMAIN_DIR, file));
+    return files;
 }
 
 // **下载远程文件**
