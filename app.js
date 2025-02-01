@@ -728,7 +728,6 @@ app.get('/ota/update', (req, res) => {
     });
 });
 
-// **前端页面 `/ota`**
 app.get('/ota', (req, res) => {
     res.send(`
     <!DOCTYPE html>
@@ -779,25 +778,14 @@ app.get('/ota', (req, res) => {
                 margin-top: 20px;
                 font-size: 16px;
             }
-            .result-item {
+            pre {
+                white-space: pre; /* 保持格式，不换行 */
+                overflow: hidden; /* 不允许滚动 */
+                max-width: 100%; /* 适应容器 */
+                background-color: #f5f5f5;
                 padding: 10px;
                 border-radius: 5px;
-                margin-bottom: 10px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            .success {
-                background-color: #e7f9e7;
-                color: #4CAF50;
-            }
-            .failure {
-                background-color: #ffe6e6;
-                color: #f44336;
-            }
-            .info {
-                background-color: #e0f7fa;
-                color: #0288d1;
+                font-size: 16px; /* 默认字体大小 */
             }
         </style>
     </head>
@@ -817,9 +805,12 @@ app.get('/ota', (req, res) => {
                     if (data.success) {
                         const resultHtml = \`
                             <h3>更新结果</h3>
-                            <pre>\${data.output}</pre>
+                            <pre id="output">\${data.output}</pre>
                         \`;
                         document.getElementById('result').innerHTML = resultHtml;
+
+                        // 等待 DOM 更新后再调整字体大小
+                        setTimeout(adjustFontSize, 0);
                     } else {
                         document.getElementById('result').innerHTML = '<p class="failure">更新时发生错误</p>';
                     }
@@ -827,6 +818,23 @@ app.get('/ota', (req, res) => {
                     document.getElementById('result').innerHTML = '<p class="failure">请求失败</p>';
                 }
             }
+
+            function adjustFontSize() {
+                const pre = document.getElementById("output");
+                if (!pre) return;
+
+                const container = pre.parentElement;
+                let fontSize = 16;
+                pre.style.fontSize = fontSize + "px";
+
+                while ((pre.scrollWidth > container.clientWidth || pre.scrollHeight > container.clientHeight) && fontSize > 10) {
+                    fontSize--;
+                    pre.style.fontSize = fontSize + "px";
+                }
+            }
+
+            // 监听窗口大小变化，重新调整
+            window.addEventListener("resize", adjustFontSize);
         </script>
     </body>
     </html>
