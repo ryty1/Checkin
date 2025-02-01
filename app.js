@@ -182,7 +182,7 @@ app.get("/info", (req, res) => {
                     <button onclick="window.location.href='/hy2ip'">换HY2_IP</button>
                     <button onclick="window.location.href='/node'">节点信息</button>
                     <button onclick="window.location.href='/log'">查看日志</button>
-                    <button onclick="window.location.href='/update'">检查更新</button>
+                    <button onclick="window.location.href='/ota'">检查更新</button>
                 </div>
             </div>
         </body>
