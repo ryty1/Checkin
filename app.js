@@ -779,13 +779,14 @@ app.get('/ota', (req, res) => {
                 font-size: 16px;
             }
             pre {
-                white-space: pre; /* 保持格式，不换行 */
-                overflow: hidden; /* 不允许滚动 */
-                max-width: 100%; /* 适应容器 */
+                white-space: pre; /* 不换行 */
+                overflow: hidden; /* 防止滚动 */
+                max-width: 100%; /* 限制最大宽度 */
                 background-color: #f5f5f5;
                 padding: 10px;
                 border-radius: 5px;
-                font-size: 16px; /* 默认字体大小 */
+                font-size: 16px; /* 初始字体大小 */
+                display: block;
             }
         </style>
     </head>
@@ -827,7 +828,7 @@ app.get('/ota', (req, res) => {
                 let fontSize = 16;
                 pre.style.fontSize = fontSize + "px";
 
-                while ((pre.scrollWidth > container.clientWidth || pre.scrollHeight > container.clientHeight) && fontSize > 10) {
+                while ((pre.scrollWidth > container.clientWidth) && fontSize > 10) {
                     fontSize--;
                     pre.style.fontSize = fontSize + "px";
                 }
