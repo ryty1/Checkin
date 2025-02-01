@@ -905,32 +905,18 @@ app.get('/update', async (req, res) => {
                     background-color: #e0f7fa;
                     color: #0288d1;
                 }
-                #loading {
-                    text-align: center;
-                    font-size: 18px;
-                    color: #555;
-                    margin: 20px 0;
-                    display: none;
-                }
             </style>
         </head>
         <body>
             <div class="container">
                 <h1>文件更新检查</h1>
-                <button id="updateButton" onclick="checkForUpdates()">检查更新</button>
-                <div id="loading">正在检查更新...</div>
+                <button onclick="checkForUpdates()">检查更新</button>
                 <div id="result"></div>
             </div>
 
             <script>
                 async function checkForUpdates() {
-                    const updateButton = document.getElementById('updateButton');
-                    updateButton.disabled = true;  // 禁用按钮，防止多次点击
-
                     try {
-                        // 显示加载动画
-                        document.getElementById('loading').style.display = 'block';
-
                         const response = await fetch('/update', { headers: { 'Accept': 'application/json' } });
                         const data = await response.json();
                         let resultHtml = '<h3>更新结果</h3>';
@@ -946,7 +932,6 @@ app.get('/update', async (req, res) => {
                             resultHtml += \`
                             <div class="\${className}">
                                 <span>\${update.message}</span>
-                                <span class="icon">\${update.success ? '✔' : '✘'}</span>
                             </div>\`;
                         });
 
@@ -954,9 +939,6 @@ app.get('/update', async (req, res) => {
                     } catch (error) {
                         document.getElementById('result').innerHTML = '<p class="failure">检查更新时出错</p>';
                     }
-
-                    // 恢复按钮状态
-                    updateButton.disabled = false;
                 }
             </script>
         </body>
