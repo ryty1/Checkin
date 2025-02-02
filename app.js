@@ -710,7 +710,22 @@ app.get("/log", (req, res) => {
         `);
     });
 });
-
+// **执行 OTA 更新**
+app.get('/ota/update', (req, res) => {
+    exec(otaScriptPath, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`❌ 执行脚本错误: ${error.message}`);
+            return res.status(500).json({ success: false, message: error.message });
+        }
+        if (stderr) {
+            console.error(`❌ 脚本错误输出: ${stderr}`);
+            return res.status(500).json({ success: false, message: stderr });
+        }
+        
+        // 返回脚本执行的结果
+        res.json({ success: true, output: stdout });
+    });
+});
 // **前端页面 `/ota`**
 app.get('/ota', (req, res) => {
     res.send(`
