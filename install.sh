@@ -42,9 +42,6 @@ else
     X " 类型域名 创建失败，请检查环境设置 " 1
     exit 1
 fi
-if [[ ! -d "$A2" ]]; then
-    mkdir -p "$A2"
-fi
 if [[ -d "$B1" ]]; then
     rm -rf "$B1"
 fi
