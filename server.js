@@ -59,40 +59,31 @@ app.delete("/accounts/:user", (req, res) => {
     res.json({ message: "账号已删除" });
 });
 
-// 获取所有账号的节点状态
-app.get("/nodes", async (req, res) => {
+// 获取所有账号的节点汇总（包括vmess和hysteria链接）
+app.get("/nodes-summary", async (req, res) => {
     const accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
     const users = Object.keys(accounts);
     const results = [];
 
     await Promise.all(users.map(async (user) => {
         const nodeUrl = `https://${user}.serv00.net/node`;
-        const logUrl = `https://${user}.serv00.net/log`;
-        const infoUrl = `https://${user}.serv00.net/info`;
-
-        let singboxsbOnline = false;
-        let cloudflareOnline = false;
-        let status = "在线";
+        let nodeLinks = [];
 
         try {
-            const logResponse = await axios.get(logUrl, { timeout: 5000 });
-            const logData = logResponse.data;
+            const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
+            const nodeData = nodeResponse.data;
 
-            singboxsbOnline = logData.includes("singboxsb");
-            cloudflareOnline = logData.includes("cloudflare");
+            // 提取vmess://和hysteria2://链接
+            const vmessLinks = nodeData.match(/vmess:\/\/[^\s]+/g) || [];
+            const hysteriaLinks = nodeData.match(/hysteria2:\/\/[^\s]+/g) || [];
+            nodeLinks = [...vmessLinks, ...hysteriaLinks];  // 汇总所有链接
         } catch (error) {
-            status = "离线";
-        }
-
-        if (!singboxsbOnline || !cloudflareOnline) {
-            try { await axios.get(infoUrl, { timeout: 5000 }); } catch (error) {}
+            console.error(`无法获取 ${user} 的节点信息`);
         }
 
         results.push({
             user,
-            status,
-            singboxsb: singboxsbOnline ? "运行中" : "未运行",
-            cloudflare: cloudflareOnline ? "运行中" : "未运行"
+            nodeLinks
         });
     }));
 
@@ -125,18 +116,16 @@ app.get("/", (req, res) => {
             <h2>账号管理</h2>
             <div class="account-buttons" id="accountButtons"></div> <!-- 显示所有账号的按钮 -->
 
-            <h2>节点状态监控</h2>
-            <button onclick="fetchNodes()">刷新状态</button>
+            <h2>节点汇总</h2>
+            <button onclick="fetchNodesSummary()">刷新节点汇总</button>
             <table>
                 <thead>
                     <tr>
                         <th>账号</th>
-                        <th>状态</th>
-                        <th>singboxsb</th>
-                        <th>cloudflare</th>
+                        <th>节点链接</th>
                     </tr>
                 </thead>
-                <tbody id="nodeTable"></tbody>
+                <tbody id="nodeSummaryTable"></tbody>
             </table>
 
             <script>
@@ -156,33 +145,30 @@ app.get("/", (req, res) => {
                     });
                 }
 
-                // 刷新节点状态
-                async function fetchNodes() {
-                    const res = await fetch("/nodes");
+                // 刷新节点汇总
+                async function fetchNodesSummary() {
+                    const res = await fetch("/nodes-summary");
                     const nodes = await res.json();
-                    const table = document.getElementById("nodeTable");
+                    const table = document.getElementById("nodeSummaryTable");
                     table.innerHTML = "";
 
                     nodes.forEach(node => {
                         const row = `<tr>
                             <td>${node.user}</td>
-                            <td>${node.status === "在线" ? "<span class='success'>在线</span>" : "<span class='danger'>离线</span>"}</td>
-                            <td>${node.singboxsb === "运行中" ? "<span class='success'>运行中</span>" : "<span class='danger'>未运行</span>"}</td>
-                            <td>${node.cloudflare === "运行中" ? "<span class='success'>运行中</span>" : "<span class='danger'>未运行</span>"}</td>
+                            <td>${node.nodeLinks.length > 0 ? node.nodeLinks.join("<br>") : "<span class='danger'>无节点链接</span>"}</td>
                         </tr>`;
                         table.innerHTML += row;
                     });
                 }
 
+                // 页面加载后调用
                 fetchAccounts();
-                fetchNodes();
             </script>
-
         </body>
         </html>
     `);
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
