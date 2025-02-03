@@ -8,7 +8,7 @@ const PORT = 3000;
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 
 // 🚀 **默认添加自身服务器的账号**
-const MAIN_SERVER_USER = "mainserver";
+const MAIN_SERVER_USER = process.env.USER.toLowerCase();
 
 // 确保配置文件存在 & 默认账号添加
 function ensureDefaultAccount() {
