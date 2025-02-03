@@ -150,7 +150,7 @@ io.on("connection", (socket) => {
 });
 
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
+    res.sendFile(path.join(public, "app.js"));
 });
 
 app.get("/info", (req, res) => {
