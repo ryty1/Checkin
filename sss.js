@@ -8,7 +8,7 @@ const PORT = 3000;
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 
 // 🚀 **默认添加自身服务器的账号**
-const MAIN_SERVER_USER = process.env.USER;  // 使用当前系统用户作为账号名
+const MAIN_SERVER_USER = "mainserver";
 
 // 确保配置文件存在 & 默认账号添加
 function ensureDefaultAccount() {
@@ -111,10 +111,9 @@ app.get("/", (req, res) => {
             <style>
                 body { font-family: Arial, sans-serif; margin: 20px; }
                 h1 { text-align: center; }
-                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                th, td { border: 1px solid black; padding: 8px; text-align: center; }
-                th { background-color: #f2f2f2; }
-                input, button { padding: 8px; margin: 5px; }
+                .account-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px; }
+                .account-button { padding: 10px 20px; font-size: 16px; background-color: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 5px; }
+                .account-button:hover { background-color: #45a049; }
                 .danger { color: red; }
                 .success { color: green; }
             </style>
@@ -124,17 +123,7 @@ app.get("/", (req, res) => {
             <h1>主控端 - 账号管理 & 状态监控</h1>
 
             <h2>账号管理</h2>
-            <input type="text" id="newUser" placeholder="输入账号">
-            <button onclick="addAccount()">添加/更新账号</button>
-            <table>
-                <thead>
-                    <tr>
-                        <th>账号</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="accountTable"></tbody>
-            </table>
+            <div class="account-buttons" id="accountButtons"></div> <!-- 显示所有账号的按钮 -->
 
             <h2>节点状态监控</h2>
             <button onclick="fetchNodes()">刷新状态</button>
@@ -151,38 +140,23 @@ app.get("/", (req, res) => {
             </table>
 
             <script>
+                // 获取所有账号并展示为按钮
                 async function fetchAccounts() {
                     const res = await fetch("/accounts");
                     const accounts = await res.json();
-                    const table = document.getElementById("accountTable");
-                    table.innerHTML = "";
+                    const buttonsContainer = document.getElementById("accountButtons");
+                    buttonsContainer.innerHTML = ""; // 清空之前的内容
 
                     Object.keys(accounts).forEach(user => {
-                        const deleteButton = user === "${MAIN_SERVER_USER}" ? "不可删除" : \`<button onclick="deleteAccount('\${user}')">删除</button>\`;
-                        const row = \`<tr>
-                            <td>\${user}</td>
-                            <td>\${deleteButton}</td>
-                        </tr>\`;
-                        table.innerHTML += row;
+                        const button = document.createElement("button");
+                        button.className = "account-button";
+                        button.textContent = user;
+                        button.onclick = () => window.location.href = `https://${user}.serv00.net/info`; // 点击后跳转到相应的info页面
+                        buttonsContainer.appendChild(button);
                     });
                 }
 
-                async function addAccount() {
-                    const user = document.getElementById("newUser").value.trim();
-                    if (!user) return alert("请输入账号");
-                    await fetch("/accounts", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ user })
-                    });
-                    fetchAccounts();
-                }
-
-                async function deleteAccount(user) {
-                    await fetch(\`/accounts/\${user}\`, { method: "DELETE" });
-                    fetchAccounts();
-                }
-
+                // 刷新节点状态
                 async function fetchNodes() {
                     const res = await fetch("/nodes");
                     const nodes = await res.json();
@@ -190,12 +164,12 @@ app.get("/", (req, res) => {
                     table.innerHTML = "";
 
                     nodes.forEach(node => {
-                        const row = \`<tr>
-                            <td>\${node.user}</td>
-                            <td>\${node.status === "在线" ? "<span class='success'>在线</span>" : "<span class='danger'>离线</span>"}</td>
-                            <td>\${node.singboxsb === "运行中" ? "<span class='success'>运行中</span>" : "<span class='danger'>未运行</span>"}</td>
-                            <td>\${node.cloudflare === "运行中" ? "<span class='success'>运行中</span>" : "<span class='danger'>未运行</span>"}</td>
-                        </tr>\`;
+                        const row = `<tr>
+                            <td>${node.user}</td>
+                            <td>${node.status === "在线" ? "<span class='success'>在线</span>" : "<span class='danger'>离线</span>"}</td>
+                            <td>${node.singboxsb === "运行中" ? "<span class='success'>运行中</span>" : "<span class='danger'>未运行</span>"}</td>
+                            <td>${node.cloudflare === "运行中" ? "<span class='success'>运行中</span>" : "<span class='danger'>未运行</span>"}</td>
+                        </tr>`;
                         table.innerHTML += row;
                     });
                 }
