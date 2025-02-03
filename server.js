@@ -59,11 +59,12 @@ app.delete("/accounts/:user", (req, res) => {
     res.json({ message: "账号已删除" });
 });
 
-// 获取所有账号的节点汇总（包括vmess和hysteria链接）
+// 获取所有账号的节点汇总（成功账号汇总节点，失败账号分开列出）
 app.get("/nodes-summary", async (req, res) => {
     const accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
     const users = Object.keys(accounts);
-    const results = [];
+    const successfulNodes = [];  // 存储成功获取节点的账号和节点
+    const failedUsers = [];      // 存储失败的账号
 
     await Promise.all(users.map(async (user) => {
         const nodeUrl = `https://${user}.serv00.net/node`;
@@ -77,17 +78,20 @@ app.get("/nodes-summary", async (req, res) => {
             const vmessLinks = nodeData.match(/vmess:\/\/[^\s]+/g) || [];
             const hysteriaLinks = nodeData.match(/hysteria2:\/\/[^\s]+/g) || [];
             nodeLinks = [...vmessLinks, ...hysteriaLinks];  // 汇总所有链接
+
+            // 如果节点链接存在，表示成功
+            if (nodeLinks.length > 0) {
+                successfulNodes.push({ user, nodeLinks });
+            } else {
+                failedUsers.push(user);  // 没有节点链接视为失败
+            }
         } catch (error) {
             console.error(`无法获取 ${user} 的节点信息`);
+            failedUsers.push(user); // 请求失败视为失败
         }
-
-        results.push({
-            user,
-            nodeLinks
-        });
     }));
 
-    res.json(results);
+    res.json({ successfulNodes, failedUsers });  // 返回成功和失败的账号
 });
 
 // 前端界面
@@ -118,15 +122,10 @@ app.get("/", (req, res) => {
 
             <h2>节点汇总</h2>
             <button onclick="fetchNodesSummary()">刷新节点汇总</button>
-            <table>
-                <thead>
-                    <tr>
-                        <th>账号</th>
-                        <th>节点链接</th>
-                    </tr>
-                </thead>
-                <tbody id="nodeSummaryTable"></tbody>
-            </table>
+            <h3>成功获取节点的账号</h3>
+            <div id="successfulNodes"></div>
+            <h3>获取节点失败的账号</h3>
+            <ul id="failedUsers"></ul>
 
             <script>
                 // 获取所有账号并展示为按钮
@@ -148,17 +147,19 @@ app.get("/", (req, res) => {
                 // 刷新节点汇总
                 async function fetchNodesSummary() {
                     const res = await fetch("/nodes-summary");
-                    const nodes = await res.json();
-                    const table = document.getElementById("nodeSummaryTable");
-                    table.innerHTML = "";
+                    const { successfulNodes, failedUsers } = await res.json();
 
-                    nodes.forEach(node => {
-                        const row = `<tr>
-                            <td>${node.user}</td>
-                            <td>${node.nodeLinks.length > 0 ? node.nodeLinks.join("<br>") : "<span class='danger'>无节点链接</span>"}</td>
-                        </tr>`;
-                        table.innerHTML += row;
-                    });
+                    // 显示成功获取节点的账号
+                    const successfulContainer = document.getElementById("successfulNodes");
+                    successfulContainer.innerHTML = successfulNodes.length > 0 ? successfulNodes.map(node => 
+                        `<div><strong>${node.user}</strong><br>${node.nodeLinks.join("<br>")}</div><br>`
+                    ).join('') : "<p>所有账号已成功获取节点信息</p>";
+
+                    // 显示获取失败的账号
+                    const failedContainer = document.getElementById("failedUsers");
+                    failedContainer.innerHTML = failedUsers.length > 0 ? failedUsers.map(user => 
+                        `<li>${user}</li>`
+                    ).join('') : "<p>没有获取失败的账号</p>";
                 }
 
                 // 页面加载后调用
