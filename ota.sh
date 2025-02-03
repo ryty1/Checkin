@@ -6,8 +6,8 @@ DOMAIN_NAME="${USER_NAME,,}.serv00.net"  # 转换为小写
 BASE_DIR="/home/$USER_NAME/domains/$DOMAIN_NAME"
 NODEJS_DIR="$BASE_DIR/public_nodejs"
 LOCAL_VERSION_FILE="$NODEJS_DIR/version.txt"  # 本地版本文件
-REMOTE_VERSION_URL="https://raw.githubusercontent.com/ryty1/serv00-save-me/main/version.txt"  # 远程版本URL
-REMOTE_DIR_URL="https://raw.githubusercontent.com/ryty1/serv00-save-me/main/"  # 远程文件目录
+REMOTE_VERSION_URL="https://raw.githubusercontent.com/ryty1/My-test/main/version.txt"  # 远程版本URL
+REMOTE_DIR_URL="https://raw.githubusercontent.com/ryty1/My-test/main/"  # 远程文件目录
 REMOTE_FILE_LIST_URL="${REMOTE_DIR_URL}file_list.txt"  # 远程 file_list.txt
 LOCAL_FILE_LIST="$NODEJS_DIR/file_list.txt"  # 本地 file_list.txt
 
