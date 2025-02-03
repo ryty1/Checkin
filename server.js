@@ -8,7 +8,7 @@ const path = require("path");
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
-const PORT = 3000;
+const PORT = 3001;
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 
 const MAIN_SERVER_USER = process.env.USER.toLowerCase();
