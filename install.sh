@@ -45,7 +45,7 @@ if [[ ! -d "$A2" ]]; then
     mkdir -p "$A2"
 fi
 cd "$A2" && npm init -y > /dev/null 2>&1
-if npm install dotenv basic-auth express axios > /dev/null 2>&1; then
+if npm install dotenv basic-auth express http socket.io axios > /dev/null 2>&1; then
     X " 安装 环境依赖 " 0
 else
     X " 环境依赖 安装失败 " 1
