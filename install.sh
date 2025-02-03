@@ -24,6 +24,7 @@ V=$(echo "$U" | tr '[:upper:]' '[:lower:]')
 W="$V.serv00.net"
 A1="/home/$U/domains/$W"
 A2="$A1/public_nodejs"
+B1="$A2/public"
 A3="https://github.com/ryty1/My-test/archive/refs/heads/main.zip"
 echo " ———————————————————————————————————————————————————————————— "
 cd && devil www del "$W" > /dev/null 2>&1
@@ -43,6 +44,9 @@ else
 fi
 if [[ ! -d "$A2" ]]; then
     mkdir -p "$A2"
+fi
+if [[ -d "$B1" ]]; then
+    rm -rf "$B1"
 fi
 cd "$A2" && npm init -y > /dev/null 2>&1
 if npm install dotenv basic-auth express http socket.io axios > /dev/null 2>&1; then
