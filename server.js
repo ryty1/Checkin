@@ -66,6 +66,8 @@ app.get("/nodes-summary", async (req, res) => {
     const successfulNodes = [];  // 存储成功获取节点的账号和节点
     const failedUsers = [];      // 存储失败的账号
 
+    let completed = 0; // 已完成的请求数量
+
     await Promise.all(users.map(async (user) => {
         const nodeUrl = `https://${user}.serv00.net/node`;
         let nodeLinks = [];
@@ -89,6 +91,9 @@ app.get("/nodes-summary", async (req, res) => {
             console.error(`无法获取 ${user} 的节点信息`);
             failedUsers.push(user); // 请求失败视为失败
         }
+
+        completed++; // 完成一个请求
+        io.emit('progress', { completed, total: users.length }); // 发送进度
     }));
 
     res.json({ successfulNodes, failedUsers });  // 返回成功和失败的账号
@@ -111,6 +116,8 @@ app.get("/", (req, res) => {
                 .account-button:hover { background-color: #45a049; }
                 .danger { color: red; }
                 .success { color: green; }
+                #progressBar { width: 100%; background-color: #f3f3f3; }
+                #progress { height: 20px; background-color: #4CAF50; text-align: center; color: white; width: 0; }
             </style>
         </head>
         <body>
@@ -127,7 +134,15 @@ app.get("/", (req, res) => {
             <h3>获取节点失败的账号</h3>
             <ul id="failedUsers"></ul>
 
+            <h3>处理进度</h3>
+            <div id="progressBar">
+                <div id="progress">0%</div>
+            </div>
+
+            <script src="/socket.io/socket.io.js"></script>
             <script>
+                const socket = io();
+
                 // 获取所有账号并展示为按钮
                 async function fetchAccounts() {
                     const res = await fetch("/accounts");
@@ -162,6 +177,14 @@ app.get("/", (req, res) => {
                     ).join('') : "<p>没有获取失败的账号</p>";
                 }
 
+                // 更新进度条
+                socket.on('progress', (data) => {
+                    const progress = (data.completed / data.total) * 100;
+                    const progressBar = document.getElementById("progress");
+                    progressBar.style.width = progress + "%";
+                    progressBar.textContent = Math.round(progress) + "%";
+                });
+
                 // 页面加载后调用
                 fetchAccounts();
             </script>
@@ -170,6 +193,14 @@ app.get("/", (req, res) => {
     `);
 });
 
-app.listen(PORT, () => {
+// 设置Socket.io
+const server = app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+});
+
+const io = require('socket.io')(server);
+
+// 启动时广播进度更新
+io.on('connection', (socket) => {
+    console.log('Client connected');
 });
