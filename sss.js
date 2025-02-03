@@ -1,139 +1,214 @@
-const express = require('express');
-const { exec } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const axios = require("axios");
+
 const app = express();
-const port = 3000;
+const PORT = 3000;
+const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 
-// 定义 OTA 脚本路径
-const otaScriptPath = path.join(__dirname, 'ota.sh');
+// 🚀 **默认添加自身服务器的账号**
+const MAIN_SERVER_USER = process.env.USER || "mainserver";  // 使用当前系统用户作为账号名，若为空，则默认使用 'mainserver'
 
-// 允许静态文件访问
-app.use(express.static(path.join(__dirname, 'public')));
+// 确保配置文件存在 & 默认账号添加
+function ensureDefaultAccount() {
+    let accounts = {};
+    if (fs.existsSync(ACCOUNTS_FILE)) {
+        accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+    }
+    if (!accounts[MAIN_SERVER_USER]) {
+        accounts[MAIN_SERVER_USER] = { user: MAIN_SERVER_USER };
+        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+    }
+}
+ensureDefaultAccount();
 
-// **执行 OTA 更新**
-app.get('/ota/update', (req, res) => {
-    exec(otaScriptPath, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`❌ 执行脚本错误: ${error.message}`);
-            return res.status(500).json({ success: false, message: error.message });
-        }
-        if (stderr) {
-            console.error(`❌ 脚本错误输出: ${stderr}`);
-            return res.status(500).json({ success: false, message: stderr });
-        }
-        
-        // 返回脚本执行的结果
-        res.json({ success: true, output: stdout });
-    });
+app.use(express.json());
+
+// 读取账号列表
+app.get("/accounts", (req, res) => {
+    if (!fs.existsSync(ACCOUNTS_FILE)) return res.json({});
+    const accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+    res.json(accounts);
 });
 
-// **前端页面 `/ota`**
-app.get('/ota', (req, res) => {
+// 添加或更新账号
+app.post("/accounts", (req, res) => {
+    const { user } = req.body;
+    if (!user) return res.status(400).json({ error: "账号不能为空" });
+
+    let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+    accounts[user] = { user };
+    fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+    res.json({ message: "账号已添加/更新" });
+});
+
+// 删除账号（禁止删除自身服务器账号）
+app.delete("/accounts/:user", (req, res) => {
+    const { user } = req.params;
+    if (user === MAIN_SERVER_USER) {
+        return res.status(400).json({ error: "无法删除自身服务器账号" });
+    }
+
+    let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+    if (accounts[user]) {
+        delete accounts[user];
+        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+    }
+
+    res.json({ message: "账号已删除" });
+});
+
+// 获取所有账号的节点状态
+app.get("/nodes", async (req, res) => {
+    const accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+    const users = Object.keys(accounts);
+    const results = [];
+
+    await Promise.all(users.map(async (user) => {
+        const nodeUrl = `https://${user}.serv00.net/node`;
+        const logUrl = `https://${user}.serv00.net/log`;
+        const infoUrl = `https://${user}.serv00.net/info`;
+
+        let singboxsbOnline = false;
+        let cloudflareOnline = false;
+        let status = "在线";
+
+        try {
+            const logResponse = await axios.get(logUrl, { timeout: 5000 });
+            const logData = logResponse.data;
+
+            singboxsbOnline = logData.includes("singboxsb");
+            cloudflareOnline = logData.includes("cloudflare");
+        } catch (error) {
+            status = "离线";
+        }
+
+        if (!singboxsbOnline || !cloudflareOnline) {
+            try { await axios.get(infoUrl, { timeout: 5000 }); } catch (error) {}
+        }
+
+        results.push({
+            user,
+            status,
+            singboxsb: singboxsbOnline ? "运行中" : "未运行",
+            cloudflare: cloudflareOnline ? "运行中" : "未运行"
+        });
+    }));
+
+    res.json(results);
+});
+
+// 前端界面
+app.get("/", (req, res) => {
     res.send(`
-    <!DOCTYPE html>
-    <html lang="zh-CN">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>OTA 更新</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                background-color: #f4f4f9;
-                margin: 0;
-                padding: 0;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-            }
-            .container {
-                width: 80%;
-                max-width: 800px;
-                padding: 20px;
-                background-color: #fff;
-                border-radius: 8px;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            }
-            h1 {
-                text-align: center;
-                color: #333;
-            }
-            button {
-                display: block;
-                margin: 20px auto;
-                padding: 10px 20px;
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 16px;
-                transition: background-color 0.3s;
-            }
-            button:hover {
-                background-color: #45a049;
-            }
-            #result {
-                margin-top: 20px;
-                font-size: 16px;
-            }
-            .result-item {
-                padding: 10px;
-                border-radius: 5px;
-                margin-bottom: 10px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            .success {
-                background-color: #e7f9e7;
-                color: #4CAF50;
-            }
-            .failure {
-                background-color: #ffe6e6;
-                color: #f44336;
-            }
-            .info {
-                background-color: #e0f7fa;
-                color: #0288d1;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>OTA 更新</h1>
-            <button onclick="checkForUpdates()">检查更新</button>
-            <div id="result"></div>
-        </div>
+        <!DOCTYPE html>
+        <html lang="zh">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>主控端 - 账号管理 & 状态监控</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                h1 { text-align: center; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                th, td { border: 1px solid black; padding: 8px; text-align: center; }
+                th { background-color: #f2f2f2; }
+                input, button { padding: 8px; margin: 5px; }
+                .danger { color: red; }
+                .success { color: green; }
+            </style>
+        </head>
+        <body>
 
-        <script>
-            async function checkForUpdates() {
-                try {
-                    const response = await fetch('/ota/update');
-                    const data = await response.json();
+            <h1>主控端 - 账号管理 & 状态监控</h1>
 
-                    if (data.success) {
-                        const resultHtml = \`
-                            <h3>更新结果</h3>
-                            <pre>\${data.output}</pre>
-                        \`;
-                        document.getElementById('result').innerHTML = resultHtml;
-                    } else {
-                        document.getElementById('result').innerHTML = '<p class="failure">更新时发生错误</p>';
-                    }
-                } catch (error) {
-                    document.getElementById('result').innerHTML = '<p class="failure">请求失败</p>';
+            <h2>账号管理</h2>
+            <input type="text" id="newUser" placeholder="输入账号">
+            <button onclick="addAccount()">添加/更新账号</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>账号</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="accountTable"></tbody>
+            </table>
+
+            <h2>节点状态监控</h2>
+            <button onclick="fetchNodes()">刷新状态</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>账号</th>
+                        <th>状态</th>
+                        <th>singboxsb</th>
+                        <th>cloudflare</th>
+                    </tr>
+                </thead>
+                <tbody id="nodeTable"></tbody>
+            </table>
+
+            <script>
+                async function fetchAccounts() {
+                    const res = await fetch("/accounts");
+                    const accounts = await res.json();
+                    const table = document.getElementById("accountTable");
+                    table.innerHTML = "";
+
+                    Object.keys(accounts).forEach(user => {
+                        const deleteButton = user === "${MAIN_SERVER_USER}" ? "不可删除" : \`<button onclick="deleteAccount('\${user}')">删除</button>\`;
+                        const row = \`<tr>
+                            <td>\${user}</td>
+                            <td>\${deleteButton}</td>
+                        </tr>\`;
+                        table.innerHTML += row;
+                    });
                 }
-            }
-        </script>
-    </body>
-    </html>
+
+                async function addAccount() {
+                    const user = document.getElementById("newUser").value.trim();
+                    if (!user) return alert("请输入账号");
+                    await fetch("/accounts", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ user })
+                    });
+                    fetchAccounts();
+                }
+
+                async function deleteAccount(user) {
+                    await fetch(\`/accounts/\${user}\`, { method: "DELETE" });
+                    fetchAccounts();
+                }
+
+                async function fetchNodes() {
+                    const res = await fetch("/nodes");
+                    const nodes = await res.json();
+                    const table = document.getElementById("nodeTable");
+                    table.innerHTML = "";
+
+                    nodes.forEach(node => {
+                        const row = \`<tr>
+                            <td>\${node.user}</td>
+                            <td>\${node.status === "在线" ? "<span class='success'>在线</span>" : "<span class='danger'>离线</span>"}</td>
+                            <td>\${node.singboxsb === "运行中" ? "<span class='success'>运行中</span>" : "<span class='danger'>未运行</span>"}</td>
+                            <td>\${node.cloudflare === "运行中" ? "<span class='success'>运行中</span>" : "<span class='danger'>未运行</span>"}</td>
+                        </tr>\`;
+                        table.innerHTML += row;
+                    });
+                }
+
+                fetchAccounts();
+                fetchNodes();
+            </script>
+
+        </body>
+        </html>
     `);
 });
 
-// 启动服务器
-app.listen(port, () => {
-    console.log(`🚀 服务器运行在 http://localhost:${port}/ota`);
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
 });
