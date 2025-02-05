@@ -48,32 +48,14 @@
         .btn-secondary:hover {
             background-color: #1e7e34;
         }
-        .default-account {
-            margin-top: 20px;
-            font-size: 18px;
-            color: #555;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>欢迎来到管理系统</h1>
+        <p>本机账号：<strong>{{mainUser}}</strong></p>
         <button class="btn btn-primary" onclick="location.href='/accounts'">账号管理</button>
         <button class="btn btn-secondary" onclick="location.href='/nodes'">节点汇总</button>
-        <div class="default-account" id="defaultAccount">默认账号：加载中...</div>
     </div>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-
-        // 获取默认账号
-        socket.emit("getDefaultAccount");
-
-        socket.on("defaultAccount", (account) => {
-            const defaultAccountElement = document.getElementById("defaultAccount");
-            defaultAccountElement.innerHTML = `默认账号：${account}`;
-        });
-    </script>
 </body>
 </html>
