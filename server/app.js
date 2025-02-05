@@ -54,7 +54,7 @@ async function getNodesSummary(socket) {
             }
         } catch (error) {
             console.log(`Failed to get node for ${user}: ${error.message}`); // 输出失败的账号和错误
-            failedAccounts.push(user);  // 记录失败的账号
+            failedAccounts.push(user);  // 请求失败，记录该账号
         }
     }));
 
