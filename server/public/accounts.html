@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>账号管理</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 500px;
+            margin: 40px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+        }
+        .btn {
+            padding: 10px 15px;
+            margin-left: 5px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-success {
+            background-color: #28A745;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #1e7e34;
+        }
+        .btn-danger {
+            background-color: #DC3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #b02a37;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            padding: 10px;
+            background: #f9f9f9;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .delete-btn:hover {
+            background-color: #b02a37;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>账号管理</h1>
+
+        <div class="input-group">
+            <input type="text" id="accountUser" placeholder="请输入账号">
+            <button class="btn btn-success" onclick="saveAccount()">保存账号</button>
+        </div>
+
+        <ul id="accountList"></ul>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        function loadAccounts() {
+            socket.emit("loadAccounts");
+        }
+
+        function saveAccount() {
+            const user = document.getElementById("accountUser").value.trim();
+            if (user) {
+                socket.emit("saveAccount", { user });
+                document.getElementById("accountUser").value = '';
+            }
+        }
+
+        function deleteAccount(user) {
+            socket.emit("deleteAccount", user);
+        }
+
+        socket.on("accountsList", (accounts) => {
+            const accountList = document.getElementById("accountList");
+            accountList.innerHTML = Object.keys(accounts).map(user => 
+                `<li>
+                    <a href="/info?user=${user}">${user}</a> <!-- 添加跳转链接 -->
+                    <button class="delete-btn" onclick="deleteAccount('${user}')">删除</button>
+                </li>`
+            ).join("");
+        });
+
+        loadAccounts();
+    </script>
+</body>
+</html>
