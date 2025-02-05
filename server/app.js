@@ -44,7 +44,7 @@ async function getNodesSummary(socket) {
             const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
             const nodeData = nodeResponse.data;
 
-            // 解析并过滤无效节点
+            // 提取 `vmess://` 和 `hysteria2://` 的节点链接
             const nodeLinks = filterNodes([
                 ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []),
                 ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])
@@ -52,6 +52,9 @@ async function getNodesSummary(socket) {
 
             if (nodeLinks.length > 0) {
                 successfulNodes.push(...nodeLinks);
+            } else {
+                console.log(`Account ${user} connected but has no valid nodes.`);
+                failedAccounts.push(user);  // 请求成功但无有效节点，判定失败
             }
         } catch (error) {
             console.log(`Failed to get node for ${user}: ${error.message}`); // 输出失败的账号和错误
