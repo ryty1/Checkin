@@ -8,37 +8,11 @@ const fs = require("fs");
 const path = require("path");
 const app = express();
 
-const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
-// 获取本机账号
-const MAIN_SERVER_USER = process.env.USER ? process.env.USER.toLowerCase() : "default_user";
-const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
-// 定义 OTA 脚本路径
-const otaScriptPath = path.join(__dirname, 'ota.sh');
+const server = http.createServer(app);
+const io = socketIo(server);
+const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 
-app.use(express.json());
-let logs = [];
-let latestStartLog = "";
-function logMessage(message) {
-    logs.push(message);
-    if (logs.length > 5) logs.shift();
-}
-function executeCommand(command, actionName, isStartLog = false, callback) {
-    exec(command, (err, stdout, stderr) => {
-        const timestamp = new Date().toLocaleString();
-        if (err) {
-            logMessage(`${actionName} 执行失败: ${err.message}`);
-            if (callback) callback(err.message);
-            return;
-        }
-        if (stderr) {
-            logMessage(`${actionName} 执行标准错误输出: ${stderr}`);
-        }
-        const successMsg = `${actionName} 执行成功:\n${stdout}`;
-        logMessage(successMsg);
-        if (isStartLog) latestStartLog = successMsg;
-        if (callback) callback(stdout);
-    });
-}
+const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 
 // 获取本机账号
 const MAIN_SERVER_USER = process.env.USER ? process.env.USER.toLowerCase() : "default_user";
@@ -125,6 +99,19 @@ io.on("connection", (socket) => {
     socket.on("loadAccounts", async () => {
         socket.emit("accountsList", await getAccounts());
     });
+});
+
+// 提供前端页面
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/info", (req, res) => {
+    const user = req.query.user;
+    if (!user) return res.status(400).send("用户未指定");
+    res.redirect(`https://${user}.serv00.net/info`);
+});
+
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
 
 function runShellCommand() {
