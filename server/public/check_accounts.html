@@ -41,13 +41,30 @@
         .btn-primary:hover {
             background-color: #0056b3;
         }
+        .results-box {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .result-item {
+            padding: 8px;
+            font-size: 16px;
+            border-bottom: 1px solid #ddd;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>账号检测结果</h1>
         <button class="btn btn-primary" onclick="checkAccounts()">开始检测</button>
-        <div id="results"></div>
+        
+        <div id="results" class="results-box"></div>
     </div>
 
     <script>
@@ -58,8 +75,16 @@
                     if (data.status === "success") {
                         const results = data.results;
                         let resultHTML = '<h2>检测结果:</h2>';
-                        for (let user in results) {
-                            resultHTML += `<p>${user}: ${results[user]}</p>`;
+                        
+                        // 排序账号
+                        const sortedResults = Object.keys(results).sort().reduce((acc, key) => {
+                            acc[key] = results[key];
+                            return acc;
+                        }, {});
+
+                        // 构建结果HTML
+                        for (let user in sortedResults) {
+                            resultHTML += `<div class="result-item">${user}: ${sortedResults[user]}</div>`;
                         }
                         document.getElementById("results").innerHTML = resultHTML; // 显示检测结果
                     } else {
