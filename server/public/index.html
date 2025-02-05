@@ -49,11 +49,11 @@
             background-color: #1e7e34;
         }
         .btn-check {
-            background-color: #FFC107;
+            background-color: #FF5733; /* 橙色 */
             color: white;
         }
         .btn-check:hover {
-            background-color: #d39e00;
+            background-color: #C70039; /* 深红色 */
         }
     </style>
 </head>
@@ -63,7 +63,7 @@
         <p>本机账号：<strong id="mainUser">加载中...</strong></p>
         <button class="btn btn-primary" onclick="location.href='/accounts'">账号管理</button>
         <button class="btn btn-secondary" onclick="location.href='/nodes'">节点汇总</button>
-        <button class="btn btn-secondary" onclick="location.href='/checkAccountsPage'">账号检测</button>
+        <button class="btn btn-check" onclick="location.href='/checkAccountsPage'">账号检测</button>
     </div>
 
     <script>
