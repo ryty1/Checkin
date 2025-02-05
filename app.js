@@ -16,63 +16,6 @@ const MAIN_SERVER_USER = process.env.USER ? process.env.USER.toLowerCase() : "de
 
 app.use(express.static(path.join(__dirname, "public"))); // 提供静态文件
 
-// 获取当前系统的状态数据
-async function getSystemStatus() {
-    // 运行 Shell 命令并获取返回信息（假设这里有实际的命令执行）
-    await runShellCommand();
-    await KeepAlive();
-
-    return {
-        singboxStatus: "已复活",
-        htmlonliveStatus: "守护中",
-    };
-}
-
-// 提供 info 页面
-app.get("/info", async (req, res) => {
-    const systemStatus = await getSystemStatus();
-    res.json(systemStatus);  // 返回 JSON 数据
-});
-
-
-
-app.use(bodyParser.urlencoded({ extended: false }));
-
-// 访问 HY2_IP 页面（返回静态 HTML 文件）
-app.get("/hy2ip", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "hy2ip.html"));
-});
-
-// 处理 IP 更新请求
-app.post("/hy2ip/execute", (req, res) => {
-    const confirmation = req.body.confirmation?.trim();
-
-    if (confirmation !== "更新") {
-        return res.status(400).json({ error: "输入错误，请输入 '更新' 以确认执行 IP 更新。" });
-    }
-
-    try {
-        let updatedIp = "192.168.1.100"; // 假设的 IP 更新逻辑
-        res.json({
-            success: true,
-            message: `SingBox 配置文件成功更新 IP 为 ${updatedIp}`,
-            updatedIp,
-            logs: [
-                "命令执行成功",
-                `SingBox 配置文件成功更新 IP 为 ${updatedIp}`,
-                "sing-box 已重启"
-            ]
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "更新失败，请稍后再试。",
-            logs: ["命令执行失败", error.message]
-        });
-    }
-});
-
-
 
 // **确保本机账号存在**
 function ensureDefaultAccount() {
