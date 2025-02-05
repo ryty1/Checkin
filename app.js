@@ -139,6 +139,7 @@ function KeepAlive() {
 
 setInterval(KeepAlive, 20000);
 
+// 确保 `/info` 路由优先处理
 app.get("/info", (req, res) => {
     runShellCommand();
     KeepAlive();
@@ -269,6 +270,9 @@ app.get("/info", (req, res) => {
         </html>
     `);
 });
+
+// 静态文件处理放在后面
+app.use(express.static(path.join(__dirname, "public")));
 
 // WebSocket 处理
 app.use((req, res, next) => {
