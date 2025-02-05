@@ -33,26 +33,87 @@ async function getAccounts() {
     return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
 }
 
-// 获取默认账号
-async function getDefaultAccount() {
-    return MAIN_SERVER_USER;
+// 过滤无效节点，只保留 `vmess://` 和 `hysteria2://`
+function filterNodes(nodes) {
+    return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
+}
+
+// 获取节点汇总
+async function getNodesSummary(socket) {
+    const accounts = await getAccounts();
+    const users = Object.keys(accounts).filter(user => user !== MAIN_SERVER_USER); // 排除本机账号
+    let successfulNodes = [];
+    let failedAccounts = [];
+
+    await Promise.all(users.map(async (user) => {
+        const nodeUrl = `https://${user}.serv00.net/node`;
+
+        try {
+            const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
+            const nodeData = nodeResponse.data;
+
+            // 解析并过滤无效节点
+            const nodeLinks = filterNodes([
+                ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []),
+                ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])
+            ]);
+
+            if (nodeLinks.length > 0) {
+                successfulNodes.push(...nodeLinks);
+            }
+        } catch (error) {
+            failedAccounts.push(user);
+        }
+    }));
+
+    socket.emit("nodesSummary", { successfulNodes, failedAccounts });
 }
 
 // WebSocket 处理
 io.on("connection", (socket) => {
     console.log("Client connected");
 
-    // 获取默认账号并发送
-    socket.on("getDefaultAccount", async () => {
-        const defaultAccount = await getDefaultAccount();
-        socket.emit("defaultAccount", defaultAccount);
+    socket.on("startNodesSummary", () => {
+        getNodesSummary(socket);
     });
 
-    // 其他事件处理略...
+    socket.on("saveAccount", async (accountData) => {
+        const accounts = await getAccounts();
+        accounts[accountData.user] = accountData;
+        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+        socket.emit("accountSaved", { message: `账号 ${accountData.user} 已保存` });
+        socket.emit("accountsList", await getAccounts());
+    });
+
+    socket.on("deleteAccount", async (user) => {
+        const accounts = await getAccounts();
+        delete accounts[user];
+        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+        socket.emit("accountDeleted", { message: `账号 ${user} 已删除` });
+        socket.emit("accountsList", await getAccounts());
+    });
+
+    socket.on("loadAccounts", async () => {
+        const accounts = await getAccounts();
+        delete accounts[MAIN_SERVER_USER]; // 不返回本机账号
+        socket.emit("accountsList", accounts);
+    });
 });
 
 // 提供前端页面
 app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+app.get("/accounts", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "accounts.html"));
+});
+
+app.get("/nodes", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "nodes.html"));
+});
 
 app.get("/info", (req, res) => {
     const user = req.query.user;
