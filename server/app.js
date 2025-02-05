@@ -184,7 +184,7 @@ app.post("/setTelegramSettings", (req, res) => {
     const settings = { telegramToken, telegramChatId };
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
 
-    res.json({ message: "Telegram 设置已更新" });
+    res.json({ message: "TG 配置已更新" });
 });
 app.use(express.json()); // 解析 JSON 格式的请求体
 server.listen(PORT, () => {
