@@ -84,10 +84,6 @@
         .delete-btn:hover {
             background-color: #b02a37;
         }
-        #error-message {
-            color: red;
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
@@ -98,8 +94,6 @@
             <input type="text" id="accountUser" placeholder="请输入账号">
             <button class="btn btn-success" onclick="saveAccount()">保存账号</button>
         </div>
-
-        <div id="error-message"></div> <!-- 显示错误消息 -->
 
         <ul id="accountList"></ul>
     </div>
@@ -112,38 +106,18 @@
             socket.emit("loadAccounts");
         }
 
-        // 保存账号函数
         function saveAccount() {
             const user = document.getElementById("accountUser").value.trim();
-            const errorMessageDiv = document.getElementById("error-message");
-
             if (user) {
-                // 验证账号是否存在
-                const url = `https://${user}.serv00.net/info`;
-                axios.get(url)
-                    .then(response => {
-                        // 如果账号有效，则保存账号
-                        socket.emit("saveAccount", { user });
-                        document.getElementById("accountUser").value = ''; // 清空输入框
-                        errorMessageDiv.innerHTML = ''; // 清空错误消息
-                    })
-                    .catch(error => {
-                        // 如果状态码不是500，表示账号不可用或存在问题
-                        if (error.response && error.response.status === 500) {
-                            errorMessageDiv.innerHTML = `账号 ${user} 未存活或不存在，请检查。`;
-                        } else {
-                            errorMessageDiv.innerHTML = `无法连接账号 ${user}，请稍后再试。`;
-                        }
-                    });
+                socket.emit("saveAccount", { user });
+                document.getElementById("accountUser").value = '';
             }
         }
 
-        // 删除账号函数
         function deleteAccount(user) {
             socket.emit("deleteAccount", user);
         }
 
-        // 获取所有账号并显示
         socket.on("accountsList", (accounts) => {
             const accountList = document.getElementById("accountList");
             accountList.innerHTML = Object.keys(accounts).map(user => 
@@ -154,7 +128,6 @@
             ).join("");
         });
 
-        // 加载已保存的账号
         loadAccounts();
     </script>
 </body>
