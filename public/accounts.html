@@ -125,7 +125,7 @@
             const accountList = document.getElementById("accountList");
             accountList.innerHTML = Object.keys(accounts).map(user => 
                 `<li>
-                    <a href="/info?user=${user}" target="_blank">${user}</a>
+                    <a href="/to_info?user=${user}" target="_blank">${user}</a>
                     <button class="delete-btn" onclick="deleteAccount('${user}')">删除</button>
                 </li>`
             ).join("");
