@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>账号检测</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 12px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-primary {
+            background-color: #007BFF;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>账号检测结果</h1>
+        <button class="btn btn-primary" onclick="checkAccounts()">开始检测</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function checkAccounts() {
+            fetch('/checkAccounts')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        const results = data.results;
+                        let resultHTML = '<h2>检测结果:</h2>';
+                        for (let user in results) {
+                            resultHTML += `<p>${user}: ${results[user]}</p>`;
+                        }
+                        document.getElementById("results").innerHTML = resultHTML; // 显示检测结果
+                    } else {
+                        alert('检测失败，请稍后再试');
+                    }
+                })
+                .catch(error => {
+                    console.error('检测失败:', error);
+                    alert('检测失败，请稍后再试');
+                });
+        }
+    </script>
+</body>
+</html>
