@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Notification Settings</title>
+    <title>Telegram 通知设置</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,12 +23,13 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 400px;
+            text-align: left;
         }
 
         h1 {
-            text-align: center;
             font-size: 24px;
             color: #333;
+            text-align: left;
         }
 
         label {
@@ -67,16 +68,6 @@
         button:hover {
             background-color: #0056b3;
         }
-
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .footer p {
-            font-size: 14px;
-            color: #888;
-        }
     </style>
 </head>
 <body>
@@ -92,14 +83,10 @@
             
             <button type="submit">保存设置</button>
         </form>
-
-        <div class="footer">
-            <p>Powered by YourCompany</p>
-        </div>
     </div>
 
     <script>
-        // 页面加载时，获取已有的 Telegram 设置
+        // 页面加载时获取 Telegram 配置
         fetch("/getTelegramSettings")
             .then(response => response.json())
             .then(data => {
@@ -123,7 +110,9 @@
                 body: JSON.stringify({ telegramToken: token, telegramChatId: chatId }),
             })
             .then(response => response.json())
-            .then(data => alert(data.message))
+            .then(data => {
+                alert(data.message); // 提示用户保存成功
+            })
             .catch(error => console.error("保存 Telegram 设置失败:", error));
         });
     </script>
