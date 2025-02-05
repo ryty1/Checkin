@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时进度监控</title>
+    <style>
+        .progress { width: 100%; height: 20px; background-color: #f3f3f3; border-radius: 5px; }
+        .progress-bar { height: 100%; background-color: #4CAF50; text-align: center; color: white; line-height: 20px; }
+    </style>
+</head>
+<body>
+    <h1>实时进度监控</h1>
+
+    <div>
+        <button onclick="showAccountManagement()">账号管理</button>
+        <button onclick="startNodesSummary()">开始节点汇总</button>
+        <button onclick="startProcessMonitor()">开始进程监控</button>
+    </div>
+
+    <div class="progress" id="progressBarContainer" style="display: none;">
+        <div id="progressBar" class="progress-bar">0%</div>
+    </div>
+
+    <div id="resultContainer">
+        <h3>节点汇总</h3>
+        <div id="successfulNodes"></div>
+        <div id="failedAccounts"></div>
+    </div>
+
+    <div id="accountManagement" style="display:none;">
+        <h3>账号管理</h3>
+        <ul id="accountList"></ul>
+        <input type="text" id="accountUser" placeholder="请输入账号">
+        <button onclick="saveAccount()">保存账号</button>
+        <button onclick="deleteAccount()">删除账号</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        function showAccountManagement() {
+            document.getElementById("accountManagement").style.display = "block";
+            document.getElementById("progressBarContainer").style.display = "none";
+            loadAccounts();
+        }
+
+        function loadAccounts() {
+            socket.emit("loadAccounts");
+        }
+
+        function saveAccount() {
+            const user = document.getElementById("accountUser").value.trim();
+            if (!user) {
+                alert("账号不能为空");
+                return;
+            }
+            socket.emit("saveAccount", { user });
+        }
+
+        function deleteAccount() {
+            const user = document.getElementById("accountUser").value.trim();
+            if (!user) {
+                alert("账号不能为空");
+                return;
+            }
+            socket.emit("deleteAccount", user);
+        }
+
+        function startProcessMonitor() {
+            socket.emit("startProcessMonitor");
+        }
+
+        function startNodesSummary() {
+            socket.emit("startNodesSummary");
+        }
+
+        socket.on("progress", (data) => {
+            const progressBar = document.getElementById("progressBar");
+            const progressBarContainer = document.getElementById("progressBarContainer");
+
+            if (data.progress !== undefined) {
+                progressBarContainer.style.display = "block";
+                progressBar.style.width = data.progress + "%";
+                progressBar.textContent = data.progress + "%";
+            }
+        });
+
+        socket.on("nodesSummary", (data) => {
+            console.log("接收到的节点数据:", data);  // 方便调试
+
+            const successfulNodes = document.getElementById("successfulNodes");
+            const failedAccounts = document.getElementById("failedAccounts");
+
+            successfulNodes.innerHTML = "<b>成功的节点:</b><br>";
+            if (data.successfulNodes.length > 0) {
+                data.successfulNodes.forEach(node => {
+                    console.log("当前 node 数据:", node);
+                    successfulNodes.innerHTML += `<strong>${node.user}</strong>: <ul><li>${
+                        Array.isArray(node.nodeLinks) ? node.nodeLinks.join("</li><li>") : "无可用节点"
+                    }</li></ul><br>`;
+                });
+            } else {
+                successfulNodes.innerHTML += "没有找到成功的节点。<br>";
+            }
+
+            failedAccounts.innerHTML = "<b>失败的账号:</b><br>";
+            if (data.failedAccounts.length > 0) {
+                failedAccounts.innerHTML += data.failedAccounts.join("<br>");
+            } else {
+                failedAccounts.innerHTML += "没有失败的账号。<br>";
+            }
+        });
+
+        socket.on("processMonitorComplete", (data) => {
+            alert(data.message);
+        });
+
+        socket.on("nodesSummaryComplete", (data) => {
+            alert(data.message);
+        });
+
+        socket.on("accountSaved", (data) => {
+            alert(data.message);
+        });
+
+        socket.on("accountDeleted", (data) => {
+            alert(data.message);
+        });
+
+        socket.on("accountsList", (accounts) => {
+            const accountList = document.getElementById("accountList");
+            accountList.innerHTML = "";
+            for (const user in accounts) {
+                const li = document.createElement("li");
+                li.textContent = user;
+                accountList.appendChild(li);
+            }
+        });
+    </script>
+</body>
+</html>
