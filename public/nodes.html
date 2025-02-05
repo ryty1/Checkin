@@ -11,7 +11,7 @@
     <button onclick="startNodesSummary()">开始节点汇总</button>
     <button onclick="copyNodes()">复制成功的节点</button>
 
-    <div id="successfulNodes"></div>
+    <textarea id="successfulNodes" readonly></textarea>
     <div id="failedAccounts"></div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -24,28 +24,13 @@
         }
 
         function copyNodes() {
-            if (nodesText) {
-                navigator.clipboard.writeText(nodesText).then(() => {
-                    alert("节点已复制！");
-                });
-            } else {
-                alert("没有可复制的节点");
-            }
+            if (nodesText) navigator.clipboard.writeText(nodesText).then(() => alert("节点已复制！"));
         }
 
         socket.on("nodesSummary", (data) => {
-            const successfulNodesDiv = document.getElementById("successfulNodes");
-            const failedAccountsDiv = document.getElementById("failedAccounts");
-
-            if (data.successfulNodes.length > 0) {
-                nodesText = data.successfulNodes.join("\n");
-                successfulNodesDiv.innerHTML = data.successfulNodes.map(node => `<div>${node}</div>`).join("");
-            } else {
-                successfulNodesDiv.innerHTML = "没有成功的节点。";
-                nodesText = "";
-            }
-
-            failedAccountsDiv.innerHTML = data.failedAccounts.length
+            nodesText = data.successfulNodes.join("\n");
+            document.getElementById("successfulNodes").value = nodesText;
+            document.getElementById("failedAccounts").innerHTML = data.failedAccounts.length
                 ? `<b>失败的账号:</b><br>${data.failedAccounts.join("<br>")}`
                 : "";
         });
