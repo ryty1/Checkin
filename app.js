@@ -11,26 +11,17 @@ const io = socketIo(server);
 const PORT = 3000;
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 
-// 获取本机账号
+// 获取本机账号，仅用于主页显示
 const MAIN_SERVER_USER = process.env.USER ? process.env.USER.toLowerCase() : "default_user";
 
-// **确保本机账号存在**
-function ensureDefaultAccount() {
-    let accounts = {};
-    if (fs.existsSync(ACCOUNTS_FILE)) {
-        accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
-    }
-    if (!accounts[MAIN_SERVER_USER]) {
-        accounts[MAIN_SERVER_USER] = { user: MAIN_SERVER_USER };
-        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-    }
-}
-ensureDefaultAccount();
-
-// 获取所有账号
-async function getAccounts() {
+// 获取所有账号（不包含本机账号）
+async function getAccounts(excludeMainUser = true) {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
-    return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+    let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+    if (excludeMainUser) {
+        delete accounts[MAIN_SERVER_USER]; // 账号管理和节点汇总排除本机账号
+    }
+    return accounts;
 }
 
 // 过滤无效节点，只保留 `vmess://` 和 `hysteria2://`
@@ -40,8 +31,8 @@ function filterNodes(nodes) {
 
 // 获取节点汇总
 async function getNodesSummary(socket) {
-    const accounts = await getAccounts();
-    const users = Object.keys(accounts).filter(user => user !== MAIN_SERVER_USER); // 排除本机账号
+    const accounts = await getAccounts(true); // 排除本机账号
+    const users = Object.keys(accounts);
     let successfulNodes = [];
     let failedAccounts = [];
 
@@ -78,43 +69,50 @@ io.on("connection", (socket) => {
     });
 
     socket.on("saveAccount", async (accountData) => {
-        const accounts = await getAccounts();
+        const accounts = await getAccounts(false);
         accounts[accountData.user] = accountData;
         fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
         socket.emit("accountSaved", { message: `账号 ${accountData.user} 已保存` });
-        socket.emit("accountsList", await getAccounts());
+        socket.emit("accountsList", await getAccounts(true));
     });
 
     socket.on("deleteAccount", async (user) => {
-        const accounts = await getAccounts();
+        const accounts = await getAccounts(false);
         delete accounts[user];
         fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
         socket.emit("accountDeleted", { message: `账号 ${user} 已删除` });
-        socket.emit("accountsList", await getAccounts());
+        socket.emit("accountsList", await getAccounts(true));
     });
 
     socket.on("loadAccounts", async () => {
-        const accounts = await getAccounts();
-        delete accounts[MAIN_SERVER_USER]; // 不返回本机账号
-        socket.emit("accountsList", accounts);
+        socket.emit("accountsList", await getAccounts(true));
     });
 });
 
 // 提供前端页面
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/", (req, res) => {
+// 主页，传递本机账号
+app.get("/", async (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// 主页接口，单独获取本机账号（不会写入 `accounts.json`）
+app.get("/getMainUser", (req, res) => {
+    res.json({ mainUser: MAIN_SERVER_USER });
+});
+
+// 账号管理页面
 app.get("/accounts", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "accounts.html"));
 });
 
+// 节点汇总页面
 app.get("/nodes", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "nodes.html"));
 });
 
+// 跳转到指定用户的节点页面
 app.get("/info", (req, res) => {
     const user = req.query.user;
     if (!user) return res.status(400).send("用户未指定");
