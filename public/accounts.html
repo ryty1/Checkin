@@ -122,7 +122,7 @@
             const accountList = document.getElementById("accountList");
             accountList.innerHTML = Object.keys(accounts).map(user => 
                 `<li>
-                    <span>${user}</span>
+                    <a href="/info?user=${user}">${user}</a> <!-- 添加跳转链接 -->
                     <button class="delete-btn" onclick="deleteAccount('${user}')">删除</button>
                 </li>`
             ).join("");
