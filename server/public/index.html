@@ -48,12 +48,19 @@
         .btn-secondary:hover {
             background-color: #1e7e34;
         }
-        .btn-check {
+        .btn-account-check {
             background-color: #FF5733; /* 橙色 */
             color: white;
         }
-        .btn-check:hover {
+        .btn-account-check:hover {
             background-color: #C70039; /* 深红色 */
+        }
+        .btn-notification-settings {
+            background-color: #333333; /* 浅黑色 */
+            color: white;
+        }
+        .btn-notification-settings:hover {
+            background-color: #1a1a1a; /* 更深的黑色 */
         }
     </style>
 </head>
@@ -63,8 +70,8 @@
         <p>本机账号：<strong id="mainUser">加载中...</strong></p>
         <button class="btn btn-primary" onclick="location.href='/accounts'">账号管理</button>
         <button class="btn btn-secondary" onclick="location.href='/nodes'">节点汇总</button>
-        <button class="btn btn-check" onclick="location.href='/checkAccountsPage'">账号检测</button>
-        <button class="btn btn-check" onclick="location.href='/notificationSettings'">通知设置</button>
+        <button class="btn btn-account-check" onclick="location.href='/checkAccountsPage'">账号检测</button>
+        <button class="btn btn-notification-settings" onclick="location.href='/notificationSettings'">通知设置</button>
     </div>
 
     <script>
