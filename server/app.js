@@ -36,6 +36,7 @@ async function getNodesSummary(socket) {
     let successfulNodes = [];
     let failedAccounts = [];
 
+    // 遍历所有账号，尝试获取节点数据
     await Promise.all(users.map(async (user) => {
         const nodeUrl = `https://${user}.serv00.net/node`;
 
@@ -61,6 +62,7 @@ async function getNodesSummary(socket) {
     console.log('成功的节点:', successfulNodes);
     console.log('失败的账号:', failedAccounts);  // 输出失败的账号，确保其包含数据
 
+    // 向客户端发送数据
     socket.emit("nodesSummary", { successfulNodes, failedAccounts });
 }
 
