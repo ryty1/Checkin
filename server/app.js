@@ -12,9 +12,34 @@ const server = http.createServer(app);
 const io = socketIo(server);
 const PORT = 3000;
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
+const SETTINGS_FILE = path.join(__dirname, "settings.json");
 
 // 获取本机账号，仅用于主页显示
 const MAIN_SERVER_USER = process.env.USER ? process.env.USER.toLowerCase() : "default_user";
+
+// 获取所有账号（不包含本机账号）
+async function getAccounts(excludeMainUser = true) {
+    if (!fs.existsSync(ACCOUNTS_FILE)) return {};
+    let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+    if (excludeMainUser) {
+        delete accounts[MAIN_SERVER_USER]; // 账号管理和节点汇总排除本机账号
+    }
+    return accounts;
+}
+
+// 获取 Telegram 设置
+function getTelegramSettings() {
+    if (!fs.existsSync(SETTINGS_FILE)) {
+        return null;
+    }
+    return JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
+}
+
+// 更新 Telegram 设置
+async function updateTelegramSettings(token, chatId) {
+    const settings = { telegramToken: token, telegramChatId: chatId };
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+}
 
 // 发送账号检测结果到 Telegram
 async function sendCheckResultsToTG() {
@@ -55,97 +80,14 @@ async function sendCheckResultsToTG() {
 }
 
 // 定时任务：每天早上8点自动检测
-cron.schedule('5 * * * *', () => {
+cron.schedule('0 8 * * *', () => {
     console.log('启动每日账号检测');
     sendCheckResultsToTG();
 });
 
-// 获取所有账号（不包含本机账号）
-async function getAccounts(excludeMainUser = true) {
-    if (!fs.existsSync(ACCOUNTS_FILE)) return {};
-    let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
-    if (excludeMainUser) {
-        delete accounts[MAIN_SERVER_USER]; // 账号管理和节点汇总排除本机账号
-    }
-    return accounts;
-}
-
-// 过滤无效节点，只保留 `vmess://` 和 `hysteria2://`
-function filterNodes(nodes) {
-    return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
-}
-
-// 获取节点汇总
-async function getNodesSummary(socket) {
-    const accounts = await getAccounts(true); // 排除本机账号
-    const users = Object.keys(accounts);
-    let successfulNodes = [];
-    let failedAccounts = [];
-
-    // 遍历所有账号，尝试获取节点数据
-    await Promise.all(users.map(async (user) => {
-        const nodeUrl = `https://${user}.serv00.net/node`;
-
-        try {
-            const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
-            const nodeData = nodeResponse.data;
-
-            // 提取 `vmess://` 和 `hysteria2://` 的节点链接
-            const nodeLinks = filterNodes([
-                ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []),
-                ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])
-            ]);
-
-            if (nodeLinks.length > 0) {
-                successfulNodes.push(...nodeLinks);
-            } else {
-                console.log(`Account ${user} connected but has no valid nodes.`);
-                failedAccounts.push(user);  // 请求成功但无有效节点，判定失败
-            }
-        } catch (error) {
-            console.log(`Failed to get node for ${user}: ${error.message}`); // 输出失败的账号和错误
-            failedAccounts.push(user);  // 请求失败，记录该账号
-        }
-    }));
-
-    console.log('成功的节点:', successfulNodes);
-    console.log('失败的账号:', failedAccounts);  // 输出失败的账号，确保其包含数据
-
-    // 向客户端发送数据
-    socket.emit("nodesSummary", { successfulNodes, failedAccounts });
-}
-
-// WebSocket 处理
-io.on("connection", (socket) => {
-    console.log("Client connected");
-
-    socket.on("startNodesSummary", () => {
-        getNodesSummary(socket);
-    });
-
-    socket.on("saveAccount", async (accountData) => {
-        const accounts = await getAccounts(false);
-        accounts[accountData.user] = accountData;
-        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-        socket.emit("accountSaved", { message: `账号 ${accountData.user} 已保存` });
-        socket.emit("accountsList", await getAccounts(true));
-    });
-
-    socket.on("deleteAccount", async (user) => {
-        const accounts = await getAccounts(false);
-        delete accounts[user];
-        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-        socket.emit("accountDeleted", { message: `账号 ${user} 已删除` });
-        socket.emit("accountsList", await getAccounts(true));
-    });
-
-    socket.on("loadAccounts", async () => {
-        socket.emit("accountsList", await getAccounts(true));
-    });
-});
-
 // 提供前端页面
 app.use(express.static(path.join(__dirname, "public")));
+app.use(express.json()); // 解析 JSON 格式的请求体
 
 // 主页，传递本机账号
 app.get("/", async (req, res) => {
@@ -216,10 +158,6 @@ app.get("/checkAccounts", async (req, res) => {
         res.status(500).json({ status: "error", message: "检测失败，请稍后再试" });
     }
 });
-// Telegram 设置页面
-app.get("/notificationSettings", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
-});
 
 // 设置 Telegram 配置（用于通知设置）
 app.post("/setTelegramSettings", async (req, res) => {
@@ -229,10 +167,10 @@ app.post("/setTelegramSettings", async (req, res) => {
     }
 
     // 更新设置
-    const settings = { telegramToken, telegramChatId };
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+    await updateTelegramSettings(telegramToken, telegramChatId);
     res.json({ message: "Telegram 设置更新成功" });
 });
+
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
