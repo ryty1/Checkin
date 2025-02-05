@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>账号检测</title>
+    <title>账号管理</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,8 +13,8 @@
             padding: 0;
         }
         .container {
-            max-width: 600px;
-            margin: 50px auto;
+            max-width: 500px;
+            margin: 40px auto;
             background: white;
             padding: 20px;
             border-radius: 10px;
@@ -23,117 +23,139 @@
         h1 {
             color: #333;
         }
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+        }
         .btn {
-            display: block;
-            width: 100%;
-            margin: 10px 0;
-            padding: 12px;
-            font-size: 18px;
+            padding: 10px 15px;
+            margin-left: 5px;
+            font-size: 16px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: 0.3s;
         }
-        .btn-primary {
-            background-color: #007BFF;
+        .btn-success {
+            background-color: #28A745;
             color: white;
         }
-        .btn-primary:hover {
-            background-color: #0056b3;
+        .btn-success:hover {
+            background-color: #1e7e34;
         }
-        .results-box {
-            margin-top: 15px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            text-align: left;
+        .btn-danger {
+            background-color: #DC3545;
+            color: white;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .btn-danger:hover {
+            background-color: #b02a37;
         }
-        th, td {
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            padding: 10px;
+            background: #f9f9f9;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
             padding: 5px 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
         }
-        th {
-            background-color: #f0f0f0;
+        .delete-btn:hover {
+            background-color: #b02a37;
         }
-        .status {
-            text-align: left;
+        #error-message {
+            color: red;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>账号检测</h1>
-        <p style="font-size: 14px; color: red;">默认每天8点自动检测一次，设置通知接收明细</p>
+        <h1>账号管理</h1>
+
         <div class="input-group">
             <input type="text" id="accountUser" placeholder="请输入账号">
-            <button class="btn btn-primary" onclick="saveAccount()">保存账号</button>
+            <button class="btn btn-success" onclick="saveAccount()">保存账号</button>
         </div>
-        <div id="results" class="results-box"></div>
+
+        <div id="error-message"></div> <!-- 显示错误消息 -->
+
+        <ul id="accountList"></ul>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
 
+        function loadAccounts() {
+            socket.emit("loadAccounts");
+        }
+
         // 保存账号函数
         function saveAccount() {
             const user = document.getElementById("accountUser").value.trim();
+            const errorMessageDiv = document.getElementById("error-message");
+
             if (user) {
-                // 验证账号
+                // 验证账号是否存在
                 const url = `https://${user}.serv00.net/info`;
                 axios.get(url)
                     .then(response => {
-                        // 如果状态码不是500，则表示账号存在或存活
-                        alert('账号未存活或账号不存在');
+                        // 如果账号有效，则保存账号
+                        socket.emit("saveAccount", { user });
+                        document.getElementById("accountUser").value = ''; // 清空输入框
+                        errorMessageDiv.innerHTML = ''; // 清空错误消息
                     })
                     .catch(error => {
-                        // 如果响应为500，则允许保存账号
+                        // 如果状态码不是500，表示账号不可用或存在问题
                         if (error.response && error.response.status === 500) {
-                            socket.emit("saveAccount", { user });
-                            alert(`账号 ${user} 已保存`);
+                            errorMessageDiv.innerHTML = `账号 ${user} 未存活或不存在，请检查。`;
                         } else {
-                            alert('账号未存活或账号不存在');
+                            errorMessageDiv.innerHTML = `无法连接账号 ${user}，请稍后再试。`;
                         }
                     });
             }
         }
 
-        function checkAccounts() {
-            fetch('/checkAccounts')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === "success") {
-                        const results = data.results;
-                        let resultHTML = '<table>';
-                        resultHTML += '<tr><th>#</th><th>账号</th><th>状态</th></tr>';
-
-                        // 排序账号
-                        const sortedUsers = Object.keys(results).sort();
-                        sortedUsers.forEach((user, index) => {
-                            resultHTML += `<tr>
-                                <td>${index + 1}</td>
-                                <td>${user}</td>
-                                <td class="status">${results[user]}</td>
-                            </tr>`;
-                        });
-
-                        resultHTML += '</table>';
-                        document.getElementById("results").innerHTML = resultHTML;
-                    } else {
-                        alert('检测失败，请稍后再试');
-                    }
-                })
-                .catch(error => {
-                    console.error('检测失败:', error);
-                    alert('检测失败，请稍后再试');
-                });
+        // 删除账号函数
+        function deleteAccount(user) {
+            socket.emit("deleteAccount", user);
         }
+
+        // 获取所有账号并显示
+        socket.on("accountsList", (accounts) => {
+            const accountList = document.getElementById("accountList");
+            accountList.innerHTML = Object.keys(accounts).map(user => 
+                `<li>
+                    <a href="/info?user=${user}">${user}</a> <!-- 添加跳转链接 -->
+                    <button class="delete-btn" onclick="deleteAccount('${user}')">删除</button>
+                </li>`
+            ).join("");
+        });
+
+        // 加载已保存的账号
+        loadAccounts();
     </script>
 </body>
 </html>
