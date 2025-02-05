@@ -163,27 +163,30 @@ app.get("/checkAccounts", async (req, res) => {
 app.get("/notificationSettings", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
 });
-// 获取 Telegram 设置
+// 获取 Telegram 设置（如果文件不存在，则返回空值）
 app.get("/getTelegramSettings", (req, res) => {
     if (!fs.existsSync(SETTINGS_FILE)) {
-        return res.json({ telegramToken: "", telegramChatId: "" }); // 如果文件不存在，返回空值
+        return res.json({ telegramToken: "", telegramChatId: "" }); // 默认返回空数据
     }
-
     const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
     res.json(settings);
 });
-// 设置 Telegram 配置（用于通知设置）
-app.post("/setTelegramSettings", async (req, res) => {
+
+// 保存 Telegram 设置，每次提交都会覆盖之前的值
+app.post("/setTelegramSettings", (req, res) => {
     const { telegramToken, telegramChatId } = req.body;
+
     if (!telegramToken || !telegramChatId) {
         return res.status(400).json({ message: "Telegram 配置不完整" });
     }
 
-    // 更新设置
-    await updateTelegramSettings(telegramToken, telegramChatId);
-    res.json({ message: "Telegram 设置更新成功" });
-});
+    // 直接覆盖 `settings.json` 文件
+    const settings = { telegramToken, telegramChatId };
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
 
+    res.json({ message: "Telegram 设置已更新" });
+});
+app.use(express.json()); // 解析 JSON 格式的请求体
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
