@@ -101,7 +101,7 @@ io.on("connection", (socket) => {
 // 提供前端页面
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/info", (req, res) => {
+app.get("/to_info", (req, res) => {
     const user = req.query.user;
     if (!user) return res.status(400).send("用户未指定");
     res.redirect(`https://${user}.serv00.net/info`);
