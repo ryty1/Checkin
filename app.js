@@ -11,34 +11,18 @@ const io = socketIo(server);
 const PORT = 3000;
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 
-// 确保配置文件存在 & 默认账号添加
-const MAIN_SERVER_USER = process.env.USER.toLowerCase();
-function ensureDefaultAccount() {
-    let accounts = {};
-    if (fs.existsSync(ACCOUNTS_FILE)) {
-        accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
-    }
-    if (!accounts[MAIN_SERVER_USER]) {
-        accounts[MAIN_SERVER_USER] = { user: MAIN_SERVER_USER };
-        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-    }
-}
-ensureDefaultAccount();
-
-// 获取所有账号
+// 账号管理
 async function getAccounts() {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
     return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
 }
 
-// 添加/修改账号
 async function saveAccount(user, accountData) {
     const accounts = await getAccounts();
     accounts[user] = accountData;
     fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
 }
 
-// 删除账号
 async function deleteAccount(user) {
     const accounts = await getAccounts();
     delete accounts[user];
@@ -87,11 +71,13 @@ io.on("connection", (socket) => {
     socket.on("saveAccount", async (accountData) => {
         await saveAccount(accountData.user, accountData);
         socket.emit("accountSaved", { message: `账号 ${accountData.user} 已保存` });
+        socket.emit("accountsList", await getAccounts()); // 立即更新前端
     });
 
     socket.on("deleteAccount", async (user) => {
         await deleteAccount(user);
         socket.emit("accountDeleted", { message: `账号 ${user} 已删除` });
+        socket.emit("accountsList", await getAccounts()); // 立即更新前端
     });
 
     socket.on("loadAccounts", async () => {
@@ -99,20 +85,17 @@ io.on("connection", (socket) => {
     });
 });
 
-// 设置静态文件服务，确保 `public` 目录下的 HTML 文件可以访问
-app.use(express.static(path.join(__dirname, 'public')));
+// 提供前端页面
+app.use(express.static(path.join(__dirname, "public")));
 
-// 主页路由
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// 账号管理页面路由
 app.get("/accounts", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "accounts.html"));
 });
 
-// 节点汇总页面路由
 app.get("/nodes", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "nodes.html"));
 });
