@@ -48,6 +48,13 @@
         .btn-secondary:hover {
             background-color: #1e7e34;
         }
+        .btn-check {
+            background-color: #FFC107;
+            color: white;
+        }
+        .btn-check:hover {
+            background-color: #d39e00;
+        }
     </style>
 </head>
 <body>
@@ -56,6 +63,7 @@
         <p>本机账号：<strong id="mainUser">加载中...</strong></p>
         <button class="btn btn-primary" onclick="location.href='/accounts'">账号管理</button>
         <button class="btn btn-secondary" onclick="location.href='/nodes'">节点汇总</button>
+        <button class="btn btn-check" onclick="checkAccount()">账号检测</button>
     </div>
 
     <script>
@@ -68,6 +76,18 @@
             .catch(error => {
                 document.getElementById("mainUser").innerText = "获取失败";
             });
+
+        // 账号检测函数
+        function checkAccount() {
+            fetch("/checkAccount")
+                .then(response => response.json())
+                .then(data => {
+                    alert("账号检测结果: " + data.result);
+                })
+                .catch(error => {
+                    alert("账号检测失败，请稍后重试");
+                });
+        }
     </script>
 </body>
 </html>
