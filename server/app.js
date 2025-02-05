@@ -128,6 +128,49 @@ app.get("/info", (req, res) => {
     res.redirect(`https://${user}.serv00.net/info`);
 });
 
+// 账号检测页面
+app.get("/checkAccountsPage", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
+});
+
+// 账号批量检测路由
+app.get("/checkAccounts", async (req, res) => {
+    try {
+        const accounts = await getAccounts(false); // 获取所有账号
+        const users = Object.keys(accounts);
+
+        if (users.length === 0) {
+            return res.json({ status: "success", results: {} });
+        }
+
+        let results = {};
+
+        // 遍历所有账号，异步请求 API
+        await Promise.all(users.map(async (username) => {
+            try {
+                const apiUrl = `https://s00test.64t76dee9sk5.workers.dev/?username=${username}`;
+                const response = await axios.get(apiUrl);
+                const data = response.data;
+
+                if (data.message) {
+                    const parts = data.message.split("："); // 使用全角冒号拆分
+                    results[username] = parts.length > 1 ? parts.pop() : data.message; // 取最后一个部分
+                } else {
+                    results[username] = "未知状态";
+                }
+            } catch (error) {
+                console.error(`账号 ${username} 检测失败:`, error.message);
+                results[username] = "检测失败";
+            }
+        }));
+
+        res.json({ status: "success", results });
+    } catch (error) {
+        console.error("批量账号检测错误:", error);
+        res.status(500).json({ status: "error", message: "检测失败，请稍后再试" });
+    }
+});
+
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
