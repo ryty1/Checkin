@@ -4,18 +4,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Notification Settings</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            margin-left: 20px; /* To slightly shift the content to the right */
+        }
+
+        h1 {
+            text-align: left;
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0 20px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .footer {
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        .footer p {
+            font-size: 14px;
+            color: #888;
+        }
+    </style>
 </head>
 <body>
-    <h1>Telegram Notification Settings</h1>
-    <form id="telegramSettingsForm">
-        <label for="telegramToken">Telegram Bot Token:</label>
-        <input type="text" id="telegramToken" name="telegramToken" required>
-        <br><br>
-        <label for="telegramChatId">Telegram Chat ID:</label>
-        <input type="text" id="telegramChatId" name="telegramChatId" required>
-        <br><br>
-        <button type="submit">Save Settings</button>
-    </form>
+
+    <div class="container">
+        <h1>Telegram 设置</h1>
+        <form id="telegramSettingsForm">
+            <label for="telegramToken">Telegram Bot Token:</label>
+            <input type="text" id="telegramToken" name="telegramToken" required placeholder="Enter your bot token">
+            
+            <label for="telegramChatId">Telegram Chat ID:</label>
+            <input type="text" id="telegramChatId" name="telegramChatId" required placeholder="Enter your chat ID">
+            
+            <button type="submit">Save Settings</button>
+        </form>
+
+        <div class="footer">
+            <p>Powered by YourCompany</p>
+        </div>
+    </div>
 
     <script>
         document.getElementById("telegramSettingsForm").addEventListener("submit", function (e) {
@@ -36,5 +119,6 @@
             .catch(error => console.error("Error:", error));
         });
     </script>
+
 </body>
 </html>
