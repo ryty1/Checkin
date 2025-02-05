@@ -4,6 +4,8 @@ const socketIo = require("socket.io");
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
+const cron = require("node-cron");
+const TelegramBot = require('node-telegram-bot-api');
 
 const app = express();
 const server = http.createServer(app);
@@ -13,6 +15,50 @@ const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 
 // 获取本机账号，仅用于主页显示
 const MAIN_SERVER_USER = process.env.USER ? process.env.USER.toLowerCase() : "default_user";
+
+// 发送账号检测结果到 Telegram
+async function sendCheckResultsToTG() {
+    try {
+        const settings = getTelegramSettings();
+        if (!settings) {
+            console.log("Telegram 设置不存在");
+            return;
+        }
+
+        const { telegramToken, telegramChatId } = settings;
+
+        const bot = new TelegramBot(telegramToken, { polling: false });
+        const response = await axios.get("http://localhost:3000/checkAccounts"); // 本地 API 调用
+        const data = response.data.results;
+
+        if (!data || Object.keys(data).length === 0) {
+            await bot.sendMessage(telegramChatId, "账号检测结果：没有账号需要检测");
+            return;
+        }
+
+        let message = "📋 账号检测结果：\n";
+        let index = 1;
+        for (const [user, status] of Object.entries(data)) {
+            message += `${index}. ${user}: ${status}\n`;
+            index++;
+        }
+
+        await bot.sendMessage(telegramChatId, message);
+    } catch (error) {
+        console.error("发送 TG 失败：", error);
+        const settings = getTelegramSettings();
+        if (settings && settings.telegramChatId) {
+            const bot = new TelegramBot(settings.telegramToken, { polling: false });
+            await bot.sendMessage(settings.telegramChatId, "❌ 账号检测失败，无法获取数据");
+        }
+    }
+}
+
+// 定时任务：每天早上8点自动检测
+cron.schedule('5 * * * *', () => {
+    console.log('启动每日账号检测');
+    sendCheckResultsToTG();
+});
 
 // 获取所有账号（不包含本机账号）
 async function getAccounts(excludeMainUser = true) {
@@ -170,7 +216,23 @@ app.get("/checkAccounts", async (req, res) => {
         res.status(500).json({ status: "error", message: "检测失败，请稍后再试" });
     }
 });
+// Telegram 设置页面
+app.get("/notificationSettings", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
+});
 
+// 设置 Telegram 配置（用于通知设置）
+app.post("/setTelegramSettings", async (req, res) => {
+    const { telegramToken, telegramChatId } = req.body;
+    if (!telegramToken || !telegramChatId) {
+        return res.status(400).json({ message: "Telegram 配置不完整" });
+    }
+
+    // 更新设置
+    const settings = { telegramToken, telegramChatId };
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+    res.json({ message: "Telegram 设置更新成功" });
+});
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
