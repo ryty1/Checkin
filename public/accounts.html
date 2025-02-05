@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>账号管理</title>
+</head>
+<body>
+    <h1>账号管理</h1>
+
+    <ul id="accountList"></ul>
+
+    <input type="text" id="accountUser" placeholder="请输入账号">
+    <button onclick="saveAccount()">保存账号</button>
+    <button onclick="deleteAccount()">删除账号</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        function loadAccounts() {
+            socket.emit("loadAccounts");
+        }
+
+        function saveAccount() {
+            const user = document.getElementById("accountUser").value.trim();
+            if (!user) {
+                alert("账号不能为空");
+                return;
+            }
+            socket.emit("saveAccount", { user });
+        }
+
+        function deleteAccount() {
+            const user = document.getElementById("accountUser").value.trim();
+            if (!user) {
+                alert("账号不能为空");
+                return;
+            }
+            socket.emit("deleteAccount", user);
+        }
+
+        socket.on("accountSaved", (data) => alert(data.message));
+        socket.on("accountDeleted", (data) => alert(data.message));
+
+        socket.on("accountsList", (accounts) => {
+            const accountList = document.getElementById("accountList");
+            accountList.innerHTML = Object.keys(accounts).map(user => 
+                `<li><a href="/info?user=${user}" target="_blank">${user}</a></li>`).join("");
+        });
+
+        loadAccounts();
+    </script>
+</body>
+</html>
