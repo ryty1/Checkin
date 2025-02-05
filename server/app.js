@@ -230,6 +230,21 @@ app.get("/checkAccounts", async (req, res) => {
     }
 });
 
+// 获取和保存 Telegram 设置
+app.post("/setTelegramSettings", (req, res) => {
+    const { telegramToken, telegramChatId } = req.body;
+    if (!telegramToken || !telegramChatId) {
+        return res.status(400).json({ message: "Telegram 配置不完整" });
+    }
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ telegramToken, telegramChatId }, null, 2));
+    res.json({ message: "Telegram 设置已更新" });
+});
+
+// Telegram 设置页面
+app.get("/notificationSettings", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
+});
+
 server.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
 });
