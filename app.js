@@ -1,17 +1,19 @@
 require('dotenv').config();
 const express = require("express");
+const http = require("http");
+const socketIo = require("socket.io");
+const axios = require("axios");
 const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const app = express();
 
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
+// 获取本机账号
+const MAIN_SERVER_USER = process.env.USER ? process.env.USER.toLowerCase() : "default_user";
 const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
 // 定义 OTA 脚本路径
 const otaScriptPath = path.join(__dirname, 'ota.sh');
-
-// 允许静态文件访问
-app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(express.json());
 let logs = [];
@@ -37,6 +39,94 @@ function executeCommand(command, actionName, isStartLog = false, callback) {
         if (callback) callback(stdout);
     });
 }
+
+// 获取本机账号
+const MAIN_SERVER_USER = process.env.USER ? process.env.USER.toLowerCase() : "default_user";
+
+// **确保本机账号存在**
+function ensureDefaultAccount() {
+    let accounts = {};
+    if (fs.existsSync(ACCOUNTS_FILE)) {
+        accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+    }
+    if (!accounts[MAIN_SERVER_USER]) {
+        accounts[MAIN_SERVER_USER] = { user: MAIN_SERVER_USER };
+        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+    }
+}
+ensureDefaultAccount();
+
+// 获取所有账号
+async function getAccounts() {
+    if (!fs.existsSync(ACCOUNTS_FILE)) return {};
+    return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+}
+
+// 过滤无效节点，只保留 `vmess://` 和 `hysteria2://`
+function filterNodes(nodes) {
+    return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
+}
+
+// 获取节点汇总
+async function getNodesSummary(socket) {
+    const accounts = await getAccounts();
+    const users = Object.keys(accounts);
+    let successfulNodes = [];
+    let failedAccounts = [];
+
+    await Promise.all(users.map(async (user) => {
+        const nodeUrl = `https://${user}.serv00.net/node`;
+
+        try {
+            const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
+            const nodeData = nodeResponse.data;
+
+            // 解析并过滤无效节点
+            const nodeLinks = filterNodes([
+                ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []),
+                ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])
+            ]);
+
+            if (nodeLinks.length > 0) {
+                successfulNodes.push(...nodeLinks);
+            }
+        } catch (error) {
+            failedAccounts.push(user);
+        }
+    }));
+
+    socket.emit("nodesSummary", { successfulNodes, failedAccounts });
+}
+
+// WebSocket 处理
+io.on("connection", (socket) => {
+    console.log("Client connected");
+
+    socket.on("startNodesSummary", () => {
+        getNodesSummary(socket);
+    });
+
+    socket.on("saveAccount", async (accountData) => {
+        const accounts = await getAccounts();
+        accounts[accountData.user] = accountData;
+        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+        socket.emit("accountSaved", { message: `账号 ${accountData.user} 已保存` });
+        socket.emit("accountsList", await getAccounts());
+    });
+
+    socket.on("deleteAccount", async (user) => {
+        const accounts = await getAccounts();
+        delete accounts[user];
+        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+        socket.emit("accountDeleted", { message: `账号 ${user} 已删除` });
+        socket.emit("accountsList", await getAccounts());
+    });
+
+    socket.on("loadAccounts", async () => {
+        socket.emit("accountsList", await getAccounts());
+    });
+});
+
 function runShellCommand() {
     const command = `cd ${process.env.HOME}/serv00-play/singbox/ && bash start.sh`;
     executeCommand(command, "start.sh", true);
@@ -55,6 +145,15 @@ function KeepAlive() {
     executeCommand(command, "keepalive.sh", true);
 }
 setInterval(KeepAlive, 20000);
+
+
+// 提供前端页面
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/to_info", (req, res) => {
+    const user = req.query.user;
+    res.redirect(`https://${user}.serv00.net/info`);
+});
 
 app.get("/info", (req, res) => {
     runShellCommand();
