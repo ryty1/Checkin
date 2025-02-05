@@ -82,15 +82,15 @@
 <body>
 
     <div class="container">
-        <h1>Telegram Notification Settings</h1>
+        <h1>Telegram 通知设置</h1>
         <form id="telegramSettingsForm">
-            <label for="telegramToken">Telegram Bot Token:</label>
-            <input type="text" id="telegramToken" name="telegramToken" required placeholder="Enter your bot token">
+            <label for="telegramToken">Telegram 机器人 Token:</label>
+            <input type="text" id="telegramToken" name="telegramToken" required placeholder="输入你的机器人 Token">
             
             <label for="telegramChatId">Telegram Chat ID:</label>
-            <input type="text" id="telegramChatId" name="telegramChatId" required placeholder="Enter your chat ID">
+            <input type="text" id="telegramChatId" name="telegramChatId" required placeholder="输入你的 Chat ID">
             
-            <button type="submit">Save Settings</button>
+            <button type="submit">保存设置</button>
         </form>
 
         <div class="footer">
@@ -99,6 +99,16 @@
     </div>
 
     <script>
+        // 页面加载时，获取已有的 Telegram 设置
+        fetch("/getTelegramSettings")
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("telegramToken").value = data.telegramToken || "";
+                document.getElementById("telegramChatId").value = data.telegramChatId || "";
+            })
+            .catch(error => console.error("获取 Telegram 设置失败:", error));
+
+        // 监听表单提交事件
         document.getElementById("telegramSettingsForm").addEventListener("submit", function (e) {
             e.preventDefault();
 
@@ -114,7 +124,7 @@
             })
             .then(response => response.json())
             .then(data => alert(data.message))
-            .catch(error => console.error("Error:", error));
+            .catch(error => console.error("保存 Telegram 设置失败:", error));
         });
     </script>
 
