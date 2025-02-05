@@ -105,9 +105,12 @@
         }
 
         socket.on("nodesSummary", (data) => {
+            console.log('完整返回数据:', data);  // 打印完整返回数据，确认是否正确接收到
+
             const successfulNodesDiv = document.getElementById("successfulNodes");
             const failedAccountsDiv = document.getElementById("failedAccounts");
 
+            // 处理成功的节点
             if (data.successfulNodes.length > 0) {
                 nodesText = data.successfulNodes.join("\n");
                 successfulNodesDiv.innerText = nodesText;
@@ -116,6 +119,7 @@
                 nodesText = "";
             }
 
+            // 处理失败的账号
             if (data.failedAccounts.length > 0) {
                 failedAccountsDiv.innerHTML = `<b>以下账号获取失败：</b><br>${data.failedAccounts.join("<br>")}`;
             } else {
