@@ -15,12 +15,12 @@ const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 const SETTINGS_FILE = path.join(__dirname, "settings.json");
 
 app.use(express.static(path.join(__dirname, "public")));
-app.use(express.json());
+app.use(express.json()); // 解析 JSON 格式的请求体
 
-// **获取本机账号，仅用于主页显示**
-const MAIN_SERVER_USER = process.env.USER ? process.env.USER.toLowerCase() : "default_user";
+// 获取本机账号，仅用于主页显示
+const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; // 适配不同系统环境变量
 
-// **获取所有账号**
+// 获取所有账号（不包含本机账号）
 async function getAccounts(excludeMainUser = true) {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
     let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
@@ -30,14 +30,14 @@ async function getAccounts(excludeMainUser = true) {
     return accounts;
 }
 
-// **过滤无效节点，只保留 `vmess://` 和 `hysteria2://`**
+// 过滤无效节点，只保留 `vmess://` 和 `hysteria2://`
 function filterNodes(nodes) {
     return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
 }
 
-// **获取节点汇总**
+// 获取节点汇总
 async function getNodesSummary(socket) {
-    const accounts = await getAccounts(true);
+    const accounts = await getAccounts(true); // 排除本机账号
     const users = Object.keys(accounts);
     let successfulNodes = [];
     let failedAccounts = [];
@@ -67,7 +67,7 @@ async function getNodesSummary(socket) {
     socket.emit("nodesSummary", { successfulNodes, failedAccounts });
 }
 
-// **WebSocket 处理**
+// WebSocket 处理
 io.on("connection", (socket) => {
     console.log("Client connected");
 
@@ -96,7 +96,7 @@ io.on("connection", (socket) => {
     });
 });
 
-// **获取 Telegram 设置**
+// 获取 Telegram 设置
 function getTelegramSettings() {
     if (!fs.existsSync(SETTINGS_FILE)) {
         return null;
@@ -104,7 +104,7 @@ function getTelegramSettings() {
     return JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
 }
 
-// **更新 Telegram 设置**
+// 更新 Telegram 设置
 app.post("/setTelegramSettings", (req, res) => {
     const { telegramToken, telegramChatId } = req.body;
     if (!telegramToken || !telegramChatId) {
@@ -114,7 +114,7 @@ app.post("/setTelegramSettings", (req, res) => {
     res.json({ message: "Telegram 设置已更新" });
 });
 
-// **获取已保存的 Telegram 设置**
+// 获取已保存的 Telegram 设置
 app.get("/getTelegramSettings", (req, res) => {
     if (!fs.existsSync(SETTINGS_FILE)) {
         return res.json({ telegramToken: "", telegramChatId: "" });
@@ -123,12 +123,12 @@ app.get("/getTelegramSettings", (req, res) => {
     res.json(settings);
 });
 
-// **发送账号检测结果到 Telegram**
+// 发送账号检测结果到 Telegram
 async function sendCheckResultsToTG() {
     try {
         const settings = getTelegramSettings();
         if (!settings) {
-            console.log("❌ 未配置 Telegram 机器人");
+            console.log("Telegram 设置不存在");
             return;
         }
 
@@ -150,29 +150,44 @@ async function sendCheckResultsToTG() {
 
         await bot.sendMessage(telegramChatId, message);
     } catch (error) {
-        console.error("❌ 发送 Telegram 失败:", error);
+        console.error("发送 Telegram 失败:", error);
     }
 }
 
-// **定时任务：每天早上 8:00 运行账号检测**
+// 定时任务：每天早上 8:00 运行账号检测
 cron.schedule("0 8 * * *", () => {
     console.log("⏰ 运行每日账号检测任务...");
     sendCheckResultsToTG();
 });
 
-// **主页**
+// 主页
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// **账号检测页面**
+// 账号检测页面
 app.get("/checkAccountsPage", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
 });
 
-// **Telegram 设置页面**
+// Telegram 设置页面
 app.get("/notificationSettings", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
+});
+
+// 获取和保存 Telegram 设置
+app.post("/setTelegramSettings", (req, res) => {
+    const { telegramToken, telegramChatId } = req.body;
+    if (!telegramToken || !telegramChatId) {
+        return res.status(400).json({ message: "Telegram 配置不完整" });
+    }
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ telegramToken, telegramChatId }, null, 2));
+    res.json({ message: "Telegram 设置已更新" });
+});
+
+// 获取本机账号，仅用于主页显示
+app.get("/getMainUser", (req, res) => {
+    res.json({ mainUser: MAIN_SERVER_USER });
 });
 
 server.listen(PORT, () => {
