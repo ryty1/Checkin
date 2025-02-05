@@ -11,8 +11,10 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
-
+// 提供前端页面
+app.use(express.static(path.join(__dirname, "public")));
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
+
 
 // 获取本机账号
 const MAIN_SERVER_USER = process.env.USER ? process.env.USER.toLowerCase() : "default_user";
@@ -101,13 +103,6 @@ io.on("connection", (socket) => {
     });
 });
 
-// 提供前端页面
-app.use(express.static(path.join(__dirname, "public")));
-
-app.get("/to_info", (req, res) => {
-    const user = req.query.user;
-    res.redirect(`https://${user}.serv00.net/info`);
-});
 
 function runShellCommand() {
     const command = `cd ${process.env.HOME}/serv00-play/singbox/ && bash start.sh`;
@@ -129,8 +124,7 @@ function KeepAlive() {
 setInterval(KeepAlive, 20000);
 
 
-// 提供前端页面
-app.use(express.static(path.join(__dirname, "public")));
+
 
 app.get("/to_info", (req, res) => {
     const user = req.query.user;
@@ -951,6 +945,12 @@ app.use((req, res, next) => {
     res.status(404).send("页面未找到");
 });
 app.listen(3000, () => {
+    const timestamp = new Date().toLocaleString();
+    const startMsg = `${timestamp} 服务器已启动，监听端口 3000`;
+    logMessage(startMsg);
+    console.log(startMsg);
+});
+server.listen(3000, () => {
     const timestamp = new Date().toLocaleString();
     const startMsg = `${timestamp} 服务器已启动，监听端口 3000`;
     logMessage(startMsg);
