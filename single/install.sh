@@ -31,17 +31,19 @@ A3="https://github.com/ryty1/My-test/archive/refs/heads/main.zip"
 # 提示用户选择保活类型
 echo "请选择保活类型："
 echo "1. 本机保活"
-echo "2. 服务端"
+echo "2. 账号服务"
 read -p "请输入选择(1 或 2): " choice
 
 if [[ "$choice" -eq 1 ]]; then
     TARGET_FOLDER="single"
+    DELETE_FOLDER="server"
     DEPENDENCIES="dotenv basic-auth express"
-    echo "选择了本机保活配置"
+    echo "开始进行 本机保活配置"
 elif [[ "$choice" -eq 2 ]]; then
     TARGET_FOLDER="server"
+    DELETE_FOLDER="single"
     DEPENDENCIES="express http socket.io axios"
-    echo "选择了服务端配置"
+    echo "开始进行 账号服务配置"
 else
     echo "无效选择，退出脚本"
     exit 1
@@ -93,19 +95,25 @@ fi
 rm -f "$A2/README.md"
 rm -f "$A2/main.zip"
 
-# 将选择的文件夹（single 或 server）中的文件前置到根目录
+# 将选择的文件夹（single 或 server）中的文件前置到根目录，并删除另一个文件夹
 echo "正在复制文件..."
 if [[ -d "$A2/$TARGET_FOLDER" ]]; then
-    # 复制文件夹中的所有文件到项目根目录
+    # 复制选择的文件夹内容到根目录
     cp -r "$A2/$TARGET_FOLDER/." "$A2/"
     rm -rf "$A2/$TARGET_FOLDER"
-    X " 文件复制完成 " 0
+    X " 复制 $TARGET_FOLDER 配置完成 " 0
 else
     X " 选择的文件夹不存在 " 1
     exit 1
 fi
 
-# 为相关脚本设置执行权限
+# 删除未选择的文件夹
+if [[ -d "$A2/$DELETE_FOLDER" ]]; then
+    rm -rf "$A2/$DELETE_FOLDER"
+    X " 删除未使用的 $DELETE_FOLDER 配置 " 0
+fi
+
+# 设置本机保活相关文件的执行权限
 if [[ "$choice" -eq 1 ]]; then
     chmod 755 "$A2/app.js" > /dev/null 2>&1
     chmod 755 "$A2/hy2ip.sh" > /dev/null 2>&1
@@ -113,7 +121,7 @@ if [[ "$choice" -eq 1 ]]; then
     chmod 755 "$A2/ota.sh" > /dev/null 2>&1
 
     echo ""
-    echo " 【 恭 喜 】： 本机保活 两 步 部署已完成  "
+    echo " 【 恭 喜 】： 本机保活  部署已完成  "
     echo " ———————————————————————————————————————————————————————————— "
     echo ""
     echo " |**保活网页 https://$W/info "
@@ -124,9 +132,7 @@ else
     chmod 755 "$A2/app.js" > /dev/null 2>&1
 
     echo ""
-    echo " 【 恭 喜 】： 账号服务 两 步 部署已完成 "
-    echo "  多账号 只要 一个 服务端，只是 管理 功能"
-    echo "  服 务 端 无 需 保 活，不 建 议 做 节 点"
+    echo " 【 恭 喜 】： 账号服务  部署已完成  "
     echo " ———————————————————————————————————————————————————————————— "
     echo ""
     echo " |**账号服务 https://$W/"
