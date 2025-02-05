@@ -38,8 +38,8 @@
             const failedAccountsDiv = document.getElementById("failedAccounts");
 
             if (data.successfulNodes.length > 0) {
-                nodesText = data.successfulNodes.join("\n");  // **用于复制的纯文本**
-                successfulNodesDiv.innerHTML = data.successfulNodes.join("<br>");  // **前端换行显示**
+                nodesText = data.successfulNodes.join("\n");
+                successfulNodesDiv.innerHTML = data.successfulNodes.map(node => `<div>${node}</div>`).join("");
             } else {
                 successfulNodesDiv.innerHTML = "没有成功的节点。";
                 nodesText = "";
