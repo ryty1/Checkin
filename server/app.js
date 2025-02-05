@@ -186,7 +186,6 @@ app.post("/setTelegramSettings", (req, res) => {
 
     res.json({ message: "TG 配置已更新" });
 });
-app.use(express.json()); // 解析 JSON 格式的请求体
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
