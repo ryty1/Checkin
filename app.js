@@ -118,6 +118,8 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts());
     });
 });
+// 提供前端页面
+app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/to_info", (req, res) => {
     const user = req.query.user;
