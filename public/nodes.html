@@ -37,8 +37,13 @@
             const successfulNodesDiv = document.getElementById("successfulNodes");
             const failedAccountsDiv = document.getElementById("failedAccounts");
 
-            nodesText = data.successfulNodes.join("\n");
-            successfulNodesDiv.innerHTML = `<textarea rows="10" cols="50" readonly>${nodesText}</textarea>`;
+            if (data.successfulNodes.length > 0) {
+                nodesText = data.successfulNodes.join("\n");  // **用于复制的纯文本**
+                successfulNodesDiv.innerHTML = data.successfulNodes.join("<br>");  // **前端换行显示**
+            } else {
+                successfulNodesDiv.innerHTML = "没有成功的节点。";
+                nodesText = "";
+            }
 
             failedAccountsDiv.innerHTML = data.failedAccounts.length
                 ? `<b>失败的账号:</b><br>${data.failedAccounts.join("<br>")}`
