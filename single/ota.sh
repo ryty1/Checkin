@@ -7,9 +7,9 @@ BASE_DIR="/home/$USER_NAME/domains/$DOMAIN_NAME"
 NODEJS_DIR="$BASE_DIR/public_nodejs"
 LOCAL_VERSION_FILE="$NODEJS_DIR/version.txt"  # 本地版本文件
 LOCAL_FILE_LIST="$NODEJS_DIR/file_list.txt"  # 本地 file_list.txt
-REMOTE_VERSION_URL="${REMOTE_DIR_URL}single/version.txt"  # 远程版本URL
-REMOTE_FILE_LIST_URL="${REMOTE_DIR_URL}single/file_list.txt"  # 远程 file_list.txt
-REMOTE_DIR_URL="https://raw.githubusercontent.com/ryty1/My-test/main/"  # 远程文件目录
+REMOTE_VERSION_URL="${REMOTE_DIR_URL}version.txt"  # 远程版本URL
+REMOTE_FILE_LIST_URL="${REMOTE_DIR_URL}file_list.txt"  # 远程 file_list.txt
+REMOTE_DIR_URL="https://raw.githubusercontent.com/ryty1/My-test/main/single/"  # 远程文件目录
 
 # **获取远程版本号**
 get_remote_version() {
