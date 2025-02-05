@@ -24,31 +24,18 @@
 
         function saveAccount() {
             const user = document.getElementById("accountUser").value.trim();
-            if (!user) {
-                alert("账号不能为空");
-                return;
-            }
+            if (!user) return alert("账号不能为空");
             socket.emit("saveAccount", { user });
         }
 
         function deleteAccount() {
             const user = document.getElementById("accountUser").value.trim();
-            if (!user) {
-                alert("账号不能为空");
-                return;
-            }
+            if (!user) return alert("账号不能为空");
             socket.emit("deleteAccount", user);
         }
 
-        socket.on("accountSaved", (data) => {
-            alert(data.message);
-            loadAccounts();
-        });
-
-        socket.on("accountDeleted", (data) => {
-            alert(data.message);
-            loadAccounts();
-        });
+        socket.on("accountSaved", () => loadAccounts());
+        socket.on("accountDeleted", () => loadAccounts());
 
         socket.on("accountsList", (accounts) => {
             const accountList = document.getElementById("accountList");
