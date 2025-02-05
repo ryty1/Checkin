@@ -33,7 +33,7 @@ async function getAccounts() {
     return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
 }
 
-// 过滤无效节点，只保留 vmess 和 hysteria2
+// 过滤无效节点，只保留 `vmess://` 和 `hysteria2://`
 function filterNodes(nodes) {
     return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
 }
@@ -54,8 +54,8 @@ async function getNodesSummary(socket) {
 
             // 解析并过滤无效节点
             const nodeLinks = filterNodes([
-                ...(nodeData.match(/vmess:\/\/[^\s]+/g) || []),
-                ...(nodeData.match(/hysteria2:\/\/[^\s]+/g) || [])
+                ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []),
+                ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])
             ]);
 
             if (nodeLinks.length > 0) {
