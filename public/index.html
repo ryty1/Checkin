@@ -4,11 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>主页</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 12px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-primary {
+            background-color: #007BFF;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #28A745;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #1e7e34;
+        }
+    </style>
 </head>
 <body>
-    <h1>欢迎来到管理系统</h1>
-
-    <button onclick="location.href='/accounts'">账号管理</button>
-    <button onclick="location.href='/nodes'">节点汇总</button>
+    <div class="container">
+        <h1>欢迎来到管理系统</h1>
+        <button class="btn btn-primary" onclick="location.href='/accounts'">账号管理</button>
+        <button class="btn btn-secondary" onclick="location.href='/nodes'">节点汇总</button>
+    </div>
 </body>
 </html>
