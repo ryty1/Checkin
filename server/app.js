@@ -53,7 +53,7 @@ async function getNodesSummary(socket) {
                 successfulNodes.push(...nodeLinks);
             }
         } catch (error) {
-            failedAccounts.push(user);
+            failedAccounts.push(user);  // 失败的账号
         }
     }));
 
