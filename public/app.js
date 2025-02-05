@@ -57,13 +57,8 @@ async function checkProcessStatus(account) {
         const response = await axios.get(logUrl, { timeout: 5000 });
         const logData = response.data;
 
-        // 判断进程是否存在
         const processStatus = processesToMonitor.reduce((status, processName) => {
-            if (logData.includes(processName)) {
-                status[processName] = "运行中";
-            } else {
-                status[processName] = "未运行";
-            }
+            status[processName] = logData.includes(processName) ? "运行中" : "未运行";
             return status;
         }, {});
 
@@ -77,23 +72,20 @@ async function checkProcessStatus(account) {
 async function checkAllProcesses(socket) {
     const accounts = await getAccounts();
     const accountNames = Object.keys(accounts);
-    const total = accountNames.length;
     let completed = 0;
 
     const results = [];
 
-    // 向前端推送进度
     socket.emit("progress", { progress: 0 });
 
     await Promise.all(accountNames.map(async (account) => {
         const result = await checkProcessStatus(account);
         results.push(result);
         completed += 1;
-        const progress = Math.floor((completed / total) * 100);
-        socket.emit("progress", { progress });
+        socket.emit("progress", { progress: Math.floor((completed / accountNames.length) * 100) });
     }));
 
-    socket.emit("progress", { progress: 100 }); // 完成时，进度达到 100%
+    socket.emit("progress", { progress: 100 });
     return results;
 }
 
@@ -103,8 +95,6 @@ async function getNodesSummary(socket) {
     const users = Object.keys(accounts);
     const results = [];
     const failedAccounts = [];
-
-    const total = users.length;
     let completed = 0;
 
     socket.emit("progress", { progress: 0 });
@@ -117,9 +107,10 @@ async function getNodesSummary(socket) {
             const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
             const nodeData = nodeResponse.data;
 
-            const vmessLinks = nodeData.match(/vmess:\/\/[^\s]+/g) || [];
-            const hysteriaLinks = nodeData.match(/hysteria2:\/\/[^\s]+/g) || [];
-            nodeLinks = [...vmessLinks, ...hysteriaLinks];
+            nodeLinks = [
+                ...(nodeData.match(/vmess:\/\/[^\s]+/g) || []),
+                ...(nodeData.match(/hysteria2:\/\/[^\s]+/g) || [])
+            ];
 
             if (nodeLinks.length > 0) {
                 results.push({ user, nodeLinks });
@@ -130,33 +121,29 @@ async function getNodesSummary(socket) {
         }
 
         completed += 1;
-        const progress = Math.floor((completed / total) * 100);
-        socket.emit("progress", { progress });
+        socket.emit("progress", { progress: Math.floor((completed / users.length) * 100) });
     }));
 
-    socket.emit("progress", { progress: 100 }); // 完成时，进度达到 100%
+    socket.emit("progress", { progress: 100 });
     socket.emit("nodesSummary", { successfulNodes: results, failedAccounts });
 }
 
-// 客户端连接后处理
+// 客户端连接处理
 io.on("connection", (socket) => {
     console.log("Client connected");
 
-    // 请求进程监控
     socket.on("startProcessMonitor", () => {
         checkAllProcesses(socket).then(() => {
             socket.emit("processMonitorComplete", { message: "进程监控已完成" });
         });
     });
 
-    // 请求节点汇总
     socket.on("startNodesSummary", () => {
         getNodesSummary(socket).then(() => {
             socket.emit("nodesSummaryComplete", { message: "节点汇总已完成" });
         });
     });
 
-    // 处理账号管理
     socket.on("saveAccount", async (accountData) => {
         await saveAccount(accountData.user, accountData);
         socket.emit("accountSaved", { message: `账号 ${accountData.user} 已保存` });
@@ -168,141 +155,33 @@ io.on("connection", (socket) => {
     });
 });
 
-// 静态文件服务，提供前端页面
+// 静态文件服务
 app.get("/", (req, res) => {
-    res.send(`
-    <!DOCTYPE html>
-    <html lang="zh">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>实时进度监控</title>
-        <style>
-            .progress { width: 100%; height: 20px; background-color: #f3f3f3; border-radius: 5px; }
-            .progress-bar { height: 100%; background-color: #4CAF50; text-align: center; color: white; line-height: 20px; }
-        </style>
-    </head>
-    <body>
-        <h1>实时进度监控</h1>
-
-        <div>
-            <button onclick="showAccountManagement()">账号管理</button>
-            <button onclick="startNodesSummary()">开始节点汇总</button>
-            <button onclick="startProcessMonitor()">开始进程监控</button>
-        </div>
-
-        <div class="progress" id="progressBarContainer" style="display: none;">
-            <div id="progressBar" class="progress-bar">0%</div>
-        </div>
-
-        <div id="resultContainer">
-            <h3>节点汇总</h3>
-            <div id="successfulNodes"></div>
-            <div id="failedAccounts"></div>
-        </div>
-
-        <div id="accountManagement" style="display:none;">
-            <h3>账号管理</h3>
-            <ul id="accountList"></ul>
-        </div>
-
-        <script src="/socket.io/socket.io.js"></script>
-        <script>
-            const socket = io();
-
-            // 账号管理
-            function showAccountManagement() {
-                document.getElementById("accountManagement").style.display = "block";
-                document.getElementById("progressBarContainer").style.display = "none";
-                loadAccounts();
-            }
-
-            // 加载账号列表
-            function loadAccounts() {
-                socket.emit("loadAccounts");
-            }
-
-            // 保存账号
-            function saveAccount() {
-                const user = document.getElementById("accountUser").value;
-                const accountData = { user };
-                socket.emit("saveAccount", accountData);
-            }
-
-            // 删除账号
-            function deleteAccount() {
-                const user = document.getElementById("accountUser").value;
-                socket.emit("deleteAccount", user);
-            }
-
-            // 启动进程监控
-            function startProcessMonitor() {
-                socket.emit("startProcessMonitor");
-            }
-
-            // 启动节点汇总
-            function startNodesSummary() {
-                socket.emit("startNodesSummary");
-            }
-
-            // 监听进度更新
-            socket.on("progress", (data) => {
-                const progressBar = document.getElementById("progressBar");
-                const progressBarContainer = document.getElementById("progressBarContainer");
-
-                if (data.progress !== undefined) {
-                    progressBarContainer.style.display = "block";
-                    progressBar.style.width = data.progress + "%";
-                    progressBar.textContent = data.progress + "%";
-                }
-            });
-
-            // 监听节点汇总结果
-            socket.on("nodesSummary", (data) => {
-                const successfulNodes = document.getElementById("successfulNodes");
-                const failedAccounts = document.getElementById("failedAccounts");
-
-                successfulNodes.innerHTML = "<b>成功的节点:</b><br>";
-
-                if (data.successfulNodes.length > 0) {
-                    data.successfulNodes.forEach(node => {
-                        successfulNodes.innerHTML += `<strong>${node.user}</strong>: <ul><li>${node.nodeLinks.join("</li><li>")}</li></ul><br>`;
-                    });
-                } else {
-                    successfulNodes.innerHTML += "没有找到成功的节点。<br>";
-                }
-
-                failedAccounts.innerHTML = "<b>失败的账号:</b><br>";
-                if (data.failedAccounts.length > 0) {
-                    failedAccounts.innerHTML += data.failedAccounts.join("<br>");
-                } else {
-                    failedAccounts.innerHTML += "没有失败的账号。<br>";
-                }
-            });
-
-            // 监听任务完成
-            socket.on("processMonitorComplete", (data) => {
-                alert(data.message);
-            });
-
-            socket.on("nodesSummaryComplete", (data) => {
-                alert(data.message);
-            });
-
-            socket.on("accountSaved", (data) => {
-                alert(data.message);
-            });
-
-            socket.on("accountDeleted", (data) => {
-                alert(data.message);
-            });
-        </script>
-    </body>
-    </html>
-    `);
+    res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// 账号点击跳转
+// 监听 `nodesSummary` 事件
+socket.on("nodesSummary", (data) => {
+    const successfulNodes = document.getElementById("successfulNodes");
+    const failedAccounts = document.getElementById("failedAccounts");
+
+    successfulNodes.innerHTML = "<b>成功的节点:</b><br>";
+
+    if (data.successfulNodes.length > 0) {
+        data.successfulNodes.forEach(node => {
+            // **确保 nodeLinks 是数组**
+            const nodeLinks = Array.isArray(node.nodeLinks) ? node.nodeLinks.join("</li><li>") : "无可用节点";
+            successfulNodes.innerHTML += `<strong>${node.user}</strong>: <ul><li>${nodeLinks}</li></ul><br>`;
+        });
+    } else {
+        successfulNodes.innerHTML += "没有找到成功的节点。<br>";
+    }
+
+    failedAccounts.innerHTML = "<b>失败的账号:</b><br>";
+    failedAccounts.innerHTML += data.failedAccounts.length > 0 ? data.failedAccounts.join("<br>") : "没有失败的账号。<br>";
+});
+
+// 账号跳转
 app.get("/info", (req, res) => {
     const user = req.query.user;
     if (!user) {
