@@ -42,12 +42,12 @@
 
         socket.on("accountSaved", (data) => {
             alert(data.message);
-            loadAccounts();  // **自动刷新账号列表**
+            loadAccounts();
         });
 
         socket.on("accountDeleted", (data) => {
             alert(data.message);
-            loadAccounts();  // **自动刷新账号列表**
+            loadAccounts();
         });
 
         socket.on("accountsList", (accounts) => {
