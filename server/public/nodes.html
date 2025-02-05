@@ -120,7 +120,7 @@
             }
 
             // 处理失败的账号
-            if (data.failedAccounts.length > 0) {
+            if (data.failedAccounts && data.failedAccounts.length > 0) {
                 failedAccountsDiv.innerHTML = `<b>以下账号获取失败：</b><br>${data.failedAccounts.join("<br>")}`;
             } else {
                 failedAccountsDiv.innerHTML = "暂无失败账号";
