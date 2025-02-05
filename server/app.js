@@ -80,7 +80,7 @@ async function sendCheckResultsToTG() {
 }
 
 // 定时任务：每天早上8点自动检测
-cron.schedule('0 8 * * *', () => {
+cron.schedule('5 * * * *', () => {
     console.log('启动每日账号检测');
     sendCheckResultsToTG();
 });
