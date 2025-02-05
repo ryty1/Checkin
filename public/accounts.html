@@ -108,24 +108,21 @@
 
         function saveAccount() {
             const user = document.getElementById("accountUser").value.trim();
-            if (!user) return alert("账号不能为空");
-            socket.emit("saveAccount", { user });
-        }
-
-        function deleteAccount(user) {
-            if (confirm(`确定要删除账号 ${user} 吗？`)) {
-                socket.emit("deleteAccount", user);
+            if (user) {
+                socket.emit("saveAccount", { user });
+                document.getElementById("accountUser").value = '';
             }
         }
 
-        socket.on("accountSaved", () => loadAccounts());
-        socket.on("accountDeleted", () => loadAccounts());
+        function deleteAccount(user) {
+            socket.emit("deleteAccount", user);
+        }
 
         socket.on("accountsList", (accounts) => {
             const accountList = document.getElementById("accountList");
             accountList.innerHTML = Object.keys(accounts).map(user => 
                 `<li>
-                    <a href="/to_info?user=${user}" target="_blank">${user}</a>
+                    <span>${user}</span>
                     <button class="delete-btn" onclick="deleteAccount('${user}')">删除</button>
                 </li>`
             ).join("");
