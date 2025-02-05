@@ -135,7 +135,7 @@ async function sendCheckResultsToTG() {
         const { telegramToken, telegramChatId } = settings;
         const bot = new TelegramBot(telegramToken, { polling: false });
 
-        const response = await axios.get("http://localhost:3000/checkAccounts");
+        const response = await axios.get(`https://${process.env.USER}.serv00.net/checkAccounts`);
         const data = response.data.results;
 
         if (!data || Object.keys(data).length === 0) {
