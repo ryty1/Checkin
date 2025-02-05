@@ -4,15 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>节点汇总</title>
+    <style>
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            text-align: center;
+        }
+        .node-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 20px auto;  /* 增加间距，防止和按钮挤在一起 */
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            word-wrap: break-word;
+            text-align: left;
+            width: 100%;
+            max-width: 600px; /* 防止过宽 */
+            min-height: 150px; /* 让 `box` 不会太小 */
+            box-sizing: border-box;
+            white-space: pre-wrap; /* 让换行符生效 */
+            overflow-y: auto; /* 如果节点太多，允许滚动 */
+        }
+        .btn {
+            display: block; /* 让按钮换行 */
+            width: 200px;
+            margin: 10px auto;
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <h1>节点汇总</h1>
+    <div class="container">
+        <h1>节点汇总</h1>
 
-    <button onclick="startNodesSummary()">开始节点汇总</button>
-    <button onclick="copyNodes()">复制成功的节点</button>
+        <button class="btn" onclick="startNodesSummary()">开始节点汇总</button>
+        <button class="btn" onclick="copyNodes()">复制成功的节点</button>
 
-    <textarea id="successfulNodes" readonly></textarea>
-    <div id="failedAccounts"></div>
+        <div id="successfulNodes" class="node-box"></div>
+        <div id="failedAccounts"></div>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -24,13 +56,28 @@
         }
 
         function copyNodes() {
-            if (nodesText) navigator.clipboard.writeText(nodesText).then(() => alert("节点已复制！"));
+            if (nodesText) {
+                navigator.clipboard.writeText(nodesText).then(() => {
+                    alert("节点已复制！");
+                });
+            } else {
+                alert("没有可复制的节点");
+            }
         }
 
         socket.on("nodesSummary", (data) => {
-            nodesText = data.successfulNodes.join("\n");
-            document.getElementById("successfulNodes").value = nodesText;
-            document.getElementById("failedAccounts").innerHTML = data.failedAccounts.length
+            const successfulNodesDiv = document.getElementById("successfulNodes");
+            const failedAccountsDiv = document.getElementById("failedAccounts");
+
+            if (data.successfulNodes.length > 0) {
+                nodesText = data.successfulNodes.join("\n");  // **确保换行**
+                successfulNodesDiv.innerText = nodesText; // **让 `<div>` 正确换行**
+            } else {
+                successfulNodesDiv.innerText = "没有成功的节点。";
+                nodesText = "";
+            }
+
+            failedAccountsDiv.innerHTML = data.failedAccounts.length
                 ? `<b>失败的账号:</b><br>${data.failedAccounts.join("<br>")}`
                 : "";
         });
