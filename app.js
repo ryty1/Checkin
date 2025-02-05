@@ -11,10 +11,8 @@ const io = socketIo(server);
 const PORT = 3000;
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 
-// 默认添加自身服务器的账号
-const MAIN_SERVER_USER = process.env.USER.toLowerCase();
-
 // 确保配置文件存在 & 默认账号添加
+const MAIN_SERVER_USER = process.env.USER.toLowerCase();
 function ensureDefaultAccount() {
     let accounts = {};
     if (fs.existsSync(ACCOUNTS_FILE)) {
@@ -51,41 +49,31 @@ async function deleteAccount(user) {
 async function getNodesSummary(socket) {
     const accounts = await getAccounts();
     const users = Object.keys(accounts);
-    const results = [];
-    const failedAccounts = [];
-
-    const total = users.length;
-    let completed = 0;
-    socket.emit("progress", { progress: 0 });
+    let successfulNodes = [];
+    let failedAccounts = [];
 
     await Promise.all(users.map(async (user) => {
         const nodeUrl = `https://${user}.serv00.net/node`;
-        let nodeLinks = [];
 
         try {
             const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
             const nodeData = nodeResponse.data;
 
-            // 确保 nodeLinks 是数组
-            nodeLinks = [
+            // 解析 vmess 和 hysteria2 链接
+            const nodeLinks = [
                 ...(nodeData.match(/vmess:\/\/[^\s]+/g) || []),
                 ...(nodeData.match(/hysteria2:\/\/[^\s]+/g) || [])
             ];
 
             if (nodeLinks.length > 0) {
-                results.push({ user, nodeLinks });
+                successfulNodes.push(...nodeLinks);
             }
         } catch (error) {
-            console.error(`无法获取 ${user} 的节点信息`);
             failedAccounts.push(user);
         }
-
-        completed += 1;
-        socket.emit("progress", { progress: Math.floor((completed / total) * 100) });
     }));
 
-    socket.emit("progress", { progress: 100 });
-    socket.emit("nodesSummary", { successfulNodes: results, failedAccounts });
+    socket.emit("nodesSummary", { successfulNodes, failedAccounts });
 }
 
 // WebSocket 处理
@@ -93,9 +81,7 @@ io.on("connection", (socket) => {
     console.log("Client connected");
 
     socket.on("startNodesSummary", () => {
-        getNodesSummary(socket).then(() => {
-            socket.emit("nodesSummaryComplete", { message: "节点汇总已完成" });
-        });
+        getNodesSummary(socket);
     });
 
     socket.on("saveAccount", async (accountData) => {
@@ -113,15 +99,30 @@ io.on("connection", (socket) => {
     });
 });
 
-// 提供前端页面
+// 设置静态文件服务，确保 `public` 目录下的 HTML 文件可以访问
+app.use(express.static(path.join(__dirname, 'public')));
+
+// 主页路由
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
+    res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// 账号跳转
+// 账号管理页面路由
+app.get("/accounts", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "accounts.html"));
+});
+
+// 节点汇总页面路由
+app.get("/nodes", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "nodes.html"));
+});
+
+// 账号点击跳转
 app.get("/info", (req, res) => {
     const user = req.query.user;
-    if (!user) return res.status(400).send("用户未指定");
+    if (!user) {
+        return res.status(400).send("用户未指定");
+    }
     res.redirect(`https://${user}.serv00.net/info`);
 });
 
