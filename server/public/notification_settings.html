@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram 设置</title>
+    <title>Telegram Notification Settings</title>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f7fc;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
             margin: 0;
             padding: 0;
             display: flex;
@@ -22,15 +22,13 @@
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 500px;
-            margin-left: 20px; /* To slightly shift the content to the right */
+            max-width: 400px;
         }
 
         h1 {
-            text-align: left;
+            text-align: center;
             font-size: 24px;
             color: #333;
-            margin-bottom: 20px;
         }
 
         label {
@@ -42,7 +40,7 @@
 
         input {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             margin: 10px 0 20px 0;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -71,7 +69,7 @@
         }
 
         .footer {
-            text-align: left;
+            text-align: center;
             margin-top: 20px;
         }
 
@@ -84,19 +82,19 @@
 <body>
 
     <div class="container">
-        <h1>Telegram 设置</h1>
+        <h1>Telegram Notification Settings</h1>
         <form id="telegramSettingsForm">
-            <label for="telegramToken">TG 机器人 Token:</label>
-            <input type="text" id="telegramToken" name="telegramToken" required placeholder="请输入 TG bot_token">
+            <label for="telegramToken">Telegram Bot Token:</label>
+            <input type="text" id="telegramToken" name="telegramToken" required placeholder="Enter your bot token">
             
-            <label for="telegramChatId">TG 用户 ID:</label>
-            <input type="text" id="telegramChatId" name="telegramChatId" required placeholder="请输入 TG  chat ID">
+            <label for="telegramChatId">Telegram Chat ID:</label>
+            <input type="text" id="telegramChatId" name="telegramChatId" required placeholder="Enter your chat ID">
             
-            <button type="submit">保存设置</button>
+            <button type="submit">Save Settings</button>
         </form>
 
         <div class="footer">
-            <p>目前只支持TG通知！</p>
+            <p>Powered by YourCompany</p>
         </div>
     </div>
 
