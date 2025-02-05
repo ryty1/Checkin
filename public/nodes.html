@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>节点汇总</title>
+</head>
+<body>
+    <h1>节点汇总</h1>
+
+    <button onclick="startNodesSummary()">开始节点汇总</button>
+    <button onclick="copyNodes()">复制成功的节点</button>
+
+    <div id="successfulNodes"></div>
+    <div id="failedAccounts"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let nodesText = "";
+
+        function startNodesSummary() {
+            socket.emit("startNodesSummary");
+        }
+
+        function copyNodes() {
+            if (nodesText) {
+                navigator.clipboard.writeText(nodesText).then(() => {
+                    alert("节点已复制！");
+                });
+            } else {
+                alert("没有可复制的节点");
+            }
+        }
+
+        socket.on("nodesSummary", (data) => {
+            const successfulNodesDiv = document.getElementById("successfulNodes");
+            const failedAccountsDiv = document.getElementById("failedAccounts");
+
+            nodesText = data.successfulNodes.join("\n");
+            successfulNodesDiv.innerHTML = `<textarea rows="10" cols="50" readonly>${nodesText}</textarea>`;
+
+            failedAccountsDiv.innerHTML = data.failedAccounts.length
+                ? `<b>失败的账号:</b><br>${data.failedAccounts.join("<br>")}`
+                : "";
+        });
+    </script>
+</body>
+</html>
