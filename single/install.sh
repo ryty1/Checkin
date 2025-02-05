@@ -96,21 +96,17 @@ rm -f "$A2/README.md"
 rm -f "$A2/main.zip"
 
 # 将选择的文件夹（single 或 server）中的文件前置到根目录，并删除另一个文件夹
-echo "正在复制文件..."
 if [[ -d "$A2/$TARGET_FOLDER" ]]; then
     # 复制选择的文件夹内容到根目录
     cp -r "$A2/$TARGET_FOLDER/." "$A2/"
     rm -rf "$A2/$TARGET_FOLDER"
-    X " 复制 $TARGET_FOLDER 配置完成 " 0
 else
-    X " 选择的文件夹不存在 " 1
     exit 1
 fi
 
 # 删除未选择的文件夹
 if [[ -d "$A2/$DELETE_FOLDER" ]]; then
     rm -rf "$A2/$DELETE_FOLDER"
-    X " 删除未使用的 $DELETE_FOLDER 配置 " 0
 fi
 
 # 设置本机保活相关文件的执行权限
