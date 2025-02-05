@@ -159,6 +159,11 @@ app.get("/checkAccounts", async (req, res) => {
     }
 });
 
+// Telegram 设置页面
+app.get("/notificationSettings", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
+});
+
 // 设置 Telegram 配置（用于通知设置）
 app.post("/setTelegramSettings", async (req, res) => {
     const { telegramToken, telegramChatId } = req.body;
