@@ -155,7 +155,7 @@ async function sendCheckResultsToTG() {
 }
 
 // 定时任务：每天早上 8:00 运行账号检测
-cron.schedule("*/5 * * * *", () => {
+cron.schedule("* 8 * * *", () => {
     console.log("⏰ 运行每日账号检测任务...");
     sendCheckResultsToTG();
 });
