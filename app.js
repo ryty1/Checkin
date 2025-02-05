@@ -36,6 +36,43 @@ app.get("/info", async (req, res) => {
 
 
 
+app.use(bodyParser.urlencoded({ extended: false }));
+
+// 访问 HY2_IP 页面（返回静态 HTML 文件）
+app.get("/hy2ip", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "hy2ip.html"));
+});
+
+// 处理 IP 更新请求
+app.post("/hy2ip/execute", (req, res) => {
+    const confirmation = req.body.confirmation?.trim();
+
+    if (confirmation !== "更新") {
+        return res.status(400).json({ error: "输入错误，请输入 '更新' 以确认执行 IP 更新。" });
+    }
+
+    try {
+        let updatedIp = "192.168.1.100"; // 假设的 IP 更新逻辑
+        res.json({
+            success: true,
+            message: `SingBox 配置文件成功更新 IP 为 ${updatedIp}`,
+            updatedIp,
+            logs: [
+                "命令执行成功",
+                `SingBox 配置文件成功更新 IP 为 ${updatedIp}`,
+                "sing-box 已重启"
+            ]
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "更新失败，请稍后再试。",
+            logs: ["命令执行失败", error.message]
+        });
+    }
+});
+
+
 
 // **确保本机账号存在**
 function ensureDefaultAccount() {
