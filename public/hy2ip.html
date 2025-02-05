@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>HY2_IP 更新</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+        .container {
+            width: 95%;
+            max-width: 600px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            text-align: left;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        p {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #555;
+            line-height: 1.5;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            text-align: center;
+            transition: 0.3s;
+        }
+        input:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+        .log-container {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HY2_IP 更新</h1>
+        <p>请输入 <b>更新</b> 以确认执行 IP 更新。</p>
+        <input type="text" id="confirmationInput" placeholder="更新">
+        <button onclick="submitUpdate()">提交</button>
+        <p>⚠️ 不同 IP 更新后原线路会失效，请复制新信息使用。</p>
+        
+        <div id="logContainer" class="log-container"></div>
+    </div>
+
+    <script>
+        function submitUpdate() {
+            const confirmation = document.getElementById("confirmationInput").value.trim();
+            const logContainer = document.getElementById("logContainer");
+
+            logContainer.innerHTML = "正在更新 IP，请稍候...";
+            logContainer.style.display = "block";
+
+            fetch("/hy2ip/execute", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `confirmation=${encodeURIComponent(confirmation)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    logContainer.innerHTML = `<p class="success">${data.message}</p>`;
+                    logContainer.innerHTML += `<p><strong>新的 IP:</strong> ${data.updatedIp}</p>`;
+                    data.logs.forEach(log => {
+                        logContainer.innerHTML += `<p>${log}</p>`;
+                    });
+                } else {
+                    logContainer.innerHTML = `<p class="error">${data.message}</p>`;
+                }
+            })
+            .catch(error => {
+                logContainer.innerHTML = `<p class="error">请求失败，请稍后再试。</p>`;
+            });
+        }
+    </script>
+</body>
+</html>
