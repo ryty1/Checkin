@@ -14,9 +14,6 @@ const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 // 默认添加自身服务器的账号
 const MAIN_SERVER_USER = process.env.USER.toLowerCase();
 
-// 需要监控的进程名
-const processesToMonitor = ["singbox", "cloudflare"];
-
 // 确保配置文件存在 & 默认账号添加
 function ensureDefaultAccount() {
     let accounts = {};
@@ -48,46 +45,6 @@ async function deleteAccount(user) {
     const accounts = await getAccounts();
     delete accounts[user];
     fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-}
-
-// 检查进程状态
-async function checkProcessStatus(account) {
-    const logUrl = `https://${account}.serv00.net/log`;
-    try {
-        const response = await axios.get(logUrl, { timeout: 5000 });
-        const logData = response.data;
-
-        // 判断进程是否存在
-        const processStatus = processesToMonitor.reduce((status, processName) => {
-            status[processName] = logData.includes(processName) ? "运行中" : "未运行";
-            return status;
-        }, {});
-
-        return { account, processStatus, error: null };
-    } catch (error) {
-        return { account, processStatus: {}, error: "无法获取日志" };
-    }
-}
-
-// 获取所有账号的进程状态
-async function checkAllProcesses(socket) {
-    const accounts = await getAccounts();
-    const accountNames = Object.keys(accounts);
-    const total = accountNames.length;
-    let completed = 0;
-
-    const results = [];
-    socket.emit("progress", { progress: 0 });
-
-    await Promise.all(accountNames.map(async (account) => {
-        const result = await checkProcessStatus(account);
-        results.push(result);
-        completed += 1;
-        socket.emit("progress", { progress: Math.floor((completed / total) * 100) });
-    }));
-
-    socket.emit("progress", { progress: 100 });
-    return results;
 }
 
 // 获取节点汇总
@@ -134,12 +91,6 @@ async function getNodesSummary(socket) {
 // WebSocket 处理
 io.on("connection", (socket) => {
     console.log("Client connected");
-
-    socket.on("startProcessMonitor", () => {
-        checkAllProcesses(socket).then(() => {
-            socket.emit("processMonitorComplete", { message: "进程监控已完成" });
-        });
-    });
 
     socket.on("startNodesSummary", () => {
         getNodesSummary(socket).then(() => {
