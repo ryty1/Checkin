@@ -8,14 +8,30 @@ const fs = require("fs");
 const path = require("path");
 const app = express();
 
+const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
+
+function runShellCommand() {
+    const command = `cd ${process.env.HOME}/serv00-play/singbox/ && bash start.sh`;
+    executeCommand(command, "start.sh", true);
+}
+function executeHy2ipScript(logMessages, callback) {
+
+    const command = `cd ${process.env.HOME}/domains/${username}.serv00.net/public_nodejs/ && bash hy2ip.sh`;
+
+    // 执行脚本并捕获输出
+    exec(command, (error, stdout, stderr) => {
+        callback(error, stdout, stderr);
+    });
+}
+function KeepAlive() {
+    const command = `cd ${process.env.HOME}/serv00-play/ && bash keepalive.sh`;
+    executeCommand(command, "keepalive.sh", true);
+}
+setInterval(KeepAlive, 20000);
+
 const server = http.createServer(app);
 const io = socketIo(server);
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
-// 提供前端页面
-app.use(express.static(path.join(__dirname, "public")));
-const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
-
-
 // 获取本机账号
 const MAIN_SERVER_USER = process.env.USER ? process.env.USER.toLowerCase() : "default_user";
 
@@ -102,29 +118,6 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts());
     });
 });
-
-
-function runShellCommand() {
-    const command = `cd ${process.env.HOME}/serv00-play/singbox/ && bash start.sh`;
-    executeCommand(command, "start.sh", true);
-}
-function executeHy2ipScript(logMessages, callback) {
-
-    const command = `cd ${process.env.HOME}/domains/${username}.serv00.net/public_nodejs/ && bash hy2ip.sh`;
-
-    // 执行脚本并捕获输出
-    exec(command, (error, stdout, stderr) => {
-        callback(error, stdout, stderr);
-    });
-}
-function KeepAlive() {
-    const command = `cd ${process.env.HOME}/serv00-play/ && bash keepalive.sh`;
-    executeCommand(command, "keepalive.sh", true);
-}
-setInterval(KeepAlive, 20000);
-
-
-
 
 app.get("/to_info", (req, res) => {
     const user = req.query.user;
