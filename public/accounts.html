@@ -40,8 +40,15 @@
             socket.emit("deleteAccount", user);
         }
 
-        socket.on("accountSaved", (data) => alert(data.message));
-        socket.on("accountDeleted", (data) => alert(data.message));
+        socket.on("accountSaved", (data) => {
+            alert(data.message);
+            loadAccounts();  // **自动刷新账号列表**
+        });
+
+        socket.on("accountDeleted", (data) => {
+            alert(data.message);
+            loadAccounts();  // **自动刷新账号列表**
+        });
 
         socket.on("accountsList", (accounts) => {
             const accountList = document.getElementById("accountList");
