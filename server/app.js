@@ -163,7 +163,15 @@ app.get("/checkAccounts", async (req, res) => {
 app.get("/notificationSettings", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
 });
+// 获取 Telegram 设置
+app.get("/getTelegramSettings", (req, res) => {
+    if (!fs.existsSync(SETTINGS_FILE)) {
+        return res.json({ telegramToken: "", telegramChatId: "" }); // 如果文件不存在，返回空值
+    }
 
+    const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
+    res.json(settings);
+});
 // 设置 Telegram 配置（用于通知设置）
 app.post("/setTelegramSettings", async (req, res) => {
     const { telegramToken, telegramChatId } = req.body;
