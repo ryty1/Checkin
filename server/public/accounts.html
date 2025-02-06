@@ -117,6 +117,10 @@
             padding: 5px 10px;
             font-size: 12px;
         }
+        .actions {
+            display: flex;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
@@ -164,6 +168,13 @@
             }
         }
 
+        // 修改分组和备注
+        function modifyAccount(user) {
+            const group = prompt("请输入新的分组名称：");
+            const note = prompt("请输入新的备注：");
+            socket.emit("modifyAccount", { user, group, note });
+        }
+
         // 监听后端发送的账号列表
         socket.on("accountsList", (accounts) => {
             const accountList = document.getElementById("accountList");
@@ -201,7 +212,10 @@
                     li.innerHTML = `
                         <span>${account.user}</span> 
                         <span>${account.note || '暂无备注'}</span> 
-                        <button class="btn btn-small btn-danger" onclick="deleteAccount('${account.user}')">删除</button>
+                        <div class="actions">
+                            <button class="btn btn-small" onclick="modifyAccount('${account.user}')">修改</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteAccount('${account.user}')">删除</button>
+                        </div>
                     `;
                     groupContent.appendChild(li);
                 });
