@@ -43,45 +43,68 @@
             border-radius: 5px;
             cursor: pointer;
             transition: 0.3s;
+            background: none;
+            border: 1px solid transparent;
         }
         .btn-success {
             background-color: #28A745;
             color: white;
+            border: 1px solid #28A745;
         }
         .btn-danger {
             background-color: #DC3545;
             color: white;
+            border: 1px solid #DC3545;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
+            table-layout: fixed;
         }
         th, td {
             padding: 10px;
-            text-align: left;
+            text-align: center;
             border-bottom: 1px solid #ddd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         th {
             background-color: #f0f0f0;
             position: sticky;
             top: 0;
+            font-size: 16px;
         }
-        .edit-btn, .delete-btn {
-            padding: 6px 8px;
-            font-size: 12px;
-            border-radius: 5px;
+        select {
+            font-size: 14px;
+            padding: 5px;
+            margin-left: 5px;
         }
         .btn-container {
             display: flex;
             gap: 5px;
+            justify-content: center;
         }
-        /* 调整列宽 */
-        th:nth-child(1), td:nth-child(1) { width: 10%; } /* 序号 */
-        th:nth-child(2), td:nth-child(2) { width: 20%; } /* 账号 */
-        th:nth-child(3), td:nth-child(3) { width: 20%; } /* 分组 */
-        th:nth-child(4), td:nth-child(4) { width: 30%; } /* 备注 */
-        th:nth-child(5), td:nth-child(5) { width: 20%; } /* 操作 */
+        /* 响应式优化 */
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+                padding: 15px;
+            }
+            th, td {
+                font-size: 14px;
+                padding: 6px;
+            }
+            select {
+                font-size: 12px;
+                padding: 3px;
+            }
+            .btn {
+                font-size: 12px;
+                padding: 4px 6px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -146,43 +169,46 @@
             renderAccounts(selectedGroup);
         }
 
-        function renderAccounts(filterGroup = "") {
-            const accountTable = document.getElementById("accountTable");
-            accountTable.innerHTML = "";
+function renderAccounts(filterGroup = "") {
+    const accountTable = document.getElementById("accountTable");
+    accountTable.innerHTML = "";
 
-            const groupedAccounts = {};
-            Object.keys(allAccounts).forEach((user, index) => {
-                const group = allAccounts[user].group || "未分组";
-                if (!groupedAccounts[group]) {
-                    groupedAccounts[group] = [];
-                }
-                groupedAccounts[group].push({ user, note: allAccounts[user].note || "无备注", index: index + 1 });
-            });
-
-            const groupFilter = document.getElementById("groupFilter");
-            groupFilter.innerHTML = `<option value="">全部</option>`;
-            Object.keys(groupedAccounts).forEach(group => {
-                groupFilter.innerHTML += `<option value="${group}">${group}</option>`;
-            });
-
-            Object.keys(groupedAccounts).forEach(group => {
-                if (filterGroup && group !== filterGroup) return;
-                groupedAccounts[group].forEach(({ user, note, index }) => {
-                    accountTable.innerHTML += `
-                        <tr>
-                            <td>${index}</td>
-                            <td>${user}</td>
-                            <td>${group}</td>
-                            <td>${note}</td>
-                            <td class="btn-container">
-                                <button class="btn btn-success edit-btn" onclick="updateAccount('${user}')">修改</button>
-                                <button class="btn btn-danger delete-btn" onclick="deleteAccount('${user}')">删除</button>
-                            </td>
-                        </tr>`;
-                });
-            });
+    const groupedAccounts = {};
+    Object.keys(allAccounts).forEach((user, index) => {
+        const group = allAccounts[user].group || "未分组";
+        if (!groupedAccounts[group]) {
+            groupedAccounts[group] = [];
         }
+        groupedAccounts[group].push({ user, note: allAccounts[user].note || "无备注", index: index + 1 });
+    });
 
+    // 重新生成筛选下拉框选项
+    const groupFilter = document.getElementById("groupFilter");
+    groupFilter.innerHTML = `<option value="">全部</option>`;
+    Object.keys(groupedAccounts).forEach(group => {
+        groupFilter.innerHTML += `<option value="${group}">${group}</option>`;
+    });
+
+    // 过滤并显示账号数据
+    Object.keys(groupedAccounts).forEach(group => {
+        // 如果选择的是 "全部"（空字符串），则不过滤任何组，显示所有数据
+        if (filterGroup && group !== filterGroup) return;
+
+        groupedAccounts[group].forEach(({ user, note, index }) => {
+            accountTable.innerHTML += `
+                <tr>
+                    <td>${index}</td>
+                    <td>${user}</td>
+                    <td>${group}</td>
+                    <td>${note}</td>
+                    <td class="btn-container">
+                        <button class="btn btn-success" onclick="updateAccount('${user}')">修改</button>
+                        <button class="btn btn-danger" onclick="deleteAccount('${user}')">删除</button>
+                    </td>
+                </tr>`;
+        });
+    });
+}
         socket.on("accountsList", (accounts) => {
             allAccounts = accounts;
             renderAccounts();
