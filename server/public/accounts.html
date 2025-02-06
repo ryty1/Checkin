@@ -211,7 +211,7 @@
                     const li = document.createElement('li');
                     li.innerHTML = `
                         <span>${account.user}</span> 
-                        <span>${account.note || '暂无备注'}</span> 
+                        <span>${account.note || '--'}</span> 
                         <div class="actions">
                             <button class="btn btn-small" onclick="modifyAccount('${account.user}')">修改</button>
                             <button class="btn btn-small btn-danger" onclick="deleteAccount('${account.user}')">删除</button>
