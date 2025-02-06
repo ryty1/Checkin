@@ -52,17 +52,19 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts(true));
     });
 
-    // 编辑账号备注
-    socket.on("editAccount", async (accountData) => {
+    // 修改账号的分组和备注
+    socket.on("modifyAccount", async ({ user, group, note }) => {
         const accounts = await getAccounts(false);
-        if (accounts[accountData.user]) {
-            accounts[accountData.user].note = accountData.note; // 更新备注
+        if (accounts[user]) {
+            accounts[user].group = group;
+            accounts[user].note = note;
             fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-            socket.emit("accountEdited", { message: `账号 ${accountData.user} 备注已更新` });
+            socket.emit("accountModified", { message: `账号 ${user} 已更新` });
             socket.emit("accountsList", await getAccounts(true));
         }
     });
 
+    // 加载账号
     socket.on("loadAccounts", async () => {
         socket.emit("accountsList", await getAccounts(true));
     });
