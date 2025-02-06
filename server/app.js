@@ -20,7 +20,7 @@ app.use(express.json()); // 解析 JSON 格式的请求体
 // 获取本机账号，仅用于主页显示
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; // 适配不同系统环境变量
 
-// 获取所有账号，返回包含分组和备注信息的数据
+// 获取所有账号（不包含本机账号），并返回分组和备注信息
 async function getAccounts(excludeMainUser = true) {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
     let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
@@ -29,6 +29,35 @@ async function getAccounts(excludeMainUser = true) {
     }
     return accounts;
 }
+
+// WebSocket 处理
+io.on("connection", (socket) => {
+    console.log("Client connected");
+
+    socket.on("startNodesSummary", () => {
+        getNodesSummary(socket);
+    });
+
+    socket.on("saveAccount", async (accountData) => {
+        const accounts = await getAccounts(false);
+        accounts[accountData.user] = accountData;  // 保存分组和备注
+        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+        socket.emit("accountSaved", { message: `账号 ${accountData.user} 已保存` });
+        socket.emit("accountsList", await getAccounts(true));
+    });
+
+    socket.on("deleteAccount", async (user) => {
+        const accounts = await getAccounts(false);
+        delete accounts[user];
+        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+        socket.emit("accountDeleted", { message: `账号 ${user} 已删除` });
+        socket.emit("accountsList", await getAccounts(true));
+    });
+
+    socket.on("loadAccounts", async () => {
+        socket.emit("accountsList", await getAccounts(true));
+    });
+});
 
 // 过滤无效节点，只保留 `vmess://` 和 `hysteria2://`
 function filterNodes(nodes) {
@@ -70,36 +99,6 @@ async function getNodesSummary(socket) {
     // 发送结果，保持顺序
     socket.emit("nodesSummary", { successfulNodes, failedAccounts });
 }
-
-// WebSocket 处理
-io.on("connection", (socket) => {
-    console.log("Client connected");
-
-    socket.on("startNodesSummary", () => {
-        getNodesSummary(socket);
-    });
-
-    // 保存账号，支持分组和备注
-    socket.on("saveAccount", async (accountData) => {
-        const accounts = await getAccounts(false);
-        accounts[accountData.user] = accountData;  // 保存分组和备注
-        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-        socket.emit("accountSaved", { message: `账号 ${accountData.user} 已保存` });
-        socket.emit("accountsList", await getAccounts(true));
-    });
-
-    socket.on("deleteAccount", async (user) => {
-        const accounts = await getAccounts(false);
-        delete accounts[user];
-        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-        socket.emit("accountDeleted", { message: `账号 ${user} 已删除` });
-        socket.emit("accountsList", await getAccounts(true));
-    });
-
-    socket.on("loadAccounts", async () => {
-        socket.emit("accountsList", await getAccounts(true));
-    });
-});
 
 // 获取 Telegram 设置
 function getTelegramSettings() {
