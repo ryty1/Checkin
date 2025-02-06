@@ -170,9 +170,12 @@
 
         // 修改分组和备注
         function modifyAccount(user) {
-            const group = prompt("请输入新的分组名称：");
-            const note = prompt("请输入新的备注：");
-            socket.emit("modifyAccount", { user, group, note });
+            const isModifyGroup = confirm("是否修改分组?");
+            if (isModifyGroup) {
+                const group = prompt("请输入新的分组名称：");
+                const note = prompt("请输入新的备注：");
+                socket.emit("modifyAccount", { user, group, note });
+            }
         }
 
         // 监听后端发送的账号列表
@@ -192,26 +195,23 @@
                 groups[group].push({ user, note: account.note });
             });
 
-            // 遍历每个分组
-            for (const groupName in groups) {
+            // 在未分组的组前显示
+            if (groups["未分组"]) {
                 const groupDiv = document.createElement('div');
-
-                // 创建分组折叠按钮
                 const groupHeader = document.createElement('div');
                 groupHeader.classList.add('group-header');
-                groupHeader.onclick = () => toggleGroup(groupName);
-                groupHeader.innerHTML = `${groupName} <span>点击展开/收起</span>`;
+                groupHeader.onclick = () => toggleGroup("未分组");
+                groupHeader.innerHTML = `未分组 <span>点击展开/收起</span>`;
                 groupDiv.appendChild(groupHeader);
 
-                // 创建分组内容
                 const groupContent = document.createElement('div');
-                groupContent.id = groupName;
+                groupContent.id = "未分组";
                 groupContent.classList.add('group-content');
-                groups[groupName].forEach(account => {
+                groups["未分组"].forEach(account => {
                     const li = document.createElement('li');
                     li.innerHTML = `
                         <span>${account.user}</span> 
-                        <span>${account.note || '--'}</span> 
+                        <span>${account.note || '暂无备注'}</span> 
                         <div class="actions">
                             <button class="btn btn-small" onclick="modifyAccount('${account.user}')">修改</button>
                             <button class="btn btn-small btn-danger" onclick="deleteAccount('${account.user}')">删除</button>
@@ -222,6 +222,40 @@
 
                 groupDiv.appendChild(groupContent);
                 accountList.appendChild(groupDiv);
+            }
+
+            // 遍历每个分组
+            for (const groupName in groups) {
+                if (groupName !== "未分组") {
+                    const groupDiv = document.createElement('div');
+
+                    // 创建分组折叠按钮
+                    const groupHeader = document.createElement('div');
+                    groupHeader.classList.add('group-header');
+                    groupHeader.onclick = () => toggleGroup(groupName);
+                    groupHeader.innerHTML = `${groupName} <span>点击展开/收起</span>`;
+                    groupDiv.appendChild(groupHeader);
+
+                    // 创建分组内容
+                    const groupContent = document.createElement('div');
+                    groupContent.id = groupName;
+                    groupContent.classList.add('group-content');
+                    groups[groupName].forEach(account => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span>${account.user}</span> 
+                            <span>${account.note || '---'}</span> 
+                            <div class="actions">
+                                <button class="btn btn-small" onclick="modifyAccount('${account.user}')">修改</button>
+                                <button class="btn btn-small btn-danger" onclick="deleteAccount('${account.user}')">删除</button>
+                            </div>
+                        `;
+                        groupContent.appendChild(li);
+                    });
+
+                    groupDiv.appendChild(groupContent);
+                    accountList.appendChild(groupDiv);
+                }
             }
         });
 
