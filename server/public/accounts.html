@@ -114,7 +114,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let allAccounts = {}; // 存储所有账号数据
+        let allAccounts = {}; 
 
         function loadAccounts() {
             socket.emit("loadAccounts");
@@ -133,10 +133,11 @@
         }
 
         function updateAccount(user) {
-            const newGroup = prompt("请输入新的分组名称：", allAccounts[user].group || "");
-            const newNote = prompt("请输入新的备注：", allAccounts[user].note || "");
+            const newGroup = confirm("是否修改分组？") ? prompt("请输入新的分组名称：", allAccounts[user].group || "") : allAccounts[user].group;
+            const newNote = confirm("是否修改备注？") ? prompt("请输入新的备注：", allAccounts[user].note || "") : allAccounts[user].note;
+
             if (newGroup !== null && newNote !== null) {
-                socket.emit("updateAccount", { user, group: newGroup, note: newNote });
+                socket.emit("modifyAccount", { user, group: newGroup, note: newNote });
             }
         }
 
