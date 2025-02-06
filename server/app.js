@@ -25,7 +25,7 @@ async function getAccounts(excludeMainUser = true) {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
     let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
     if (excludeMainUser) {
-        delete accounts[MAIN_SERVER_USER]; // 排除本机账号
+        delete accounts[MAIN_SERVER_USER];
     }
     return accounts;
 }
@@ -82,10 +82,10 @@ io.on("connection", (socket) => {
     // 保存账号，支持分组和备注
     socket.on("saveAccount", async (accountData) => {
         const accounts = await getAccounts(false);
-        accounts[accountData.user] = accountData; // 确保账号数据包含 `group` 和 `note`
+        accounts[accountData.user] = accountData;  // 保存分组和备注
         fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
         socket.emit("accountSaved", { message: `账号 ${accountData.user} 已保存` });
-        socket.emit("accountsList", await getAccounts(true)); // 返回最新的账号列表
+        socket.emit("accountsList", await getAccounts(true));
     });
 
     socket.on("deleteAccount", async (user) => {
