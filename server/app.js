@@ -20,16 +20,10 @@ app.use(express.json()); // 解析 JSON 格式的请求体
 // 获取本机账号，仅用于主页显示
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; // 适配不同系统环境变量
 
-// 获取所有账号（不包含本机账号），并返回分组和备注信息
-async function getAccounts() {
-    if (!fs.existsSync(ACCOUNTS_FILE)) return {};
-    return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
-}
-
 io.on("connection", (socket) => {
     socket.on("saveAccount", async (accountData) => {
         const accounts = await getAccounts();
-        accounts[accountData.user] = { user: accountData.user, group: null, note: null };
+        accounts[accountData.user] = { user: accountData.user, group: "未分组", note: "无备注" };
         fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
         socket.emit("accountsList", await getAccounts());
     });
@@ -45,7 +39,7 @@ io.on("connection", (socket) => {
         const accounts = await getAccounts();
         if (accounts[user]) {
             if (group !== null) accounts[user].group = group;
-            if (note !== undefined) accounts[user].note = note;
+            if (note !== null) accounts[user].note = note;
             fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
         }
         socket.emit("accountsList", await getAccounts());
