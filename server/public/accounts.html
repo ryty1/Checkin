@@ -13,8 +13,8 @@
             padding: 0;
         }
         .container {
-            max-width: 500px;
-            margin: 40px auto;
+            max-width: 600px;
+            margin: 50px auto;
             background: white;
             padding: 20px;
             border-radius: 10px;
@@ -23,112 +23,150 @@
         h1 {
             color: #333;
         }
-        .input-group {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
-        input {
-            flex: 1;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            outline: none;
-        }
         .btn {
-            padding: 10px 15px;
-            margin-left: 5px;
-            font-size: 16px;
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 12px;
+            font-size: 18px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: 0.3s;
         }
-        .btn-success {
-            background-color: #28A745;
+        .btn-primary {
+            background-color: #007BFF;
             color: white;
         }
-        .btn-success:hover {
-            background-color: #1e7e34;
+        .btn-primary:hover {
+            background-color: #0056b3;
         }
-        .btn-danger {
-            background-color: #DC3545;
-            color: white;
+        .results-box {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: left;
         }
-        .btn-danger:hover {
-            background-color: #b02a37;
+        .group {
+            margin-bottom: 15px;
         }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        li {
-            padding: 10px;
-            background: #f9f9f9;
-            margin-bottom: 8px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .delete-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
+        .group-header {
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #f0f0f0;
+            padding: 8px;
             cursor: pointer;
-            font-size: 14px;
         }
-        .delete-btn:hover {
-            background-color: #b02a37;
+        .group-content {
+            display: none;
+            padding-left: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 5px 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        .status {
+            text-align: left;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>账号管理</h1>
-
-        <div class="input-group">
-            <input type="text" id="accountUser" placeholder="请输入账号">
-            <button class="btn btn-success" onclick="saveAccount()">保存账号</button>
-        </div>
-
-        <ul id="accountList"></ul>
+        <button class="btn btn-primary" onclick="loadAccounts()">加载账号</button>
+        
+        <div id="results" class="results-box"></div>
+        <button class="btn btn-primary" onclick="saveAccounts()">保存修改</button>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
+        let accounts = {};
 
         function loadAccounts() {
-            socket.emit("loadAccounts");
+            fetch('/getAccounts')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        accounts = data.results;
+                        displayAccounts();
+                    } else {
+                        alert('加载失败，请稍后再试');
+                    }
+                })
+                .catch(error => {
+                    console.error('加载失败:', error);
+                    alert('加载失败，请稍后再试');
+                });
         }
 
-        function saveAccount() {
-            const user = document.getElementById("accountUser").value.trim();
-            if (user) {
-                socket.emit("saveAccount", { user });
-                document.getElementById("accountUser").value = '';
+        function displayAccounts() {
+            let resultHTML = '';
+            let groupedAccounts = {};
+
+            // 按分组对账号进行分类
+            Object.keys(accounts).forEach(username => {
+                const account = accounts[username];
+                const group = account.group || '未分组';
+
+                if (!groupedAccounts[group]) {
+                    groupedAccounts[group] = [];
+                }
+
+                groupedAccounts[group].push({ username, ...account });
+            });
+
+            // 遍历分组并生成HTML
+            Object.keys(groupedAccounts).forEach(group => {
+                resultHTML += `<div class="group">
+                    <div class="group-header" onclick="toggleGroup('${group}')">${group} <span>+</span></div>
+                    <div class="group-content" id="group-${group}">`;
+
+                groupedAccounts[group].forEach((account, index) => {
+                    resultHTML += `<table>
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${account.username}</td>
+                            <td><input type="text" value="${account.group || ''}" id="group-${account.username}" /></td>
+                            <td><input type="text" value="${account.note || ''}" id="note-${account.username}" /></td>
+                            <td><button onclick="removeAccount('${account.username}')">删除</button></td>
+                        </tr>
+                    </table>`;
+                });
+
+                resultHTML += '</div></div>';
+            });
+
+            document.getElementById("results").innerHTML = resultHTML;
+        }
+
+        function toggleGroup(group) {
+            const groupContent = document.getElementById(`group-${group}`);
+            const groupHeader = event.target;
+            if (groupContent.style.display === "none") {
+                groupContent.style.display = "block";
+                groupHeader.innerHTML = `${group} <span>-</span>`;
+            } else {
+                groupContent.style.display = "none";
+                groupHeader.innerHTML = `${group} <span>+</span>`;
             }
         }
-
-        function deleteAccount(user) {
-            socket.emit("deleteAccount", user);
+        
+        function removeAccount(username) {
+            if (confirm(`确定要删除账号 ${username} 吗？`)) {
+                // 执行删除操作
+                socket.emit("deleteAccount", username);
+            }
         }
-
-        socket.on("accountsList", (accounts) => {
-            const accountList = document.getElementById("accountList");
-            accountList.innerHTML = Object.keys(accounts).map(user => 
-                `<li>
-                    <a href="/info?user=${user}">${user}</a> <!-- 添加跳转链接 -->
-                    <button class="delete-btn" onclick="deleteAccount('${user}')">删除</button>
-                </li>`
-            ).join("");
-        });
-
-        loadAccounts();
     </script>
 </body>
 </html>
