@@ -81,6 +81,17 @@
         .group-list {
             display: none;
         }
+        .btn-edit {
+            background-color: #ffc107;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-edit:hover {
+            background-color: #e0a800;
+        }
     </style>
 </head>
 <body>
@@ -133,6 +144,13 @@
             groupList.style.display = groupList.style.display === 'none' ? 'table-row-group' : 'none';
         }
 
+        function editAccount(user) {
+            const newNote = prompt("请输入备注：");
+            if (newNote !== null) {
+                socket.emit("editAccount", { user, note: newNote });
+            }
+        }
+
         socket.on("accountsList", (accounts) => {
             const accountTableBody = document.getElementById("accountTableBody");
             accountTableBody.innerHTML = '';  // 清空当前表格内容
@@ -165,6 +183,7 @@
                         <td>${account.note || '-'}</td>
                         <td>
                             <button class="btn btn-danger" onclick="deleteAccount('${account.user}')">删除</button>
+                            <button class="btn-edit" onclick="editAccount('${account.user}')">修改</button>
                         </td>
                     `;
                     groupList.appendChild(accountItem);
@@ -194,6 +213,7 @@
                         <td>${account.note || '-'}</td>
                         <td>
                             <button class="btn btn-danger" onclick="deleteAccount('${account.user}')">删除</button>
+                            <button class="btn-edit" onclick="editAccount('${account.user}')">修改</button>
                         </td>
                     `;
                     groupList.appendChild(accountItem);
