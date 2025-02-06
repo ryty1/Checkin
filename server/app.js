@@ -20,6 +20,11 @@ app.use(express.json()); // 解析 JSON 格式的请求体
 // 获取本机账号，仅用于主页显示
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; // 适配不同系统环境变量
 
+async function getAccounts() {
+    if (!fs.existsSync(ACCOUNTS_FILE)) return {};
+    return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+}
+
 io.on("connection", (socket) => {
     socket.on("saveAccount", async (accountData) => {
         const accounts = await getAccounts();
