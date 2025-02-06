@@ -20,7 +20,7 @@ app.use(express.json()); // 解析 JSON 格式的请求体
 // 获取本机账号，仅用于主页显示
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; // 适配不同系统环境变量
 
-// 获取所有账号，返回分组信息
+// 获取所有账号，返回包含分组和备注信息的数据
 async function getAccounts(excludeMainUser = true) {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
     let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
@@ -79,15 +79,14 @@ io.on("connection", (socket) => {
         getNodesSummary(socket);
     });
 
-     // 保存账号，支持分组信息
+    // 保存账号，支持分组和备注
     socket.on("saveAccount", async (accountData) => {
         const accounts = await getAccounts(false);
-        accounts[accountData.user] = accountData; // 账号数据应该包含 `group` 和 `note`
+        accounts[accountData.user] = accountData; // 确保账号数据包含 `group` 和 `note`
         fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
         socket.emit("accountSaved", { message: `账号 ${accountData.user} 已保存` });
         socket.emit("accountsList", await getAccounts(true)); // 返回最新的账号列表
     });
-
 
     socket.on("deleteAccount", async (user) => {
         const accounts = await getAccounts(false);
