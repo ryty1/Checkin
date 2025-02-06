@@ -88,9 +88,22 @@
             padding: 5px 10px;
             border-radius: 5px;
             cursor: pointer;
+            width: 100px;
         }
         .btn-edit:hover {
             background-color: #e0a800;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100px;
+        }
+        .btn-delete:hover {
+            background-color: #b02a37;
         }
     </style>
 </head>
@@ -182,8 +195,8 @@
                         <td>未分组</td>
                         <td>${account.note || '-'}</td>
                         <td>
-                            <button class="btn btn-danger" onclick="deleteAccount('${account.user}')">删除</button>
                             <button class="btn-edit" onclick="editAccount('${account.user}')">修改</button>
+                            <button class="btn-delete" onclick="deleteAccount('${account.user}')">删除</button>
                         </td>
                     `;
                     groupList.appendChild(accountItem);
@@ -212,8 +225,8 @@
                         <td>${account.group}</td>
                         <td>${account.note || '-'}</td>
                         <td>
-                            <button class="btn btn-danger" onclick="deleteAccount('${account.user}')">删除</button>
                             <button class="btn-edit" onclick="editAccount('${account.user}')">修改</button>
+                            <button class="btn-delete" onclick="deleteAccount('${account.user}')">删除</button>
                         </td>
                     `;
                     groupList.appendChild(accountItem);
