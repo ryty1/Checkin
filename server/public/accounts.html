@@ -13,7 +13,7 @@
             padding: 0;
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 40px auto;
             background: white;
             padding: 20px;
@@ -28,7 +28,7 @@
             justify-content: space-between;
             margin-bottom: 15px;
         }
-        input, select {
+        input {
             flex: 1;
             padding: 10px;
             font-size: 16px;
@@ -37,7 +37,7 @@
             outline: none;
         }
         .btn {
-            padding: 8px 12px;
+            padding: 6px 10px;
             font-size: 14px;
             border: none;
             border-radius: 5px;
@@ -64,9 +64,11 @@
         }
         th {
             background-color: #f0f0f0;
+            position: sticky;
+            top: 0;
         }
         .edit-btn, .delete-btn {
-            padding: 6px 10px;
+            padding: 6px 8px;
             font-size: 12px;
             border-radius: 5px;
         }
@@ -74,44 +76,45 @@
             display: flex;
             gap: 5px;
         }
-        .filter-group {
-            margin-bottom: 10px;
-        }
+        /* 调整列宽 */
+        th:nth-child(1), td:nth-child(1) { width: 10%; } /* 序号 */
+        th:nth-child(2), td:nth-child(2) { width: 20%; } /* 账号 */
+        th:nth-child(3), td:nth-child(3) { width: 20%; } /* 分组 */
+        th:nth-child(4), td:nth-child(4) { width: 30%; } /* 备注 */
+        th:nth-child(5), td:nth-child(5) { width: 20%; } /* 操作 */
     </style>
 </head>
 <body>
     <div class="container">
         <h1>账号管理</h1>
-
         <div class="input-group">
             <input type="text" id="accountUser" placeholder="请输入账号">
             <button class="btn btn-success" onclick="saveAccount()">保存账号</button>
         </div>
-
-        <!-- 筛选分组 -->
-        <div class="filter-group">
-            <label for="groupFilter">筛选分组：</label>
-            <select id="groupFilter" onchange="filterByGroup()">
-                <option value="all">全部</option>
-            </select>
-        </div>
-
+        
         <table>
             <thead>
                 <tr>
+                    <th>序号</th>
                     <th>账号</th>
-                    <th>分组</th>
+                    <th>
+                        分组 
+                        <select id="groupFilter" onchange="filterAccounts()">
+                            <option value="">全部</option>
+                        </select>
+                    </th>
                     <th>备注</th>
                     <th>操作</th>
                 </tr>
             </thead>
-            <tbody id="accountList"></tbody>
+            <tbody id="accountTable"></tbody>
         </table>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
+        let allAccounts = {}; // 存储所有账号数据
 
         function loadAccounts() {
             socket.emit("loadAccounts");
@@ -120,65 +123,68 @@
         function saveAccount() {
             const user = document.getElementById("accountUser").value.trim();
             if (user) {
-                socket.emit("saveAccount", { user, group: "未分组", note: "无备注" });
+                socket.emit("saveAccount", { user });
                 document.getElementById("accountUser").value = '';
             }
-        }
-
-        function editAccount(user, currentGroup, currentNote) {
-            const newGroup = prompt(`当前分组: ${currentGroup}\n请输入新的分组名称（留空不修改）：`);
-            const newNote = prompt(`当前备注: ${currentNote}\n请输入新的备注（留空不修改）：`);
-
-            if (newGroup === null && newNote === null) return;
-
-            const updatedGroup = newGroup ? newGroup.trim() : currentGroup;
-            const updatedNote = newNote ? newNote.trim() : currentNote;
-
-            socket.emit("updateAccount", { user, group: updatedGroup, note: updatedNote });
         }
 
         function deleteAccount(user) {
             socket.emit("deleteAccount", user);
         }
 
-        function filterByGroup() {
-            const selectedGroup = document.getElementById("groupFilter").value;
-            const rows = document.querySelectorAll("#accountList tr");
+        function updateAccount(user) {
+            const newGroup = prompt("请输入新的分组名称：", allAccounts[user].group || "");
+            const newNote = prompt("请输入新的备注：", allAccounts[user].note || "");
+            if (newGroup !== null && newNote !== null) {
+                socket.emit("updateAccount", { user, group: newGroup, note: newNote });
+            }
+        }
 
-            rows.forEach(row => {
-                const group = row.getAttribute("data-group");
-                row.style.display = (selectedGroup === "all" || group === selectedGroup) ? "table-row" : "none";
+        function filterAccounts() {
+            const selectedGroup = document.getElementById("groupFilter").value;
+            renderAccounts(selectedGroup);
+        }
+
+        function renderAccounts(filterGroup = "") {
+            const accountTable = document.getElementById("accountTable");
+            accountTable.innerHTML = "";
+
+            const groupedAccounts = {};
+            Object.keys(allAccounts).forEach((user, index) => {
+                const group = allAccounts[user].group || "未分组";
+                if (!groupedAccounts[group]) {
+                    groupedAccounts[group] = [];
+                }
+                groupedAccounts[group].push({ user, note: allAccounts[user].note || "无备注", index: index + 1 });
+            });
+
+            const groupFilter = document.getElementById("groupFilter");
+            groupFilter.innerHTML = `<option value="">全部</option>`;
+            Object.keys(groupedAccounts).forEach(group => {
+                groupFilter.innerHTML += `<option value="${group}">${group}</option>`;
+            });
+
+            Object.keys(groupedAccounts).forEach(group => {
+                if (filterGroup && group !== filterGroup) return;
+                groupedAccounts[group].forEach(({ user, note, index }) => {
+                    accountTable.innerHTML += `
+                        <tr>
+                            <td>${index}</td>
+                            <td>${user}</td>
+                            <td>${group}</td>
+                            <td>${note}</td>
+                            <td class="btn-container">
+                                <button class="btn btn-success edit-btn" onclick="updateAccount('${user}')">修改</button>
+                                <button class="btn btn-danger delete-btn" onclick="deleteAccount('${user}')">删除</button>
+                            </td>
+                        </tr>`;
+                });
             });
         }
 
         socket.on("accountsList", (accounts) => {
-            const accountList = document.getElementById("accountList");
-            accountList.innerHTML = "";
-
-            const groupFilter = document.getElementById("groupFilter");
-            groupFilter.innerHTML = '<option value="all">全部</option>';
-            const groupsSet = new Set();
-
-            Object.keys(accounts).forEach(user => {
-                const { group, note } = accounts[user];
-                groupsSet.add(group);
-
-                accountList.innerHTML += `
-                    <tr data-group="${group}">
-                        <td>${user}</td>
-                        <td>${group}</td>
-                        <td>${note}</td>
-                        <td class="btn-container">
-                            <button class="btn btn-success edit-btn" onclick="editAccount('${user}', '${group}', '${note}')">修改</button>
-                            <button class="btn btn-danger delete-btn" onclick="deleteAccount('${user}')">删除</button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            groupsSet.forEach(group => {
-                groupFilter.innerHTML += `<option value="${group}">${group}</option>`;
-            });
+            allAccounts = accounts;
+            renderAccounts();
         });
 
         loadAccounts();
