@@ -37,9 +37,9 @@
             outline: none;
         }
         .btn {
-            padding: 8px 15px; /* 修改了按钮的大小 */
+            padding: 8px 15px;
             margin-left: 5px;
-            font-size: 14px; /* 调整字体大小 */
+            font-size: 14px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
@@ -88,14 +88,15 @@
             display: flex;
             justify-content: space-between;
             background-color: #e9ecef;
-            padding: 8px 15px;
+            padding: 6px 15px; /* 更小的高度 */
             border: 1px solid #ddd;
             cursor: pointer;
             font-weight: bold;
+            border-radius: 8px; /* 圆滑的边角 */
         }
         .group-content {
-            display: none; /* 默认折叠 */
-            padding: 10px 0;
+            display: none;
+            padding: 5px 0; /* 更小的高度 */
             margin-left: 20px;
         }
         table {
@@ -175,6 +176,10 @@
                 const group = prompt("请输入新的分组名称：");
                 const note = prompt("请输入新的备注：");
                 socket.emit("modifyAccount", { user, group, note });
+            } else {
+                // 如果没有修改分组，仍然可以修改备注
+                const note = prompt("请输入新的备注：");
+                socket.emit("modifyAccount", { user, group: null, note });
             }
         }
 
@@ -244,7 +249,7 @@
                         const li = document.createElement('li');
                         li.innerHTML = `
                             <span>${account.user}</span> 
-                            <span>${account.note || '---'}</span> 
+                            <span>${account.note || '暂无备注'}</span> 
                             <div class="actions">
                                 <button class="btn btn-small" onclick="modifyAccount('${account.user}')">修改</button>
                                 <button class="btn btn-small btn-danger" onclick="deleteAccount('${account.user}')">删除</button>
