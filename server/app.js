@@ -28,7 +28,7 @@ async function getAccounts() {
 io.on("connection", (socket) => {
     socket.on("saveAccount", async (accountData) => {
         const accounts = await getAccounts();
-        accounts[accountData.user] = { user: accountData.user, group: "未分组", note: "无备注" };
+        accounts[accountData.user] = { user: accountData.user, group: "未分组" };  // 移除了备注字段
         fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
         socket.emit("accountsList", await getAccounts());
     });
@@ -40,11 +40,11 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts());
     });
 
-    socket.on("modifyAccount", async ({ user, group, note }) => {
+    socket.on("modifyAccount", async ({ user, group }) => {  // 移除了备注字段
         const accounts = await getAccounts();
         if (accounts[user]) {
             if (group !== null) accounts[user].group = group;
-            if (note !== null) accounts[user].note = note;
+            // 不再修改备注字段
             fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
         }
         socket.emit("accountsList", await getAccounts());
@@ -54,7 +54,6 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts());
     });
 });
-
 // 过滤无效节点，只保留 `vmess://` 和 `hysteria2://`
 function filterNodes(nodes) {
     return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
