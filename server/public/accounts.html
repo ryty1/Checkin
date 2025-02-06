@@ -4,121 +4,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>账号管理</title>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        text-align: left;  /* 设置整体文字左对齐 */
-        margin: 0;
-        padding: 0;
-    }
-    .container {
-        max-width: 800px;
-        margin: 40px auto;
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    h1 {
-        color: #333;
-    }
-    .input-group {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 15px;
-    }
-    input {
-        flex: 1;
-        padding: 10px;
-        font-size: 16px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        outline: none;
-    }
-    .btn {
-        padding: 6px 10px;
-        font-size: 14px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: 0.3s;
-        background: none;
-        border: 1px solid transparent;
-    }
-    .btn-success {
-        background-color: #28A745;
-        color: white;
-        border: 1px solid #28A745;
-    }
-    .btn-danger {
-        background-color: #DC3545;
-        color: white;
-        border: 1px solid #DC3545;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
-        table-layout: fixed;
-    }
-    th, td {
-        padding: 10px;
-        text-align: left;  /* 使表头和内容左对齐 */
-        border-bottom: 1px solid #ddd;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    th {
-        background-color: #f0f0f0;
-        position: sticky;
-        top: 0;
-        font-size: 16px;
-    }
-    /* 修改列宽 */
-    th:nth-child(1), td:nth-child(1) {
-        width: 10%;  /* 序号列宽度 */
-    }
-    th:nth-child(2), td:nth-child(2) {
-        width: 40%;  /* 账号列宽度 */
-    }
-    th:nth-child(3), td:nth-child(3) {
-        width: 30%;  /* 分组列宽度 */
-    }
-    th:nth-child(4), td:nth-child(4) {
-        width: 20%;  /* 操作列宽度 */
-    }
-    select {
-        font-size: 14px;
-        padding: 5px;
-        margin-left: 5px;
-    }
-    .btn-container {
-        display: flex;
-        gap: 5px;
-        justify-content: center;
-    }
-    /* 响应式优化 */
-    @media (max-width: 600px) {
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: left;
+            margin: 0;
+            padding: 0;
+        }
         .container {
-            width: 95%;
-            padding: 15px;
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        th, td {
-            font-size: 14px;
-            padding: 6px;
+        h1 {
+            color: #333;
         }
-        select {
-            font-size: 12px;
-            padding: 3px;
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
         }
         .btn {
-            font-size: 12px;
-            padding: 4px 6px;
+            padding: 6px 10px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+            background: none;
+            border: 1px solid transparent;
         }
-    }
-</style>
+        .btn-success {
+            background-color: #28A745;
+            color: white;
+            border: 1px solid #28A745;
+        }
+        .btn-danger {
+            background-color: #DC3545;
+            color: white;
+            border: 1px solid #DC3545;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            table-layout: fixed;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        th {
+            background-color: #f0f0f0;
+            position: sticky;
+            top: 0;
+            font-size: 16px;
+        }
+        /* 修改列宽 */
+        th:nth-child(1), td:nth-child(1) {
+            width: 10%;  /* 序号列宽度 */
+        }
+        th:nth-child(2), td:nth-child(2) {
+            width: 40%;  /* 账号列宽度 */
+            padding-left: 20px;  /* 序号和账号间距 */
+        }
+        th:nth-child(3), td:nth-child(3) {
+            width: 30%;  /* 分组列宽度 */
+        }
+        th:nth-child(4), td:nth-child(4) {
+            width: 20%;  /* 操作列宽度 */
+        }
+        select {
+            font-size: 14px;
+            padding: 5px;
+            margin-left: 5px;
+        }
+        .btn-container {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+        /* 响应式优化 */
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+                padding: 15px;
+            }
+            th, td {
+                font-size: 14px;
+                padding: 6px;
+            }
+            select {
+                font-size: 12px;
+                padding: 3px;
+            }
+            .btn {
+                font-size: 12px;
+                padding: 4px 6px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -175,50 +176,50 @@
             }
         }
 
-function filterAccounts() {
-    const selectedGroup = document.getElementById("groupFilter").value;
-    renderAccounts(selectedGroup);
-}
-
-function renderAccounts(filterGroup = "") {
-    const accountTable = document.getElementById("accountTable");
-    accountTable.innerHTML = "";
-
-    const groupedAccounts = {};
-    Object.keys(allAccounts).forEach((user, index) => {
-        const group = allAccounts[user].group || "未分组";
-        if (!groupedAccounts[group]) {
-            groupedAccounts[group] = [];
+        function filterAccounts() {
+            const selectedGroup = document.getElementById("groupFilter").value;
+            renderAccounts(selectedGroup);
         }
-        groupedAccounts[group].push({ user, index: index + 1 });
-    });
 
-    // 重新生成筛选下拉框选项
-    const groupFilter = document.getElementById("groupFilter");
-    groupFilter.innerHTML = `<option value="">全部</option>`;
-    Object.keys(groupedAccounts).forEach(group => {
-        groupFilter.innerHTML += `<option value="${group}">${group}</option>`;
-    });
+        function renderAccounts(filterGroup = "") {
+            const accountTable = document.getElementById("accountTable");
+            accountTable.innerHTML = "";
 
-    // 过滤并显示账号数据
-    Object.keys(groupedAccounts).forEach(group => {
-        // 如果选择的是 "全部"（空字符串），则不过滤任何组，显示所有数据
-        if (filterGroup && (filterGroup !== "" && group !== filterGroup)) return;
+            const groupedAccounts = {};
+            Object.keys(allAccounts).forEach((user, index) => {
+                const group = allAccounts[user].group || "未分组";
+                if (!groupedAccounts[group]) {
+                    groupedAccounts[group] = [];
+                }
+                groupedAccounts[group].push({ user, index: index + 1 });
+            });
 
-        groupedAccounts[group].forEach(({ user, index }) => {
-            accountTable.innerHTML += `
-                <tr>
-                    <td>${index}</td>
-                    <td>${user}</td>
-                    <td>${group}</td>
-                    <td class="btn-container">
-                        <button class="btn btn-success" onclick="updateAccount('${user}')">修改</button>
-                        <button class="btn btn-danger" onclick="deleteAccount('${user}')">删除</button>
-                    </td>
-                </tr>`;
-        });
-    });
-}
+            // 重新生成筛选下拉框选项
+            const groupFilter = document.getElementById("groupFilter");
+            groupFilter.innerHTML = `<option value="">全部</option>`;
+            Object.keys(groupedAccounts).forEach(group => {
+                groupFilter.innerHTML += `<option value="${group}">${group}</option>`;
+            });
+
+            // 过滤并显示账号数据
+            Object.keys(groupedAccounts).forEach(group => {
+                if (filterGroup && (filterGroup !== "" && group !== filterGroup)) return;
+
+                groupedAccounts[group].forEach(({ user, index }) => {
+                    accountTable.innerHTML += `
+                        <tr>
+                            <td>${index}</td>
+                            <td>${user}</td>
+                            <td>${group}</td>
+                            <td class="btn-container">
+                                <button class="btn btn-success" onclick="updateAccount('${user}')">修改</button>
+                                <button class="btn btn-danger" onclick="deleteAccount('${user}')">删除</button>
+                            </td>
+                        </tr>`;
+                });
+            });
+        }
+
         socket.on("accountsList", (accounts) => {
             allAccounts = accounts;
             renderAccounts();
