@@ -13,7 +13,7 @@
             padding: 0;
         }
         .container {
-            max-width: 800px;
+            max-width: 500px;
             margin: 40px auto;
             background: white;
             padding: 20px;
@@ -37,9 +37,9 @@
             outline: none;
         }
         .btn {
-            padding: 8px 15px;
+            padding: 10px 15px;
             margin-left: 5px;
-            font-size: 14px;
+            font-size: 16px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
@@ -84,55 +84,15 @@
         .delete-btn:hover {
             background-color: #b02a37;
         }
-        .group-header {
-            display: flex;
-            justify-content: space-between;
-            background-color: #e9ecef;
-            padding: 6px 15px; /* 更小的高度 */
-            border: 1px solid #ddd;
-            cursor: pointer;
-            font-weight: bold;
-            border-radius: 8px; /* 圆滑的边角 */
-        }
-        .group-content {
-            display: none;
-            padding: 5px 0; /* 更小的高度 */
-            margin-left: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 8px 15px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background-color: #f0f0f0;
-        }
-        .status {
-            text-align: left;
-        }
-        .btn-small {
-            padding: 5px 10px;
-            font-size: 12px;
-        }
-        .actions {
-            display: flex;
-            justify-content: space-between;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>账号管理</h1>
-
         <div class="input-group">
             <input type="text" id="accountUser" placeholder="请输入账号">
             <button class="btn btn-success" onclick="saveAccount()">保存账号</button>
         </div>
-
         <ul id="accountList"></ul>
     </div>
 
@@ -140,12 +100,10 @@
     <script>
         const socket = io();
 
-        // 加载账号列表
         function loadAccounts() {
             socket.emit("loadAccounts");
         }
 
-        // 保存账号
         function saveAccount() {
             const user = document.getElementById("accountUser").value.trim();
             if (user) {
@@ -154,114 +112,33 @@
             }
         }
 
-        // 删除账号
         function deleteAccount(user) {
             socket.emit("deleteAccount", user);
         }
 
-        // 显示或隐藏分组内容
-        function toggleGroup(groupName) {
-            const groupContent = document.getElementById(groupName);
-            if (groupContent.style.display === "none") {
-                groupContent.style.display = "block";
-            } else {
-                groupContent.style.display = "none";
-            }
-        }
-
-        // 修改分组和备注
         function modifyAccount(user) {
+            // 询问是否修改分组
             const isModifyGroup = confirm("是否修改分组?");
+            
             if (isModifyGroup) {
                 const group = prompt("请输入新的分组名称：");
                 const note = prompt("请输入新的备注：");
                 socket.emit("modifyAccount", { user, group, note });
             } else {
-                // 如果没有修改分组，仍然可以修改备注
                 const note = prompt("请输入新的备注：");
-                socket.emit("modifyAccount", { user, group: null, note });
+                socket.emit("modifyAccount", { user, group: null, note }); // group为null表示不修改分组
             }
         }
 
-        // 监听后端发送的账号列表
         socket.on("accountsList", (accounts) => {
             const accountList = document.getElementById("accountList");
-            accountList.innerHTML = ''; // 清空当前的账号列表
-
-            const groups = {};
-
-            // 将账号按分组分类
-            Object.keys(accounts).forEach(user => {
-                const account = accounts[user];
-                const group = account.group || "未分组"; // 如果没有分组则归为“未分组”
-                if (!groups[group]) {
-                    groups[group] = [];
-                }
-                groups[group].push({ user, note: account.note });
-            });
-
-            // 在未分组的组前显示
-            if (groups["未分组"]) {
-                const groupDiv = document.createElement('div');
-                const groupHeader = document.createElement('div');
-                groupHeader.classList.add('group-header');
-                groupHeader.onclick = () => toggleGroup("未分组");
-                groupHeader.innerHTML = `未分组 <span>点击展开/收起</span>`;
-                groupDiv.appendChild(groupHeader);
-
-                const groupContent = document.createElement('div');
-                groupContent.id = "未分组";
-                groupContent.classList.add('group-content');
-                groups["未分组"].forEach(account => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <span>${account.user}</span> 
-                        <span>${account.note || '暂无备注'}</span> 
-                        <div class="actions">
-                            <button class="btn btn-small" onclick="modifyAccount('${account.user}')">修改</button>
-                            <button class="btn btn-small btn-danger" onclick="deleteAccount('${account.user}')">删除</button>
-                        </div>
-                    `;
-                    groupContent.appendChild(li);
-                });
-
-                groupDiv.appendChild(groupContent);
-                accountList.appendChild(groupDiv);
-            }
-
-            // 遍历每个分组
-            for (const groupName in groups) {
-                if (groupName !== "未分组") {
-                    const groupDiv = document.createElement('div');
-
-                    // 创建分组折叠按钮
-                    const groupHeader = document.createElement('div');
-                    groupHeader.classList.add('group-header');
-                    groupHeader.onclick = () => toggleGroup(groupName);
-                    groupHeader.innerHTML = `${groupName} <span>点击展开/收起</span>`;
-                    groupDiv.appendChild(groupHeader);
-
-                    // 创建分组内容
-                    const groupContent = document.createElement('div');
-                    groupContent.id = groupName;
-                    groupContent.classList.add('group-content');
-                    groups[groupName].forEach(account => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `
-                            <span>${account.user}</span> 
-                            <span>${account.note || '暂无备注'}</span> 
-                            <div class="actions">
-                                <button class="btn btn-small" onclick="modifyAccount('${account.user}')">修改</button>
-                                <button class="btn btn-small btn-danger" onclick="deleteAccount('${account.user}')">删除</button>
-                            </div>
-                        `;
-                        groupContent.appendChild(li);
-                    });
-
-                    groupDiv.appendChild(groupContent);
-                    accountList.appendChild(groupDiv);
-                }
-            }
+            accountList.innerHTML = Object.keys(accounts).map(user => 
+                `<li>
+                    <span>${user} - ${accounts[user].group || "未分组"} - ${accounts[user].note || "无备注"}</span>
+                    <button class="btn btn-success" onclick="modifyAccount('${user}')">修改</button>
+                    <button class="delete-btn" onclick="deleteAccount('${user}')">删除</button>
+                </li>`
+            ).join("");
         });
 
         loadAccounts();
