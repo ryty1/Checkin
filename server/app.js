@@ -30,41 +30,41 @@ async function getAccounts(excludeMainUser = true) {
     return accounts;
 }
 
-// WebSocket 处理
 io.on("connection", (socket) => {
     console.log("Client connected");
 
-    // 保存账号
     socket.on("saveAccount", async (accountData) => {
         const accounts = await getAccounts(false);
-        accounts[accountData.user] = accountData;
+        accounts[accountData.user] = { user: accountData.user, group: null, note: null };
         fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-        socket.emit("accountSaved", { message: `账号 ${accountData.user} 已保存` });
         socket.emit("accountsList", await getAccounts(true));
     });
 
-    // 删除账号
     socket.on("deleteAccount", async (user) => {
         const accounts = await getAccounts(false);
         delete accounts[user];
         fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-        socket.emit("accountDeleted", { message: `账号 ${user} 已删除` });
         socket.emit("accountsList", await getAccounts(true));
     });
 
-    // 修改账号的分组和备注
-    socket.on("modifyAccount", async ({ user, group, note }) => {
+    socket.on("modifyAccount", async (data) => {
+        const { user, group, note } = data;
         const accounts = await getAccounts(false);
+
         if (accounts[user]) {
-            accounts[user].group = group;
-            accounts[user].note = note;
+            // 如果group为null，表示不修改分组
+            if (group !== null) {
+                accounts[user].group = group;
+            }
+            if (note !== undefined) {
+                accounts[user].note = note;
+            }
+
             fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-            socket.emit("accountModified", { message: `账号 ${user} 已更新` });
             socket.emit("accountsList", await getAccounts(true));
         }
     });
 
-    // 加载账号
     socket.on("loadAccounts", async () => {
         socket.emit("accountsList", await getAccounts(true));
     });
