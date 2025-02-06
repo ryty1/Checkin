@@ -21,52 +21,38 @@ app.use(express.json()); // 解析 JSON 格式的请求体
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; // 适配不同系统环境变量
 
 // 获取所有账号（不包含本机账号），并返回分组和备注信息
-async function getAccounts(excludeMainUser = true) {
+async function getAccounts() {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
-    let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
-    if (excludeMainUser) {
-        delete accounts[MAIN_SERVER_USER];
-    }
-    return accounts;
+    return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
 }
 
 io.on("connection", (socket) => {
-    console.log("Client connected");
-
     socket.on("saveAccount", async (accountData) => {
-        const accounts = await getAccounts(false);
+        const accounts = await getAccounts();
         accounts[accountData.user] = { user: accountData.user, group: null, note: null };
         fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-        socket.emit("accountsList", await getAccounts(true));
+        socket.emit("accountsList", await getAccounts());
     });
 
     socket.on("deleteAccount", async (user) => {
-        const accounts = await getAccounts(false);
+        const accounts = await getAccounts();
         delete accounts[user];
         fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-        socket.emit("accountsList", await getAccounts(true));
+        socket.emit("accountsList", await getAccounts());
     });
 
-    socket.on("modifyAccount", async (data) => {
-        const { user, group, note } = data;
-        const accounts = await getAccounts(false);
-
+    socket.on("modifyAccount", async ({ user, group, note }) => {
+        const accounts = await getAccounts();
         if (accounts[user]) {
-            // 如果group为null，表示不修改分组
-            if (group !== null) {
-                accounts[user].group = group;
-            }
-            if (note !== undefined) {
-                accounts[user].note = note;
-            }
-
+            if (group !== null) accounts[user].group = group;
+            if (note !== undefined) accounts[user].note = note;
             fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-            socket.emit("accountsList", await getAccounts(true));
         }
+        socket.emit("accountsList", await getAccounts());
     });
 
     socket.on("loadAccounts", async () => {
-        socket.emit("accountsList", await getAccounts(true));
+        socket.emit("accountsList", await getAccounts());
     });
 });
 
