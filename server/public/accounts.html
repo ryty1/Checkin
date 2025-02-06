@@ -13,7 +13,7 @@
             padding: 0;
         }
         .container {
-            max-width: 500px;
+            max-width: 600px;
             margin: 40px auto;
             background: white;
             padding: 20px;
@@ -37,9 +37,8 @@
             outline: none;
         }
         .btn {
-            padding: 10px 15px;
-            margin-left: 5px;
-            font-size: 16px;
+            padding: 8px 12px;
+            font-size: 14px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
@@ -59,30 +58,33 @@
         .btn-danger:hover {
             background-color: #b02a37;
         }
-        ul {
-            list-style: none;
-            padding: 0;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
         }
-        li {
+        th, td {
             padding: 10px;
-            background: #f9f9f9;
-            margin-bottom: 8px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
         }
-        .delete-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
+        th {
+            background-color: #f0f0f0;
+        }
+        .group-header {
+            background-color: #ddd;
+            padding: 10px;
             cursor: pointer;
-            font-size: 14px;
+            font-weight: bold;
+            border-radius: 5px;
+            margin-top: 5px;
         }
-        .delete-btn:hover {
-            background-color: #b02a37;
+        .group-content {
+            display: none;
+            padding-left: 10px;
+        }
+        .visible {
+            display: block;
         }
     </style>
 </head>
@@ -93,7 +95,17 @@
             <input type="text" id="accountUser" placeholder="请输入账号">
             <button class="btn btn-success" onclick="saveAccount()">保存账号</button>
         </div>
-        <ul id="accountList"></ul>
+        <table>
+            <thead>
+                <tr>
+                    <th>账号</th>
+                    <th>分组</th>
+                    <th>备注</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="accountList"></tbody>
+        </table>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -117,29 +129,67 @@
         }
 
         function modifyAccount(user) {
-            // 询问是否修改分组
             const isModifyGroup = confirm("是否修改分组?");
-            
+            let group = null, note = null;
+
             if (isModifyGroup) {
-                const group = prompt("请输入新的分组名称：");
-                const note = prompt("请输入新的备注：");
-                socket.emit("modifyAccount", { user, group, note });
-            } else {
-                const note = prompt("请输入新的备注：");
-                socket.emit("modifyAccount", { user, group: null, note }); // group为null表示不修改分组
+                group = prompt("请输入新的分组名称：");
             }
+            note = prompt("请输入新的备注：");
+            
+            socket.emit("modifyAccount", { user, group, note });
         }
 
         socket.on("accountsList", (accounts) => {
             const accountList = document.getElementById("accountList");
-            accountList.innerHTML = Object.keys(accounts).map(user => 
-                `<li>
-                    <span>${user} - ${accounts[user].group || "未分组"} - ${accounts[user].note || "无备注"}</span>
-                    <button class="btn btn-success" onclick="modifyAccount('${user}')">修改</button>
-                    <button class="delete-btn" onclick="deleteAccount('${user}')">删除</button>
-                </li>`
-            ).join("");
+            accountList.innerHTML = "";
+
+            let groupedAccounts = {};
+            
+            Object.keys(accounts).forEach(user => {
+                const group = accounts[user].group || "未分组";
+                if (!groupedAccounts[group]) {
+                    groupedAccounts[group] = [];
+                }
+                groupedAccounts[group].push({
+                    user,
+                    note: accounts[user].note || "无备注"
+                });
+            });
+
+            Object.keys(groupedAccounts).sort((a, b) => a === "未分组" ? -1 : a.localeCompare(b)).forEach(group => {
+                const groupHeader = document.createElement("tr");
+                groupHeader.innerHTML = `<td colspan="4" class="group-header" onclick="toggleGroup('${group}')">${group} ▼</td>`;
+                accountList.appendChild(groupHeader);
+
+                const groupContent = document.createElement("tbody");
+                groupContent.id = `group-${group}`;
+                groupContent.className = "group-content";
+
+                groupedAccounts[group].forEach(({ user, note }) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${user}</td>
+                        <td>${group}</td>
+                        <td>${note}</td>
+                        <td>
+                            <button class="btn btn-success" onclick="modifyAccount('${user}')">修改</button>
+                            <button class="btn btn-danger" onclick="deleteAccount('${user}')">删除</button>
+                        </td>
+                    `;
+                    groupContent.appendChild(row);
+                });
+
+                accountList.appendChild(groupContent);
+            });
         });
+
+        function toggleGroup(group) {
+            const groupContent = document.getElementById(`group-${group}`);
+            if (groupContent) {
+                groupContent.classList.toggle("visible");
+            }
+        }
 
         loadAccounts();
     </script>
