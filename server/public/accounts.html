@@ -28,7 +28,7 @@
             justify-content: space-between;
             margin-bottom: 15px;
         }
-        input {
+        input, select {
             flex: 1;
             padding: 10px;
             font-size: 16px;
@@ -65,23 +65,6 @@
         th {
             background-color: #f0f0f0;
         }
-        .group-header {
-            background: #ddd;
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 5px;
-            font-weight: bold;
-            text-align: left;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .group-header span {
-            flex-grow: 1;
-        }
-        .group-content {
-            display: none;
-        }
         .edit-btn, .delete-btn {
             padding: 6px 10px;
             font-size: 12px;
@@ -90,6 +73,9 @@
         .btn-container {
             display: flex;
             gap: 5px;
+        }
+        .filter-group {
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -100,6 +86,14 @@
         <div class="input-group">
             <input type="text" id="accountUser" placeholder="请输入账号">
             <button class="btn btn-success" onclick="saveAccount()">保存账号</button>
+        </div>
+
+        <!-- 筛选分组 -->
+        <div class="filter-group">
+            <label for="groupFilter">筛选分组：</label>
+            <select id="groupFilter" onchange="filterByGroup()">
+                <option value="all">全部</option>
+            </select>
         </div>
 
         <table>
@@ -131,51 +125,59 @@
             }
         }
 
-        function toggleGroup(group) {
-            const content = document.getElementById(`group-${group}`);
-            content.style.display = content.style.display === "none" ? "table-row-group" : "none";
-        }
+        function editAccount(user, currentGroup, currentNote) {
+            const newGroup = prompt(`当前分组: ${currentGroup}\n请输入新的分组名称（留空不修改）：`);
+            const newNote = prompt(`当前备注: ${currentNote}\n请输入新的备注（留空不修改）：`);
 
-        function editAccount(user, group, note) {
-            const newGroup = confirm("是否修改分组？") ? prompt("请输入新的分组名称：", group) : group;
-            const newNote = prompt("请输入新的备注：", note);
-            socket.emit("updateAccount", { user, group: newGroup, note: newNote });
+            if (newGroup === null && newNote === null) return;
+
+            const updatedGroup = newGroup ? newGroup.trim() : currentGroup;
+            const updatedNote = newNote ? newNote.trim() : currentNote;
+
+            socket.emit("updateAccount", { user, group: updatedGroup, note: updatedNote });
         }
 
         function deleteAccount(user) {
             socket.emit("deleteAccount", user);
         }
 
+        function filterByGroup() {
+            const selectedGroup = document.getElementById("groupFilter").value;
+            const rows = document.querySelectorAll("#accountList tr");
+
+            rows.forEach(row => {
+                const group = row.getAttribute("data-group");
+                row.style.display = (selectedGroup === "all" || group === selectedGroup) ? "table-row" : "none";
+            });
+        }
+
         socket.on("accountsList", (accounts) => {
             const accountList = document.getElementById("accountList");
             accountList.innerHTML = "";
 
-            const groupedAccounts = {};
+            const groupFilter = document.getElementById("groupFilter");
+            groupFilter.innerHTML = '<option value="all">全部</option>';
+            const groupsSet = new Set();
+
             Object.keys(accounts).forEach(user => {
                 const { group, note } = accounts[user];
-                if (!groupedAccounts[group]) groupedAccounts[group] = [];
-                groupedAccounts[group].push({ user, note });
+                groupsSet.add(group);
+
+                accountList.innerHTML += `
+                    <tr data-group="${group}">
+                        <td>${user}</td>
+                        <td>${group}</td>
+                        <td>${note}</td>
+                        <td class="btn-container">
+                            <button class="btn btn-success edit-btn" onclick="editAccount('${user}', '${group}', '${note}')">修改</button>
+                            <button class="btn btn-danger delete-btn" onclick="deleteAccount('${user}')">删除</button>
+                        </td>
+                    </tr>
+                `;
             });
 
-            Object.keys(groupedAccounts).sort((a, b) => a === "未分组" ? -1 : a.localeCompare(b)).forEach(group => {
-                accountList.innerHTML += `
-                    <tr class="group-header" onclick="toggleGroup('${group}')">
-                        <td colspan="4"><span>${group}</span> ▼</td>
-                    </tr>
-                    <tbody id="group-${group}" class="group-content">
-                        ${groupedAccounts[group].map(({ user, note }) => `
-                            <tr>
-                                <td>${user}</td>
-                                <td>${group}</td>
-                                <td>${note}</td>
-                                <td class="btn-container">
-                                    <button class="btn btn-success edit-btn" onclick="editAccount('${user}', '${group}', '${note}')">修改</button>
-                                    <button class="btn btn-danger delete-btn" onclick="deleteAccount('${user}')">删除</button>
-                                </td>
-                            </tr>
-                        `).join("")}
-                    </tbody>
-                `;
+            groupsSet.forEach(group => {
+                groupFilter.innerHTML += `<option value="${group}">${group}</option>`;
             });
         });
 
