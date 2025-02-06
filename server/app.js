@@ -34,24 +34,33 @@ async function getAccounts(excludeMainUser = true) {
 io.on("connection", (socket) => {
     console.log("Client connected");
 
-    socket.on("startNodesSummary", () => {
-        getNodesSummary(socket);
-    });
-
+    // 保存账号
     socket.on("saveAccount", async (accountData) => {
         const accounts = await getAccounts(false);
-        accounts[accountData.user] = accountData;  // 保存分组和备注
+        accounts[accountData.user] = accountData;
         fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
         socket.emit("accountSaved", { message: `账号 ${accountData.user} 已保存` });
         socket.emit("accountsList", await getAccounts(true));
     });
 
+    // 删除账号
     socket.on("deleteAccount", async (user) => {
         const accounts = await getAccounts(false);
         delete accounts[user];
         fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
         socket.emit("accountDeleted", { message: `账号 ${user} 已删除` });
         socket.emit("accountsList", await getAccounts(true));
+    });
+
+    // 编辑账号备注
+    socket.on("editAccount", async (accountData) => {
+        const accounts = await getAccounts(false);
+        if (accounts[accountData.user]) {
+            accounts[accountData.user].note = accountData.note; // 更新备注
+            fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+            socket.emit("accountEdited", { message: `账号 ${accountData.user} 备注已更新` });
+            socket.emit("accountsList", await getAccounts(true));
+        }
     });
 
     socket.on("loadAccounts", async () => {
