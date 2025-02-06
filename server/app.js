@@ -21,8 +21,11 @@ app.use(express.json()); // 解析 JSON 格式的请求体
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; // 适配不同系统环境变量
 
 async function getAccounts() {
-    if (!fs.existsSync(ACCOUNTS_FILE)) return {};
-    return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+    if (fs.existsSync(ACCOUNTS_FILE)) {
+        const data = fs.readFileSync(ACCOUNTS_FILE, 'utf-8');
+        return JSON.parse(data);
+    }
+    return {};
 }
 
 io.on("connection", (socket) => {
@@ -44,7 +47,6 @@ io.on("connection", (socket) => {
         const accounts = await getAccounts();
         if (accounts[user]) {
             if (group !== null) accounts[user].group = group;
-            // 不再修改备注字段
             fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
         }
         socket.emit("accountsList", await getAccounts());
@@ -54,6 +56,7 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts());
     });
 });
+
 // 过滤无效节点，只保留 `vmess://` 和 `hysteria2://`
 function filterNodes(nodes) {
     return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
