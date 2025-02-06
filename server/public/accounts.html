@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>账号管理</title>
     <style>
+        /* 样式与之前相似，进行分组显示和折叠功能 */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -75,9 +76,6 @@
         th {
             background-color: #f0f0f0;
         }
-        .status {
-            text-align: left;
-        }
     </style>
 </head>
 <body>
@@ -86,7 +84,6 @@
         <button class="btn btn-primary" onclick="loadAccounts()">加载账号</button>
         
         <div id="results" class="results-box"></div>
-        <button class="btn btn-primary" onclick="saveAccounts()">保存修改</button>
     </div>
 
     <script>
@@ -160,11 +157,20 @@
                 groupHeader.innerHTML = `${group} <span>+</span>`;
             }
         }
-        
+
         function removeAccount(username) {
             if (confirm(`确定要删除账号 ${username} 吗？`)) {
                 // 执行删除操作
-                socket.emit("deleteAccount", username);
+                fetch(`/deleteAccount/${username}`, { method: "DELETE" })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            alert(`账号 ${username} 删除成功`);
+                            loadAccounts();
+                        } else {
+                            alert('删除失败，请稍后再试');
+                        }
+                    });
             }
         }
     </script>
