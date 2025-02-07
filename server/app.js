@@ -16,7 +16,6 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json()); 
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
 
-// 读取账户信息
 async function getAccounts(excludeMainUser = true) {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
     let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
@@ -26,12 +25,10 @@ async function getAccounts(excludeMainUser = true) {
     return accounts;
 }
 
-// 过滤节点
 function filterNodes(nodes) {
     return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
 }
 
-// 获取节点汇总
 async function getNodesSummary(socket) {
     const accounts = await getAccounts(true);
     const users = Object.keys(accounts); 
@@ -82,8 +79,35 @@ io.on("connection", (socket) => {
     });
 });
 
-// 读取 Telegram 设置
+// Get notification settings from settings.json or use default values
 function getSettings() {
+    if (!fs.existsSync(SETTINGS_FILE)) {
+        const defaultSettings = {
+            scheduleType: "interval",
+            timeValue: "30"
+        };
+        fs.writeFileSync(SETTINGS_FILE, JSON.stringify(defaultSettings, null, 2));
+        return defaultSettings;
+    }
+    return JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
+}
+
+app.post("/setNotificationSettings", (req, res) => {
+    const { scheduleType, timeValue } = req.body;
+    if (!scheduleType || !timeValue) {
+        return res.status(400).json({ message: "通知设置不完整" });
+    }
+    const settings = { scheduleType, timeValue };
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+    res.json({ message: "通知设置已更新" });
+});
+
+app.get("/notificationSettings", (req, res) => {
+    const settings = getSettings();
+    res.json(settings);
+});
+
+function getTelegramSettings() {
     if (!fs.existsSync(SETTINGS_FILE)) {
         return null;
     }
@@ -107,10 +131,10 @@ app.get("/getTelegramSettings", (req, res) => {
     res.json(settings);
 });
 
-// 发送检测结果到 Telegram
+// Cron job to run daily check task
 async function sendCheckResultsToTG() {
     try {
-        const settings = getSettings();
+        const settings = getTelegramSettings();
         if (!settings) {
             console.log("Telegram 设置不存在");
             return;
@@ -125,18 +149,18 @@ async function sendCheckResultsToTG() {
         }
         let results = [];
         let maxUserLength = 0;
-        let maxIndexLength = String(Object.keys(data).length).length; 
-        const accounts = await getAccounts(); 
+        let maxIndexLength = String(Object.keys(data).length).length;
+        const accounts = await getAccounts();
         const users = Object.keys(accounts);
         users.forEach(user => {
             maxUserLength = Math.max(maxUserLength, user.length);
         });
         for (let i = 0; i < users.length; i++) {
             const user = users[i];
-            const status = data[user] || "未知状态"; 
-            const maskedUser = `${escapeMarkdownV2(user)}`; 
-            const paddedIndex = String(i + 1).padEnd(maxIndexLength, " "); 
-            const paddedUser = maskedUser.padEnd(maxUserLength + 4, " "); 
+            const status = data[user] || "未知状态";
+            const maskedUser = `${escapeMarkdownV2(user)}`;
+            const paddedIndex = String(i + 1).padEnd(maxIndexLength, " ");
+            const paddedUser = maskedUser.padEnd(maxUserLength + 4, " ");
             results.push(`${paddedIndex}.${paddedUser}: ${escapeMarkdownV2(status)}`);
         }
         const now = new Date();
@@ -152,37 +176,11 @@ function escapeMarkdownV2(text) {
     return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, "\\$1");
 }
 
-// 定时任务调度
-function scheduleNotification() {
-    const settings = getSettings();
-    if (!settings) {
-        return;
-    }
-
-    const { scheduleType, timeValue } = settings;
-
-    if (scheduleType === "interval") {
-        cron.schedule(`*/${timeValue} * * * *`, () => {
-            console.log("⏰ 执行定时任务...");
-            sendCheckResultsToTG();
-        });
-    } else if (scheduleType === "daily") {
-        const [hour, minute] = timeValue.split(":").map(num => parseInt(num, 10));
-        cron.schedule(`0 ${minute} ${hour} * * *`, () => {
-            console.log("⏰ 执行定时任务...");
-            sendCheckResultsToTG();
-        });
-    } else if (scheduleType === "weekly") {
-        const [day, time] = timeValue.split("-");
-        const [hour, minute] = time.split(":").map(num => parseInt(num, 10));
-        cron.schedule(`0 ${minute} ${hour} * * ${day}`, () => {
-            console.log("⏰ 执行定时任务...");
-            sendCheckResultsToTG();
-        });
-    }
-}
-
-scheduleNotification();
+// Schedule daily check task
+cron.schedule("0 8 * * *", () => {
+    console.log("⏰ 运行每日账号检测任务...");
+    sendCheckResultsToTG();
+});
 
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
@@ -212,7 +210,7 @@ app.get("/checkAccountsPage", (req, res) => {
 
 app.get("/checkAccounts", async (req, res) => {
     try {
-        const accounts = await getAccounts(false); 
+        const accounts = await getAccounts(false); // 获取所有账号
         const users = Object.keys(accounts);
 
         if (users.length === 0) {
@@ -247,42 +245,11 @@ app.get("/checkAccounts", async (req, res) => {
     }
 });
 
-// 设置通知的时间
-app.post("/setNotificationSettings", (req, res) => {
-    const { scheduleType, timeValue } = req.body;
-    const settings = getSettings();
-    if (!settings) {
-        return res.status(400).json({ message: "设置文件丢失" });
-    }
-
-    // 更新通知设置
-    settings.scheduleType = scheduleType;
-    settings.timeValue = timeValue;
-
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-    res.json({ message: "通知设置已更新" });
-});
-
-app.get("/getNotificationSettings", (req, res) => {
-    const settings = getSettings();
-    if (!settings) {
-        return res.json({ scheduleType: "interval", timeValue: "" });
-    }
-    res.json({
-        scheduleType: settings.scheduleType || "interval",
-        timeValue: settings.timeValue || ""
-    });
-});
+// Serve notification settings page
 app.get("/notificationSettings", (req, res) => {
-    const settings = getSettings();
-    if (!settings) {
-        return res.status(404).json({ message: "No notification settings found." });
-    }
-    res.json({
-        scheduleType: settings.scheduleType || "interval",
-        timeValue: settings.timeValue || ""
-    });
+    res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
 });
+
 server.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
 });
