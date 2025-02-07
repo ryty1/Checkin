@@ -273,7 +273,16 @@ app.get("/getNotificationSettings", (req, res) => {
         timeValue: settings.timeValue || ""
     });
 });
-
+app.get("/notificationSettings", (req, res) => {
+    const settings = getSettings();
+    if (!settings) {
+        return res.status(404).json({ message: "No notification settings found." });
+    }
+    res.json({
+        scheduleType: settings.scheduleType || "interval",
+        timeValue: settings.timeValue || ""
+    });
+});
 server.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
 });
