@@ -77,12 +77,54 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts(true));
     });
 });
-function getTelegramSettings() {
-    if (!fs.existsSync(SETTINGS_FILE)) {
-        return null;
-    }
+let cronJob = null; // 用于存储定时任务
+
+// 读取通知设置
+function getNotificationSettings() {
+    if (!fs.existsSync(SETTINGS_FILE)) return {};
     return JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
 }
+
+// 保存通知设置
+function saveNotificationSettings(settings) {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+}
+
+// 解析时间配置并返回 cron 表达式
+function getCronExpression(scheduleType, timeValue) {
+    if (scheduleType === "interval") {
+        const minutes = parseInt(timeValue, 10);
+        if (isNaN(minutes) || minutes <= 0) return null;
+        return `*/${minutes} * * * *`;
+    } else if (scheduleType === "daily") {
+        const [hour, minute] = timeValue.split(":").map(num => parseInt(num, 10));
+        if (isNaN(hour) || isNaN(minute)) return null;
+        return `${minute} ${hour} * * *`;
+    } else if (scheduleType === "weekly") {
+        const [day, time] = timeValue.split("-");
+        const [hour, minute] = time.split(":").map(num => parseInt(num, 10));
+        const weekDays = { "星期日": 0, "星期一": 1, "星期二": 2, "星期三": 3, "星期四": 4, "星期五": 5, "星期六": 6 };
+        if (!weekDays.hasOwnProperty(day) || isNaN(hour) || isNaN(minute)) return null;
+        return `${minute} ${hour} * * ${weekDays[day]}`;
+    }
+    return null;
+}
+
+// 重新设置定时任务
+function resetCronJob() {
+    if (cronJob) cronJob.stop(); // 先停止现有任务
+    const settings = getNotificationSettings();
+    if (!settings || !settings.scheduleType || !settings.timeValue) return;
+
+    const cronExpression = getCronExpression(settings.scheduleType, settings.timeValue);
+    if (!cronExpression) return console.error("无效的 cron 表达式");
+
+    cronJob = cron.schedule(cronExpression, () => {
+        console.log("⏰ 运行账号检测任务...");
+        sendCheckResultsToTG();
+    });
+}
+
 app.post("/setTelegramSettings", (req, res) => {
     const { telegramToken, telegramChatId } = req.body;
     if (!telegramToken || !telegramChatId) {
@@ -98,52 +140,38 @@ app.get("/getTelegramSettings", (req, res) => {
     const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
     res.json(settings);
 });
+// 处理 Telegram 发送消息
 async function sendCheckResultsToTG() {
     try {
-        const settings = getTelegramSettings();
-        if (!settings) {
-            console.log("Telegram 设置不存在");
+        const settings = getNotificationSettings();
+        if (!settings.telegramToken || !settings.telegramChatId) {
+            console.log("❌ Telegram 设置不完整，无法发送通知");
             return;
         }
-        const { telegramToken, telegramChatId } = settings;
-        const bot = new TelegramBot(telegramToken, { polling: false });
+
+        const bot = new TelegramBot(settings.telegramToken, { polling: false });
         const response = await axios.get(`https://${process.env.USER}.serv00.net/checkAccounts`);
         const data = response.data.results;
+
         if (!data || Object.keys(data).length === 0) {
-            await bot.sendMessage(telegramChatId, "📋 账号检测结果：没有账号需要检测", { parse_mode: "MarkdownV2" });
+            await bot.sendMessage(settings.telegramChatId, "📋 账号检测结果：没有账号需要检测", { parse_mode: "MarkdownV2" });
             return;
         }
+
         let results = [];
-        let maxUserLength = 0;
-        let maxIndexLength = String(Object.keys(data).length).length; 
-        const accounts = await getAccounts(); 
-        const users = Object.keys(accounts);
-        users.forEach(user => {
-            maxUserLength = Math.max(maxUserLength, user.length);
+        Object.keys(data).forEach((user, index) => {
+            results.push(`${index + 1}. ${user}: ${data[user] || "未知状态"}`);
         });
-        for (let i = 0; i < users.length; i++) {
-            const user = users[i];
-            const status = data[user] || "未知状态";  // 获取账号状态
-            const maskedUser = `${escapeMarkdownV2(user)}`; 
-            const paddedIndex = String(i + 1).padEnd(maxIndexLength, " "); // 序号对齐
-            const paddedUser = maskedUser.padEnd(maxUserLength + 4, " "); // 账号对齐冒号
-            results.push(`${paddedIndex}.${paddedUser}: ${escapeMarkdownV2(status)}`);
-        }
-        const now = new Date();
-        const beijingTime = now.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
-        let message = `📢 账号检测结果：\n\`\`\`\n${results.join("\n")}\n\`\`\`\n⏰ 北京时间：${escapeMarkdownV2(beijingTime)}`;
-        await bot.sendMessage(telegramChatId, message, { parse_mode: "MarkdownV2" });
+
+        const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
+        let message = `📢 账号检测结果：\n\`\`\`\n${results.join("\n")}\n\`\`\`\n⏰ 北京时间：${beijingTime}`;
+        await bot.sendMessage(settings.telegramChatId, message, { parse_mode: "MarkdownV2" });
+
     } catch (error) {
-        console.error("发送 Telegram 失败:", error);
+        console.error("❌ 发送 Telegram 失败:", error);
     }
 }
-function escapeMarkdownV2(text) {
-    return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, "\\$1");
-}
-cron.schedule("0 8 * * *", () => {
-    console.log("⏰ 运行每日账号检测任务...");
-    sendCheckResultsToTG();
-});
+
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
@@ -208,9 +236,37 @@ app.post("/setTelegramSettings", (req, res) => {
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ telegramToken, telegramChatId }, null, 2));
     res.json({ message: "Telegram 设置已更新" });
 });
-app.get("/notificationSettings", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
+// 获取通知设置
+app.get("/getNotificationSettings", (req, res) => {
+    res.json(getNotificationSettings());
 });
+
+// 设置通知和 Telegram 配置
+app.post("/setNotificationSettings", (req, res) => {
+    const { telegramToken, telegramChatId, scheduleType, timeValue } = req.body;
+    
+    if (!telegramToken || !telegramChatId || !scheduleType || !timeValue) {
+        return res.status(400).json({ message: "所有字段都是必填项" });
+    }
+
+    // 解析时间并验证
+    if (!getCronExpression(scheduleType, timeValue)) {
+        return res.status(400).json({ message: "时间格式不正确，请检查输入" });
+    }
+
+    // 保存配置
+    const settings = { telegramToken, telegramChatId, scheduleType, timeValue };
+    saveNotificationSettings(settings);
+
+    // 重新设置定时任务
+    resetCronJob();
+
+    res.json({ message: "✅ 设置已保存并生效" });
+});
+
+// 启动时检查并初始化定时任务
+resetCronJob();
+
 server.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
 });
