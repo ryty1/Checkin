@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram 设置</title>
+    <title>通知 & Telegram 设置</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -39,7 +39,7 @@
             display: block;
         }
 
-        input {
+        input, select {
             width: 100%;
             padding: 10px;
             margin: 10px 0 20px 0;
@@ -49,7 +49,7 @@
             box-sizing: border-box;
         }
 
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: #007bff;
         }
@@ -71,51 +71,78 @@
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h1>Telegram 设置</h1>
-        <form id="telegramSettingsForm">
+        <h1>通知 & Telegram 设置</h1>
+        
+        <form id="notificationSettingsForm">
+            <label for="scheduleType">通知频率:</label>
+            <select id="scheduleType">
+                <option value="interval">每隔 N 分钟</option>
+                <option value="daily">每天</option>
+                <option value="weekly">每周</option>
+            </select>
+
+            <label for="timeValue">时间设置:</label>
+            <input type="text" id="timeValue" placeholder="请输入时间 (分钟/小时)" required>
+            
             <label for="telegramToken">TG Bot_Token:</label>
-            <input type="text" id="telegramToken" name="telegramToken" required placeholder="请输入 Token">
+            <input type="text" id="telegramToken" required placeholder="请输入 Token">
             
             <label for="telegramChatId">TG Chat_ID:</label>
-            <input type="text" id="telegramChatId" name="telegramChatId" required placeholder="请输入 Chat ID">
+            <input type="text" id="telegramChatId" required placeholder="请输入 Chat ID">
             
             <button type="submit">保存设置</button>
         </form>
     </div>
 
     <script>
-        // 页面加载时获取 Telegram 配置
-        fetch("/getTelegramSettings")
+        function updateTimePlaceholder() {
+            const scheduleType = document.getElementById("scheduleType").value;
+            const timeInput = document.getElementById("timeValue");
+            
+            if (scheduleType === "interval") {
+                timeInput.placeholder = "请输入间隔时间 (分钟)";
+            } else if (scheduleType === "daily") {
+                timeInput.placeholder = "请输入每天通知时间 (格式: HH:MM)";
+            } else {
+                timeInput.placeholder = "请输入每周通知时间 (格式: 星期-小时:分钟)";
+            }
+        }
+        
+        document.getElementById("scheduleType").addEventListener("change", updateTimePlaceholder);
+        
+        fetch("/getNotificationSettings")
             .then(response => response.json())
             .then(data => {
                 document.getElementById("telegramToken").value = data.telegramToken || "";
                 document.getElementById("telegramChatId").value = data.telegramChatId || "";
+                document.getElementById("scheduleType").value = data.scheduleType || "interval";
+                document.getElementById("timeValue").value = data.timeValue || "";
+                updateTimePlaceholder();
             })
-            .catch(error => console.error("获取 Telegram 设置失败:", error));
-
-        // 监听表单提交事件
-        document.getElementById("telegramSettingsForm").addEventListener("submit", function (e) {
+            .catch(error => console.error("获取设置失败:", error));
+        
+        document.getElementById("notificationSettingsForm").addEventListener("submit", function (e) {
             e.preventDefault();
-
-            const token = document.getElementById("telegramToken").value;
-            const chatId = document.getElementById("telegramChatId").value;
-
-            fetch("/setTelegramSettings", {
+            
+            const settings = {
+                telegramToken: document.getElementById("telegramToken").value,
+                telegramChatId: document.getElementById("telegramChatId").value,
+                scheduleType: document.getElementById("scheduleType").value,
+                timeValue: document.getElementById("timeValue").value
+            };
+            
+            fetch("/setNotificationSettings", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ telegramToken: token, telegramChatId: chatId }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(settings)
             })
             .then(response => response.json())
             .then(data => {
-                alert(data.message); // 提示用户保存成功
+                alert(data.message);
             })
-            .catch(error => console.error("保存 Telegram 设置失败:", error));
+            .catch(error => console.error("保存设置失败:", error));
         });
     </script>
-
 </body>
 </html>
