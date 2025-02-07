@@ -15,7 +15,6 @@ const SETTINGS_FILE = path.join(__dirname, "settings.json");
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json()); 
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
-
 async function getAccounts(excludeMainUser = true) {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
     let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
@@ -24,11 +23,9 @@ async function getAccounts(excludeMainUser = true) {
     }
     return accounts;
 }
-
 function filterNodes(nodes) {
     return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
 }
-
 async function getNodesSummary(socket) {
     const accounts = await getAccounts(true);
     const users = Object.keys(accounts); 
@@ -40,7 +37,10 @@ async function getNodesSummary(socket) {
         try {
             const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
             const nodeData = nodeResponse.data;
-            const nodeLinks = filterNodes([...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []), ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])]);
+            const nodeLinks = filterNodes([
+                ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []),
+                ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])
+            ]);
             if (nodeLinks.length > 0) {
                 successfulNodes.push(...nodeLinks);
             } else {
@@ -54,7 +54,6 @@ async function getNodesSummary(socket) {
     }
     socket.emit("nodesSummary", { successfulNodes, failedAccounts });
 }
-
 io.on("connection", (socket) => {
     console.log("Client connected");
     socket.on("startNodesSummary", () => {
@@ -78,42 +77,12 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts(true));
     });
 });
-
-// Get notification settings from settings.json or use default values
-function getSettings() {
-    if (!fs.existsSync(SETTINGS_FILE)) {
-        const defaultSettings = {
-            scheduleType: "interval",
-            timeValue: "30"
-        };
-        fs.writeFileSync(SETTINGS_FILE, JSON.stringify(defaultSettings, null, 2));
-        return defaultSettings;
-    }
-    return JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
-}
-
-app.post("/setNotificationSettings", (req, res) => {
-    const { scheduleType, timeValue } = req.body;
-    if (!scheduleType || !timeValue) {
-        return res.status(400).json({ message: "通知设置不完整" });
-    }
-    const settings = { scheduleType, timeValue };
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-    res.json({ message: "通知设置已更新" });
-});
-
-app.get("/notificationSettings", (req, res) => {
-    const settings = getSettings();
-    res.json(settings);
-});
-
 function getTelegramSettings() {
     if (!fs.existsSync(SETTINGS_FILE)) {
         return null;
     }
     return JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
 }
-
 app.post("/setTelegramSettings", (req, res) => {
     const { telegramToken, telegramChatId } = req.body;
     if (!telegramToken || !telegramChatId) {
@@ -122,7 +91,6 @@ app.post("/setTelegramSettings", (req, res) => {
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ telegramToken, telegramChatId }, null, 2));
     res.json({ message: "Telegram 设置已更新" });
 });
-
 app.get("/getTelegramSettings", (req, res) => {
     if (!fs.existsSync(SETTINGS_FILE)) {
         return res.json({ telegramToken: "", telegramChatId: "" });
@@ -130,8 +98,6 @@ app.get("/getTelegramSettings", (req, res) => {
     const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
     res.json(settings);
 });
-
-// Cron job to run daily check task
 async function sendCheckResultsToTG() {
     try {
         const settings = getTelegramSettings();
@@ -149,18 +115,18 @@ async function sendCheckResultsToTG() {
         }
         let results = [];
         let maxUserLength = 0;
-        let maxIndexLength = String(Object.keys(data).length).length;
-        const accounts = await getAccounts();
+        let maxIndexLength = String(Object.keys(data).length).length; 
+        const accounts = await getAccounts(); 
         const users = Object.keys(accounts);
         users.forEach(user => {
             maxUserLength = Math.max(maxUserLength, user.length);
         });
         for (let i = 0; i < users.length; i++) {
             const user = users[i];
-            const status = data[user] || "未知状态";
-            const maskedUser = `${escapeMarkdownV2(user)}`;
-            const paddedIndex = String(i + 1).padEnd(maxIndexLength, " ");
-            const paddedUser = maskedUser.padEnd(maxUserLength + 4, " ");
+            const status = data[user] || "未知状态";  // 获取账号状态
+            const maskedUser = `${escapeMarkdownV2(user)}`; 
+            const paddedIndex = String(i + 1).padEnd(maxIndexLength, " "); // 序号对齐
+            const paddedUser = maskedUser.padEnd(maxUserLength + 4, " "); // 账号对齐冒号
             results.push(`${paddedIndex}.${paddedUser}: ${escapeMarkdownV2(status)}`);
         }
         const now = new Date();
@@ -171,43 +137,33 @@ async function sendCheckResultsToTG() {
         console.error("发送 Telegram 失败:", error);
     }
 }
-
 function escapeMarkdownV2(text) {
     return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, "\\$1");
 }
-
-// Schedule daily check task
 cron.schedule("0 8 * * *", () => {
     console.log("⏰ 运行每日账号检测任务...");
     sendCheckResultsToTG();
 });
-
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
-
 app.get("/getMainUser", (req, res) => {
     res.json({ mainUser: MAIN_SERVER_USER });
 });
-
 app.get("/accounts", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "accounts.html"));
 });
-
 app.get("/nodes", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "nodes.html"));
 });
-
 app.get("/info", (req, res) => {
     const user = req.query.user;
     if (!user) return res.status(400).send("用户未指定");
     res.redirect(`https://${user}.serv00.net/info`);
 });
-
 app.get("/checkAccountsPage", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
 });
-
 app.get("/checkAccounts", async (req, res) => {
     try {
         const accounts = await getAccounts(false); // 获取所有账号
@@ -244,12 +200,17 @@ app.get("/checkAccounts", async (req, res) => {
         res.status(500).json({ status: "error", message: "检测失败，请稍后再试" });
     }
 });
-
-// Serve notification settings page
+app.post("/setTelegramSettings", (req, res) => {
+    const { telegramToken, telegramChatId } = req.body;
+    if (!telegramToken || !telegramChatId) {
+        return res.status(400).json({ message: "Telegram 配置不完整" });
+    }
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ telegramToken, telegramChatId }, null, 2));
+    res.json({ message: "Telegram 设置已更新" });
+});
 app.get("/notificationSettings", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
 });
-
 server.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
 });
