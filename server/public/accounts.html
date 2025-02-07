@@ -13,7 +13,7 @@
             padding: 0;
         }
         .container {
-            max-width: 800px;
+            max-width: 500px;
             margin: 40px auto;
             background: white;
             padding: 20px;
@@ -37,120 +37,70 @@
             outline: none;
         }
         .btn {
-            padding: 6px 10px;
-            font-size: 14px;
+            padding: 10px 15px;
+            margin-left: 5px;
+            font-size: 16px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: 0.3s;
-            background: none;
-            border: 1px solid transparent;
         }
         .btn-success {
             background-color: #28A745;
             color: white;
-            border: 1px solid #28A745;
+        }
+        .btn-success:hover {
+            background-color: #1e7e34;
         }
         .btn-danger {
             background-color: #DC3545;
             color: white;
-            border: 1px solid #DC3545;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            table-layout: fixed;
+        .btn-danger:hover {
+            background-color: #b02a37;
         }
-        th, td {
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
             padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        th {
-            background-color: #f0f0f0;
-            position: sticky;
-            top: 0;
-            font-size: 16px;
-        }
-        /* 修改列宽 */
-        th:nth-child(1), td:nth-child(1) {
-            width: 15%;  /* 序号列宽度 */
-        }
-        th:nth-child(2), td:nth-child(2) {
-            width: 25%;  /* 账号列宽度 */
-            padding-left: 20px;  /* 序号和账号间距 */
-        }
-        th:nth-child(3), td:nth-child(3) {
-            width: 30%;  /* 分组列宽度 */
-        }
-        th:nth-child(4), td:nth-child(4) {
-            width: 35%;  /* 操作列宽度 */
-        }
-        select {
-            font-size: 14px;
-            padding: 5px;
-            margin-left: 5px;
-        }
-        .btn-container {
+            background: #f9f9f9;
+            margin-bottom: 8px;
+            border-radius: 5px;
             display: flex;
-            gap: 5px;
-            justify-content: center;
+            justify-content: space-between;
+            align-items: center;
         }
-        /* 响应式优化 */
-        @media (max-width: 600px) {
-            .container {
-                width: 95%;
-                padding: 15px;
-            }
-            th, td {
-                font-size: 14px;
-                padding: 6px;
-            }
-            select {
-                font-size: 12px;
-                padding: 3px;
-            }
-            .btn {
-                font-size: 12px;
-                padding: 4px 6px;
-            }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .delete-btn:hover {
+            background-color: #b02a37;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>账号管理</h1>
+
         <div class="input-group">
             <input type="text" id="accountUser" placeholder="请输入账号">
             <button class="btn btn-success" onclick="saveAccount()">保存账号</button>
         </div>
-        
-        <table>
-            <thead>
-                <tr>
-                    <th>序号</th>
-                    <th>账号</th>
-                    <th>
-                        分组 
-                        <select id="groupFilter" onchange="filterAccounts()">
-                            <option value="">全部</option>
-                        </select>
-                    </th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody id="accountTable"></tbody>
-        </table>
+
+        <ul id="accountList"></ul>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let allAccounts = {}; 
 
         function loadAccounts() {
             socket.emit("loadAccounts");
@@ -168,61 +118,14 @@
             socket.emit("deleteAccount", user);
         }
 
-        function updateAccount(user) {
-            const newGroup = confirm("是否修改分组？") ? prompt("请输入新的分组名称：", allAccounts[user].group || "") : allAccounts[user].group;
-
-            if (newGroup !== null) {
-                socket.emit("modifyAccount", { user, group: newGroup });
-            }
-        }
-
-        function filterAccounts() {
-            const selectedGroup = document.getElementById("groupFilter").value;
-            renderAccounts(selectedGroup);
-        }
-
-        function renderAccounts(filterGroup = "") {
-            const accountTable = document.getElementById("accountTable");
-            accountTable.innerHTML = "";
-
-            const groupedAccounts = {};
-            Object.keys(allAccounts).forEach((user, index) => {
-                const group = allAccounts[user].group || "未分组";
-                if (!groupedAccounts[group]) {
-                    groupedAccounts[group] = [];
-                }
-                groupedAccounts[group].push({ user, index: index + 1 });
-            });
-
-            // 重新生成筛选下拉框选项
-            const groupFilter = document.getElementById("groupFilter");
-            groupFilter.innerHTML = `<option value="">全部</option>`;
-            Object.keys(groupedAccounts).forEach(group => {
-                groupFilter.innerHTML += `<option value="${group}">${group}</option>`;
-            });
-
-            // 过滤并显示账号数据
-            Object.keys(groupedAccounts).forEach(group => {
-                if (filterGroup && (filterGroup !== "" && group !== filterGroup)) return;
-
-                groupedAccounts[group].forEach(({ user, index }) => {
-                    accountTable.innerHTML += `
-                        <tr>
-                            <td>${index}</td>
-                            <td>${user}</td>
-                            <td>${group}</td>
-                            <td class="btn-container">
-                                <button class="btn btn-success" onclick="updateAccount('${user}')">修改</button>
-                                <button class="btn btn-danger" onclick="deleteAccount('${user}')">删除</button>
-                            </td>
-                        </tr>`;
-                });
-            });
-        }
-
         socket.on("accountsList", (accounts) => {
-            allAccounts = accounts;
-            renderAccounts();
+            const accountList = document.getElementById("accountList");
+            accountList.innerHTML = Object.keys(accounts).map(user => 
+                `<li>
+                    <a href="/info?user=${user}">${user}</a> <!-- 添加跳转链接 -->
+                    <button class="delete-btn" onclick="deleteAccount('${user}')">删除</button>
+                </li>`
+            ).join("");
         });
 
         loadAccounts();
