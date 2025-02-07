@@ -259,7 +259,9 @@ app.post("/setNotificationSettings", (req, res) => {
 
 // 启动时检查并初始化定时任务
 resetCronJob();
-
+app.get("/notificationSettings", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
+});
 server.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
 });
