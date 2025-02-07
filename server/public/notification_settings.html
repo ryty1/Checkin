@@ -77,7 +77,7 @@
         <form id="notificationSettingsForm">
             <label for="scheduleType">通知频率:</label>
             <select id="scheduleType">
-                <option value="interval">每隔 N 分钟</option>
+                <option value="interval">每隔</option>
                 <option value="daily">每天</option>
                 <option value="weekly">每周</option>
             </select>
@@ -103,9 +103,9 @@
             if (scheduleType === "interval") {
                 timeInput.placeholder = "请输入间隔时间 (分钟)";
             } else if (scheduleType === "daily") {
-                timeInput.placeholder = "请输入每天通知时间 (格式: HH:MM)";
+                timeInput.placeholder = "请输入每天通知时间 (格式: 08:30)";
             } else {
-                timeInput.placeholder = "请输入每周通知时间 (格式: 星期-小时:分钟)";
+                timeInput.placeholder = "请输入每周通知时间 (格式: 周五-08:30)";
             }
         }
         
