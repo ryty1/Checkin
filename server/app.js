@@ -143,33 +143,45 @@ app.get("/getTelegramSettings", (req, res) => {
 // 处理 Telegram 发送消息
 async function sendCheckResultsToTG() {
     try {
-        const settings = getNotificationSettings();
-        if (!settings.telegramToken || !settings.telegramChatId) {
-            console.log("❌ Telegram 设置不完整，无法发送通知");
+        const settings = getTelegramSettings();
+        if (!settings) {
+            console.log("Telegram 设置不存在");
             return;
         }
-
-        const bot = new TelegramBot(settings.telegramToken, { polling: false });
+        const { telegramToken, telegramChatId } = settings;
+        const bot = new TelegramBot(telegramToken, { polling: false });
         const response = await axios.get(`https://${process.env.USER}.serv00.net/checkAccounts`);
         const data = response.data.results;
-
         if (!data || Object.keys(data).length === 0) {
-            await bot.sendMessage(settings.telegramChatId, "📋 账号检测结果：没有账号需要检测", { parse_mode: "MarkdownV2" });
+            await bot.sendMessage(telegramChatId, "📋 账号检测结果：没有账号需要检测", { parse_mode: "MarkdownV2" });
             return;
         }
-
         let results = [];
-        Object.keys(data).forEach((user, index) => {
-            results.push(`${index + 1}. ${user}: ${data[user] || "未知状态"}`);
+        let maxUserLength = 0;
+        let maxIndexLength = String(Object.keys(data).length).length; 
+        const accounts = await getAccounts(); 
+        const users = Object.keys(accounts);
+        users.forEach(user => {
+            maxUserLength = Math.max(maxUserLength, user.length);
         });
-
-        const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
-        let message = `📢 账号检测结果：\n\`\`\`\n${results.join("\n")}\n\`\`\`\n⏰ 北京时间：${beijingTime}`;
-        await bot.sendMessage(settings.telegramChatId, message, { parse_mode: "MarkdownV2" });
-
+        for (let i = 0; i < users.length; i++) {
+            const user = users[i];
+            const status = data[user] || "未知状态";  // 获取账号状态
+            const maskedUser = `${escapeMarkdownV2(user)}`; 
+            const paddedIndex = String(i + 1).padEnd(maxIndexLength, " "); // 序号对齐
+            const paddedUser = maskedUser.padEnd(maxUserLength + 4, " "); // 账号对齐冒号
+            results.push(`${paddedIndex}.${paddedUser}: ${escapeMarkdownV2(status)}`);
+        }
+        const now = new Date();
+        const beijingTime = now.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
+        let message = `📢 账号检测结果：\n\`\`\`\n${results.join("\n")}\n\`\`\`\n⏰ 北京时间：${escapeMarkdownV2(beijingTime)}`;
+        await bot.sendMessage(telegramChatId, message, { parse_mode: "MarkdownV2" });
     } catch (error) {
-        console.error("❌ 发送 Telegram 失败:", error);
+        console.error("发送 Telegram 失败:", error);
     }
+}
+function escapeMarkdownV2(text) {
+    return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, "\\$1");
 }
 
 app.get("/", (req, res) => {
