@@ -15,6 +15,8 @@ const SETTINGS_FILE = path.join(__dirname, "settings.json");
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json()); 
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
+
+// 读取账户信息
 async function getAccounts(excludeMainUser = true) {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
     let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
@@ -23,9 +25,13 @@ async function getAccounts(excludeMainUser = true) {
     }
     return accounts;
 }
+
+// 过滤节点
 function filterNodes(nodes) {
     return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
 }
+
+// 获取节点汇总
 async function getNodesSummary(socket) {
     const accounts = await getAccounts(true);
     const users = Object.keys(accounts); 
@@ -37,10 +43,7 @@ async function getNodesSummary(socket) {
         try {
             const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
             const nodeData = nodeResponse.data;
-            const nodeLinks = filterNodes([
-                ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []),
-                ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])
-            ]);
+            const nodeLinks = filterNodes([...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []), ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])]);
             if (nodeLinks.length > 0) {
                 successfulNodes.push(...nodeLinks);
             } else {
@@ -54,6 +57,7 @@ async function getNodesSummary(socket) {
     }
     socket.emit("nodesSummary", { successfulNodes, failedAccounts });
 }
+
 io.on("connection", (socket) => {
     console.log("Client connected");
     socket.on("startNodesSummary", () => {
@@ -77,12 +81,15 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts(true));
     });
 });
-function getTelegramSettings() {
+
+// 读取 Telegram 设置
+function getSettings() {
     if (!fs.existsSync(SETTINGS_FILE)) {
         return null;
     }
     return JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
 }
+
 app.post("/setTelegramSettings", (req, res) => {
     const { telegramToken, telegramChatId } = req.body;
     if (!telegramToken || !telegramChatId) {
@@ -91,6 +98,7 @@ app.post("/setTelegramSettings", (req, res) => {
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ telegramToken, telegramChatId }, null, 2));
     res.json({ message: "Telegram 设置已更新" });
 });
+
 app.get("/getTelegramSettings", (req, res) => {
     if (!fs.existsSync(SETTINGS_FILE)) {
         return res.json({ telegramToken: "", telegramChatId: "" });
@@ -98,9 +106,11 @@ app.get("/getTelegramSettings", (req, res) => {
     const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
     res.json(settings);
 });
+
+// 发送检测结果到 Telegram
 async function sendCheckResultsToTG() {
     try {
-        const settings = getTelegramSettings();
+        const settings = getSettings();
         if (!settings) {
             console.log("Telegram 设置不存在");
             return;
@@ -123,10 +133,10 @@ async function sendCheckResultsToTG() {
         });
         for (let i = 0; i < users.length; i++) {
             const user = users[i];
-            const status = data[user] || "未知状态";  // 获取账号状态
+            const status = data[user] || "未知状态"; 
             const maskedUser = `${escapeMarkdownV2(user)}`; 
-            const paddedIndex = String(i + 1).padEnd(maxIndexLength, " "); // 序号对齐
-            const paddedUser = maskedUser.padEnd(maxUserLength + 4, " "); // 账号对齐冒号
+            const paddedIndex = String(i + 1).padEnd(maxIndexLength, " "); 
+            const paddedUser = maskedUser.padEnd(maxUserLength + 4, " "); 
             results.push(`${paddedIndex}.${paddedUser}: ${escapeMarkdownV2(status)}`);
         }
         const now = new Date();
@@ -137,36 +147,72 @@ async function sendCheckResultsToTG() {
         console.error("发送 Telegram 失败:", error);
     }
 }
+
 function escapeMarkdownV2(text) {
     return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, "\\$1");
 }
-cron.schedule("0 8 * * *", () => {
-    console.log("⏰ 运行每日账号检测任务...");
-    sendCheckResultsToTG();
-});
+
+// 定时任务调度
+function scheduleNotification() {
+    const settings = getSettings();
+    if (!settings) {
+        return;
+    }
+
+    const { scheduleType, timeValue } = settings;
+
+    if (scheduleType === "interval") {
+        cron.schedule(`*/${timeValue} * * * *`, () => {
+            console.log("⏰ 执行定时任务...");
+            sendCheckResultsToTG();
+        });
+    } else if (scheduleType === "daily") {
+        const [hour, minute] = timeValue.split(":").map(num => parseInt(num, 10));
+        cron.schedule(`0 ${minute} ${hour} * * *`, () => {
+            console.log("⏰ 执行定时任务...");
+            sendCheckResultsToTG();
+        });
+    } else if (scheduleType === "weekly") {
+        const [day, time] = timeValue.split("-");
+        const [hour, minute] = time.split(":").map(num => parseInt(num, 10));
+        cron.schedule(`0 ${minute} ${hour} * * ${day}`, () => {
+            console.log("⏰ 执行定时任务...");
+            sendCheckResultsToTG();
+        });
+    }
+}
+
+scheduleNotification();
+
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+
 app.get("/getMainUser", (req, res) => {
     res.json({ mainUser: MAIN_SERVER_USER });
 });
+
 app.get("/accounts", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "accounts.html"));
 });
+
 app.get("/nodes", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "nodes.html"));
 });
+
 app.get("/info", (req, res) => {
     const user = req.query.user;
     if (!user) return res.status(400).send("用户未指定");
     res.redirect(`https://${user}.serv00.net/info`);
 });
+
 app.get("/checkAccountsPage", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
 });
+
 app.get("/checkAccounts", async (req, res) => {
     try {
-        const accounts = await getAccounts(false); // 获取所有账号
+        const accounts = await getAccounts(false); 
         const users = Object.keys(accounts);
 
         if (users.length === 0) {
@@ -200,17 +246,34 @@ app.get("/checkAccounts", async (req, res) => {
         res.status(500).json({ status: "error", message: "检测失败，请稍后再试" });
     }
 });
-app.post("/setTelegramSettings", (req, res) => {
-    const { telegramToken, telegramChatId } = req.body;
-    if (!telegramToken || !telegramChatId) {
-        return res.status(400).json({ message: "Telegram 配置不完整" });
+
+// 设置通知的时间
+app.post("/setNotificationSettings", (req, res) => {
+    const { scheduleType, timeValue } = req.body;
+    const settings = getSettings();
+    if (!settings) {
+        return res.status(400).json({ message: "设置文件丢失" });
     }
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ telegramToken, telegramChatId }, null, 2));
-    res.json({ message: "Telegram 设置已更新" });
+
+    // 更新通知设置
+    settings.scheduleType = scheduleType;
+    settings.timeValue = timeValue;
+
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+    res.json({ message: "通知设置已更新" });
 });
-app.get("/notificationSettings", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
+
+app.get("/getNotificationSettings", (req, res) => {
+    const settings = getSettings();
+    if (!settings) {
+        return res.json({ scheduleType: "interval", timeValue: "" });
+    }
+    res.json({
+        scheduleType: settings.scheduleType || "interval",
+        timeValue: settings.timeValue || ""
+    });
 });
+
 server.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
 });
