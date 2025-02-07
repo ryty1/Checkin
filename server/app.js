@@ -228,14 +228,7 @@ app.get("/checkAccounts", async (req, res) => {
         res.status(500).json({ status: "error", message: "检测失败，请稍后再试" });
     }
 });
-app.post("/setTelegramSettings", (req, res) => {
-    const { telegramToken, telegramChatId } = req.body;
-    if (!telegramToken || !telegramChatId) {
-        return res.status(400).json({ message: "Telegram 配置不完整" });
-    }
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ telegramToken, telegramChatId }, null, 2));
-    res.json({ message: "Telegram 设置已更新" });
-});
+
 // 获取通知设置
 app.get("/getNotificationSettings", (req, res) => {
     res.json(getNotificationSettings());
