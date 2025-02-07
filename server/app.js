@@ -103,7 +103,7 @@ function getCronExpression(scheduleType, timeValue) {
     } else if (scheduleType === "weekly") {
         const [day, time] = timeValue.split("-");
         const [hour, minute] = time.split(":").map(num => parseInt(num, 10));
-        const weekDays = { "星期日": 0, "星期一": 1, "星期二": 2, "星期三": 3, "星期四": 4, "星期五": 5, "星期六": 6 };
+        const weekDays = { "周日": 0, "周一": 1, "周二": 2, "周三": 3, "周四": 4, "周五": 5, "周六": 6 };
         if (!weekDays.hasOwnProperty(day) || isNaN(hour) || isNaN(minute)) return null;
         return `${minute} ${hour} * * ${weekDays[day]}`;
     }
