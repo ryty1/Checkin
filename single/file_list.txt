@@ -1,4 +1,3 @@
 app.js
 install.sh
 hy2ip.sh
-abc.txt
