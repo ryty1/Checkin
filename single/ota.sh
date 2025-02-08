@@ -40,7 +40,7 @@ get_local_file_list() {
 # **下载并覆盖远程文件**
 download_file() {
     local file_name=$1
-    curl -s -o "$NODEJS_DIR/$file_name" "${REMOTE_DIR_URL}${file_name}"
+    curl -s -o "$NODEJS_DIR/$file_name" "${REMOTE_DIR_URL}${file_name}${TIMESTAMP}"
     echo "✅ ${file_name} 更新完成"
 }
 
