@@ -77,7 +77,6 @@ sync_files() {
     remote_files=$(get_remote_file_list)
     local_files=$(get_local_file_list)
 
-    # 只对存在于远程和本地 file_list 中的文件进行操作
     # 下载远程文件（覆盖本地文件）
     for file in $remote_files; do
         download_file "$file"
