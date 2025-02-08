@@ -12,6 +12,7 @@ const io = socketIo(server);
 const PORT = 3000;
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 const SETTINGS_FILE = path.join(__dirname, "settings.json");
+const otaScriptPath = path.join(__dirname, 'ota.sh');
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json()); 
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
