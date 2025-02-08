@@ -1,2 +1,4 @@
 app.js
 public/index.html
+public/nodes.html
+public/accounts.html
