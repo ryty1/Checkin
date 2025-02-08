@@ -80,11 +80,8 @@ sync_files() {
     # 只对存在于远程和本地 file_list 中的文件进行操作
     # 下载远程文件（覆盖本地文件）
     for file in $remote_files; do
-        # 如果该文件同时存在于本地 file_list.txt 中，才执行下载
-        if echo "$local_files" | grep -q "^$file$"; then
-            download_file "$file"
-            files_updated=true
-        fi
+        download_file "$file"
+        files_updated=true
     done
 
     # 删除本地无效文件（不在远程 file_list 中，且在本地 file_list 中）
