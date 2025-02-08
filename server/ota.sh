@@ -8,7 +8,7 @@ LOCAL_FILE_LIST="$NODEJS_DIR/file_list.txt"
 LOCAL_VERSION_FILE="$NODEJS_DIR/version.txt"  
 
 # **远程文件 URL（修正变量定义顺序 + 加入时间戳以绕过缓存）**
-REMOTE_DIR_URL="https://raw.githubusercontent.com/ryty1/My-test/main/single/"
+REMOTE_DIR_URL="https://raw.githubusercontent.com/ryty1/My-test/main/server/"
 TIMESTAMP="?t=$(date +%s)" 
 REMOTE_FILE_LIST_URL="${REMOTE_DIR_URL}file_list.txt${TIMESTAMP}"
 REMOTE_VERSION_URL="${REMOTE_DIR_URL}version.txt${TIMESTAMP}"
