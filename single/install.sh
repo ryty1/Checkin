@@ -126,6 +126,7 @@ if [[ "$choice" -eq 1 ]]; then
     echo ""
 else
     chmod 755 "$A2/app.js" > /dev/null 2>&1
+    chmod 755 "$A2/ota.sh" > /dev/null 2>&1
 
     echo ""
     echo " 【 恭 喜 】： 账号服务  部署已完成  "
