@@ -5,4 +5,3 @@ public/accounts.html
 public/check_accounts.html
 public/notification_settings.html
 public/ota.html
-public/add.html
