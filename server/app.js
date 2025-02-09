@@ -5,6 +5,7 @@ const socketIo = require("socket.io");
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
+const cookieParser = require("cookie-parser");  // 用于解析 cookie
 const cron = require("node-cron");
 const TelegramBot = require("node-telegram-bot-api");
 const app = express();
@@ -16,6 +17,7 @@ const SETTINGS_FILE = path.join(__dirname, "settings.json");
 const otaScriptPath = path.join(__dirname, 'ota.sh');
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json()); 
+app.use(cookieParser());  // 解析 cookie
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
 // 获取账号数据
 async function getAccounts(excludeMainUser = true) {
@@ -26,6 +28,106 @@ async function getAccounts(excludeMainUser = true) {
     }
     return accounts;
 }
+// 获取会话数据
+function getSessions() {
+    if (!fs.existsSync(SESSION_FILE)) return {};
+    return JSON.parse(fs.readFileSync(SESSION_FILE, "utf-8"));
+}
+
+// 保存会话数据
+function saveSessions(sessions) {
+    fs.writeFileSync(SESSION_FILE, JSON.stringify(sessions, null, 2));
+}
+
+// 检查并加载密码
+function getPassword() {
+    if (!fs.existsSync(PASSWORD_FILE)) return null;
+    return JSON.parse(fs.readFileSync(PASSWORD_FILE, "utf-8")).password;
+}
+
+// 设置密码
+function setPassword(newPassword) {
+    fs.writeFileSync(PASSWORD_FILE, JSON.stringify({ password: newPassword }, null, 2));
+}
+
+// 生成随机 sessionId
+function generateSessionId() {
+    return Math.random().toString(36).substring(2, 15);
+}
+
+// 会话验证中间件
+function authMiddleware(req, res, next) {
+    const sessions = getSessions();
+    const sessionId = req.cookies.sessionId;
+
+    if (sessionId && sessions[sessionId] && sessions[sessionId].expires > Date.now()) {
+        sessions[sessionId].expires = Date.now() + 30 * 60 * 1000;  // 刷新过期时间
+        saveSessions(sessions);
+        return next();
+    } else {
+        return res.redirect("/login");
+    }
+}
+
+// 检查是否已设置密码
+app.use((req, res, next) => {
+    if (!getPassword() && req.path !== "/setPassword" && req.path !== "/login") {
+        return res.redirect("/setPassword");
+    }
+    next();
+});
+
+// 登录页面
+app.get("/login", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+// 处理登录
+app.post("/login", (req, res) => {
+    const { password } = req.body;
+    const storedPassword = getPassword();
+
+    if (!storedPassword) {
+        return res.status(400).json({ success: false, message: "密码未设置" });
+    }
+
+    if (password !== storedPassword) {
+        return res.status(401).json({ success: false, message: "密码错误" });
+    }
+
+    const sessionId = generateSessionId();
+    const sessions = getSessions();
+    sessions[sessionId] = { expires: Date.now() + 30 * 60 * 1000 }; // 30分钟过期
+    saveSessions(sessions);
+
+    res.cookie("sessionId", sessionId, { maxAge: 30 * 60 * 1000, httpOnly: true });
+    res.json({ success: true });
+});
+
+// 设置密码页面
+app.get("/setPassword", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "set_password.html"));
+});
+
+// 处理设置密码
+app.post("/setPassword", (req, res) => {
+    const { password } = req.body;
+
+    if (!password || password.length < 6) {
+        return res.status(400).json({ success: false, message: "密码至少6位" });
+    }
+
+    setPassword(password);
+    res.json({ success: true, message: "密码设置成功，请登录" });
+});
+
+// 保护路由
+app.use((req, res, next) => {
+    if (req.path === "/login" || req.path === "/setPassword") {
+        return next();
+    }
+    return authMiddleware(req, res, next);
+});
 
 // 监听客户端连接
 io.on("connection", (socket) => {
