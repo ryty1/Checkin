@@ -162,6 +162,7 @@ app.get("/getTelegramSettings", (req, res) => {
     res.json(settings);
 });
 // 处理 Telegram 发送消息
+// 处理 Telegram 发送消息
 async function sendCheckResultsToTG() {
     try {
         const settings = getNotificationSettings();
@@ -182,17 +183,20 @@ async function sendCheckResultsToTG() {
         let results = [];
         let maxUserLength = 0;
         let maxSeasonLength = 0;
-        
+
+        // **保持账号配置文件的顺序**
+        const users = Object.keys(data);  // 账号顺序应与配置文件一致
+
         // 计算最大用户名长度和赛季长度
-        Object.keys(data).forEach(user => {
+        users.forEach(user => {
             maxUserLength = Math.max(maxUserLength, user.length);
             maxSeasonLength = Math.max(maxSeasonLength, (data[user]?.season || "").length);
         });
 
         // 构建格式化的账号检测结果，确保冒号和短横线对齐
-        Object.keys(data).forEach((user, index) => {
-            const paddedUser = user.padEnd(maxUserLength, " ").padEnd(maxSeasonLength + 1, " ");;  // 填充用户名，确保所有用户名长度一致
-            const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 1, " "); // 填充赛季，确保对齐
+        users.forEach((user, index) => {
+            const paddedUser = user.padEnd(maxUserLength, " ").padEnd(maxSeasonLength + 1, " ");
+            const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 1, " ");
             const status = data[user]?.status || "未知状态";
             results.push(`${index + 1}. ${paddedUser}: ${season}- ${status}`);
         });
@@ -228,11 +232,10 @@ app.get("/checkAccountsPage", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
 });
 
-// 账号检测接口
 app.get("/checkAccounts", async (req, res) => {
     try {
-        const accounts = await getAccounts(); // 获取所有账号
-        const users = Object.keys(accounts); // 账号列表
+        const accounts = await getAccounts(); // 获取所有账号（按配置文件顺序）
+        const users = Object.keys(accounts); // 保持账号配置的顺序
 
         if (users.length === 0) {
             return res.json({ status: "success", results: {} });
@@ -241,45 +244,44 @@ app.get("/checkAccounts", async (req, res) => {
         let results = {};
         const promises = users.map(async (username) => {
             try {
-                // 通过 API 获取账号状态
                 const apiUrl = `https://s00test.64t76dee9sk5.workers.dev/?username=${username}`;
                 const response = await axios.get(apiUrl);
                 const data = response.data;
 
-                // 获取状态
                 let status = "未知状态";
                 if (data.message) {
                     const parts = data.message.split("：");
                     status = parts.length > 1 ? parts.pop() : data.message;
                 }
 
-                // 合并赛季与状态信息
                 results[username] = {
                     status: status,
-                    season: accounts[username]?.season || "--" // 赛季信息
+                    season: accounts[username]?.season || "--"
                 };
-
             } catch (error) {
                 console.error(`账号 ${username} 检测失败:`, error.message);
                 results[username] = {
                     status: "检测失败",
-                    season: accounts[username]?.season || "--" // 默认赛季
+                    season: accounts[username]?.season || "--"
                 };
             }
         });
 
-        // 等待所有请求完成
         await Promise.all(promises);
 
-        // 返回结果
-        res.json({ status: "success", results });
+        // **保持账号顺序与配置文件一致**
+        let orderedResults = {};
+        users.forEach(user => {
+            orderedResults[user] = results[user];
+        });
+
+        res.json({ status: "success", results: orderedResults });
 
     } catch (error) {
         console.error("批量账号检测错误:", error);
         res.status(500).json({ status: "error", message: "检测失败，请稍后再试" });
     }
 });
-
 
 // 获取通知设置
 app.get("/getNotificationSettings", (req, res) => {
