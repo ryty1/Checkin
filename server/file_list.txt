@@ -4,6 +4,6 @@ protected/nodes.html
 protected/accounts.html
 protected/ota.html
 protected/login.html
-server/protected/set_password.html
+protected/set_password.html
 public/check_accounts.html
 public/notification_settings.html
