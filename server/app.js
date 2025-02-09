@@ -13,10 +13,106 @@ const io = socketIo(server);
 const PORT = 3000;
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 const SETTINGS_FILE = path.join(__dirname, "settings.json");
+const PASSWORD_FILE = path.join(__dirname, "password.hash");
 const otaScriptPath = path.join(__dirname, 'ota.sh');
-app.use(express.static(path.join(__dirname, "public")));
+
+// Session 配置
+app.use(session({
+    secret: 'your-secret-key',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // 生产环境应设置为 true 并启用 HTTPS
+}));
+
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json()); 
+app.use(express.static(path.join(__dirname, "public")));
+
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
+
+// 密码验证中间件
+const checkAuth = (req, res, next) => {
+    // 允许访问登录和设置密码页面
+    if (req.path === '/login' || req.path === '/setup-password') {
+        return next();
+    }
+    
+    // 检查是否已设置密码
+    if (!fs.existsSync(PASSWORD_FILE)) {
+        return res.redirect('/setup-password');
+    }
+
+    // 检查会话是否已认证
+    if (req.session.authenticated) {
+        return next();
+    }
+
+    res.redirect('/login');
+};
+
+// 应用认证中间件到所有路由（除了静态文件）
+app.use((req, res, next) => {
+    if (req.path.startsWith('/public/')) {
+        return next();
+    }
+    checkAuth(req, res, next);
+});
+
+// 登录页面
+app.get('/login', (req, res) => {
+    if (fs.existsSync(PASSWORD_FILE)) {
+        res.sendFile(path.join(__dirname, "public", "login.html"));
+    } else {
+        res.redirect('/setup-password');
+    }
+});
+
+// 处理登录请求
+app.post('/login', async (req, res) => {
+    try {
+        const { password } = req.body;
+        const hashedPassword = fs.readFileSync(PASSWORD_FILE, 'utf-8');
+        
+        if (await bcrypt.compare(password, hashedPassword)) {
+            req.session.authenticated = true;
+            res.redirect('/');
+        } else {
+            res.send('密码错误');
+        }
+    } catch (error) {
+        res.status(500).send('登录出错');
+    }
+});
+
+// 设置密码页面
+app.get('/setup-password', (req, res) => {
+    if (fs.existsSync(PASSWORD_FILE)) {
+        return res.redirect('/login');
+    }
+    res.sendFile(path.join(__dirname, "public", "setup-password.html"));
+});
+
+// 处理密码设置请求
+app.post('/setup-password', async (req, res) => {
+    if (fs.existsSync(PASSWORD_FILE)) {
+        return res.status(400).send('密码已设置');
+    }
+
+    const { password, confirmPassword } = req.body;
+    if (password !== confirmPassword) {
+        return res.status(400).send('两次输入的密码不一致');
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        fs.writeFileSync(PASSWORD_FILE, hashedPassword);
+        req.session.authenticated = true;
+        res.redirect('/');
+    } catch (error) {
+        res.status(500).send('密码设置失败');
+    }
+});
+
 // 获取账号数据
 async function getAccounts(excludeMainUser = true) {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
@@ -231,6 +327,7 @@ async function sendCheckResultsToTG() {
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+
 app.get("/getMainUser", (req, res) => {
     res.json({ mainUser: MAIN_SERVER_USER });
 });
