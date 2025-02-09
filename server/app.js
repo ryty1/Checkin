@@ -71,31 +71,46 @@ function filterNodes(nodes) {
 }
 async function getNodesSummary(socket) {
     const accounts = await getAccounts(true);
-    const users = Object.keys(accounts); 
+    if (!accounts || Object.keys(accounts).length === 0) {
+        console.log("⚠️ 未找到账号数据！");
+        socket.emit("nodesSummary", { successfulNodes: [], failedAccounts: [] });
+        return;
+    }
+
+    const users = Object.keys(accounts);  // 取出账号 key
     let successfulNodes = [];
     let failedAccounts = [];
+
     for (let i = 0; i < users.length; i++) {
-        const userKey = users[i];  // 获取 JSON key，例如 "aodaliy"
-        const user = accounts[userKey]?.user || userKey; // 如果有 "user" 字段，就用它，否则用 key
+        const userKey = users[i];  // 例如 "aodaliy"
+        const user = accounts[userKey]?.user || userKey; // 兼容旧格式 & 新格式
+
         const nodeUrl = `https://${user}.serv00.net/node`;
         try {
+            console.log(`请求节点数据: ${nodeUrl}`);
             const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
             const nodeData = nodeResponse.data;
+
             const nodeLinks = filterNodes([
                 ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []),
                 ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])
             ]);
+
             if (nodeLinks.length > 0) {
                 successfulNodes.push(...nodeLinks);
             } else {
-                console.log(`Account ${user} connected but has no valid nodes.`);
+                console.log(`账号 ${user} 连接成功但无有效节点`);
                 failedAccounts.push(user);
             }
         } catch (error) {
-            console.log(`Failed to get node for ${user}: ${error.message}`);
+            console.log(`账号 ${user} 获取节点失败: ${error.message}`);
             failedAccounts.push(user);
         }
     }
+
+    console.log("成功的节点:", successfulNodes);
+    console.log("失败的账号:", failedAccounts);
+
     socket.emit("nodesSummary", { successfulNodes, failedAccounts });
 }
 
