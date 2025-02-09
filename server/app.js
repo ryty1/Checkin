@@ -355,10 +355,10 @@ async function sendCheckResultsToTG() {
 app.get("/getMainUser", (req, res) => {
     res.json({ mainUser: MAIN_SERVER_USER });
 });
-app.get("/accounts", checkAuth, (req, res) => {
+app.get("/accounts", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "accounts.html"));
 });
-app.get("/nodes", checkAuth, (req, res) => {
+app.get("/nodes", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "nodes.html"));
 });
 app.get("/info", (req, res) => {
@@ -367,7 +367,7 @@ app.get("/info", (req, res) => {
     res.redirect(`https://${user}.serv00.net/info`);
 });
 // 发送静态HTML文件
-app.get("/checkAccountsPage", checkAuth, (req, res) => {
+app.get("/checkAccountsPage", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
 });
 
@@ -428,7 +428,7 @@ app.get("/getNotificationSettings", (req, res) => {
 });
 
 // 设置通知和 Telegram 配置
-app.post("/setNotificationSettings", checkAuth, (req, res) => {
+app.post("/setNotificationSettings", (req, res) => {
     const { telegramToken, telegramChatId, scheduleType, timeValue } = req.body;
     
     if (!telegramToken || !telegramChatId || !scheduleType || !timeValue) {
@@ -473,7 +473,7 @@ app.get('/ota/update', (req, res) => {
     });
 });
 // **前端页面 `/ota`**
-app.get('/ota', checkAuth, (req, res) => {
+app.get('/ota', (req, res) => {
     res.sendFile(path.join(__dirname, "public", "ota.html"));
 });
 
