@@ -54,11 +54,12 @@ function authMiddleware(req, res, next) {
     const sessionId = req.cookies.sessionId;
 
     if (sessionId && sessions[sessionId] && sessions[sessionId].expires > Date.now()) {
-        sessions[sessionId].expires = Date.now() + 60 * 1000;  // 刷新过期时间
+        // 刷新会话过期时间
+        sessions[sessionId].expires = Date.now() + 30 * 60 * 1000;  // 延长30分钟过期
         saveSessions(sessions);
-        return next();
+        return next();  // 继续处理请求
     } else {
-        return res.redirect("/login");
+        return res.redirect("/login");  // 如果未通过验证，跳转到登录页面
     }
 }
 
@@ -114,13 +115,26 @@ app.post("/setPassword", (req, res) => {
     res.json({ success: true, message: "密码设置成功，请登录" });
 });
 
-// 保护路由
+// 保护路由：保护所有路由，需要验证会话
 app.use((req, res, next) => {
     if (req.path === "/login" || req.path === "/setPassword") {
         return next();
     }
     return authMiddleware(req, res, next);
 });
+
+// 退出登录
+app.post("/logout", (req, res) => {
+    const sessions = getSessions();
+    const sessionId = req.cookies.sessionId;
+    if (sessionId) {
+        delete sessions[sessionId];
+        saveSessions(sessions);
+    }
+    res.clearCookie("sessionId");
+    res.redirect("/login");
+});
+
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
 // 获取账号数据
 async function getAccounts(excludeMainUser = true) {
@@ -331,10 +345,11 @@ async function sendCheckResultsToTG() {
         console.error("❌ 发送 Telegram 失败:", error);
     }
 }
-
+// 主页
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+
 app.get("/getMainUser", (req, res) => {
     res.json({ mainUser: MAIN_SERVER_USER });
 });
