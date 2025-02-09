@@ -54,7 +54,7 @@ function authMiddleware(req, res, next) {
     const sessionId = req.cookies.sessionId;
 
     if (sessionId && sessions[sessionId] && sessions[sessionId].expires > Date.now()) {
-        sessions[sessionId].expires = Date.now() + 30 * 60 * 1000;  // 刷新过期时间
+        sessions[sessionId].expires = Date.now() + 60 * 1000;  // 刷新过期时间
         saveSessions(sessions);
         return next();
     } else {
