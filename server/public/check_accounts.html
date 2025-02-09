@@ -48,6 +48,7 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             text-align: left;
+            overflow-x: auto;
         }
         table {
             width: 100%;
@@ -84,11 +85,10 @@
                         let resultHTML = '<table>';
                         resultHTML += '<tr><th>#</th><th>账号</th><th>赛季</th><th>状态</th></tr>';
 
-                        // 按账号配置顺序显示账号
                         const users = Object.keys(results);
                         users.forEach((user, index) => {
-                            const season = results[user]?.season || '--';  // 确保 season 存在
-                            const status = results[user]?.status || '--';  // 确保 status 存在
+                            const season = results[user]?.season || "--";
+                            const status = results[user]?.status || "未知状态";
                             resultHTML += `<tr>
                                 <td>${index + 1}</td>
                                 <td>${user}</td>
