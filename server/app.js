@@ -25,32 +25,6 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json()); 
 app.use(cookieParser());  // 解析 cookie
 app.use(bodyParser.urlencoded({ extended: true }));
-const express = require("express");
-const http = require("http");
-const { exec } = require("child_process");
-const socketIo = require("socket.io");
-const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
-const cookieParser = require("cookie-parser"); 
-const bodyParser = require("body-parser");
-const cron = require("node-cron");
-const TelegramBot = require("node-telegram-bot-api");
-
-const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
-const PORT = 3000;
-
-const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
-const SETTINGS_FILE = path.join(__dirname, "settings.json");
-const SESSION_FILE = path.join(__dirname, "sessions.json");
-const PASSWORD_FILE = path.join(__dirname, "password.json");
-
-app.use(express.static(path.join(__dirname, "public")));
-app.use(express.json());
-app.use(cookieParser());
-app.use(bodyParser.urlencoded({ extended: true }));
 
 // 获取会话数据
 function getSessions() {
