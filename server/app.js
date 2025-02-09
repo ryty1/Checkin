@@ -106,7 +106,7 @@ app.get("/logout", (req, res) => {
 });
 
 // **受保护的 HTML 页面**
-const protectedRoutes = ["/", "/ota", "/accounts", "/nodes", "/checkAccountsPage", "/notificationSettings"];
+const protectedRoutes = ["/", "/ota", "/accounts", "/nodes"];
 protectedRoutes.forEach(route => {
     app.get(route, checkPassword, isAuthenticated, (req, res) => {
         res.sendFile(path.join(__dirname, "protected", route === "/" ? "index.html" : `${route.slice(1)}.html`));
