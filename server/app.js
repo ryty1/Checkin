@@ -75,7 +75,8 @@ async function getNodesSummary(socket) {
     let successfulNodes = [];
     let failedAccounts = [];
     for (let i = 0; i < users.length; i++) {
-        const user = users[i];
+        const userKey = users[i];  // 获取 JSON key，例如 "aodaliy"
+        const user = accounts[userKey]?.user || userKey; // 如果有 "user" 字段，就用它，否则用 key
         const nodeUrl = `https://${user}.serv00.net/node`;
         try {
             const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
