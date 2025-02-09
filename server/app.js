@@ -191,7 +191,7 @@ async function sendCheckResultsToTG() {
 
         // 构建格式化的账号检测结果，确保冒号和短横线对齐
         Object.keys(data).forEach((user, index) => {
-            const paddedUser = user.padEnd(maxUserLength, " ");  // 填充用户名，确保所有用户名长度一致
+            const paddedUser = user.padEnd(maxUserLength, " ").padEnd(maxSeasonLength + 1, " ");;  // 填充用户名，确保所有用户名长度一致
             const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 1, " "); // 填充赛季，确保对齐
             const status = data[user]?.status || "未知状态";
             results.push(`${index + 1}. ${paddedUser}: ${season}- ${status}`);
