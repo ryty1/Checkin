@@ -20,16 +20,7 @@ const otaScriptPath = path.join(__dirname, 'ota.sh');
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json()); 
 app.use(cookieParser());  // 解析 cookie
-const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
-// 获取账号数据
-async function getAccounts(excludeMainUser = true) {
-    if (!fs.existsSync(ACCOUNTS_FILE)) return {};
-    let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
-    if (excludeMainUser) {
-        delete accounts[MAIN_SERVER_USER];  // 如果存在主用户，排除它
-    }
-    return accounts;
-}
+
 // 获取会话数据
 function getSessions() {
     if (!fs.existsSync(SESSION_FILE)) return {};
@@ -130,7 +121,16 @@ app.use((req, res, next) => {
     }
     return authMiddleware(req, res, next);
 });
-
+const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
+// 获取账号数据
+async function getAccounts(excludeMainUser = true) {
+    if (!fs.existsSync(ACCOUNTS_FILE)) return {};
+    let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+    if (excludeMainUser) {
+        delete accounts[MAIN_SERVER_USER];  // 如果存在主用户，排除它
+    }
+    return accounts;
+}
 // 监听客户端连接
 io.on("connection", (socket) => {
     console.log("Client connected");
