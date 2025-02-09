@@ -23,7 +23,7 @@ const SESSION_FILE = path.join(__dirname, "session_secret.json");
 const otaScriptPath = path.join(__dirname, 'ota.sh');
 
 app.use(express.json()); 
-
+app.use(express.static(path.join(__dirname, "public")));
 // 生成或读取 session 密钥
 function getSessionSecret() {
     if (fs.existsSync(SESSION_FILE)) {
