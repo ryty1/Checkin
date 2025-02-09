@@ -77,7 +77,6 @@
         th {
             background-color: #f2f2f2;
         }
-        /* 让 # 号和账号列左对齐 */
         th:first-child, td:first-child {
             text-align: left;
             padding-left: 10px;
@@ -100,10 +99,8 @@
         .action-buttons {
             display: flex;
             justify-content: center;
-            gap: 8px; /* 增大按钮间距 */
+            gap: 8px;
         }
-
-        /* 固定表头 */
         thead {
             position: sticky;
             top: 0;
@@ -118,7 +115,7 @@
 
         <div class="input-group">
             <input type="text" id="accountUser" placeholder="请输入账号">
-            <button class="btn btn-success" onclick="saveAccount()">保存</button>
+            <button class="btn btn-success" onclick="saveAccount()">保存账号</button>
         </div>
 
         <table>
@@ -141,8 +138,8 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let accountsData = {}; // 存储账号数据
-        let currentFilter = ""; // 记录当前选中的筛选赛季
+        let accountsData = {}; 
+        let currentFilter = "";
 
         function loadAccounts() {
             socket.emit("loadAccounts");
@@ -157,7 +154,9 @@
         }
 
         function deleteAccount(user) {
-            socket.emit("deleteAccount", user);
+            if (confirm(`确定要删除账号 "${user}" 吗？`)) {
+                socket.emit("deleteAccount", user);
+            }
         }
 
         function updateSeason(user) {
@@ -169,7 +168,7 @@
 
         function updateSeasonFilterOptions() {
             const filterSelect = document.getElementById("seasonFilter");
-            filterSelect.innerHTML = '<option value="">全部</option>'; // 确保"全部"选项始终存在
+            filterSelect.innerHTML = '<option value="">全部</option>'; 
 
             const uniqueSeasons = new Set();
             Object.values(accountsData).forEach(account => {
@@ -185,13 +184,12 @@
                 filterSelect.appendChild(option);
             });
 
-            // 确保当前筛选值正确更新
             filterSelect.value = currentFilter;
         }
 
         function filterBySeason() {
             const filter = document.getElementById("seasonFilter").value;
-            currentFilter = filter; // 记录当前筛选状态
+            currentFilter = filter; 
             renderTable(filter);
         }
 
@@ -215,12 +213,12 @@
                 tableBody.innerHTML += row;
             });
 
-            updateSeasonFilterOptions(); // 更新赛季筛选框选项
+            updateSeasonFilterOptions();
         }
 
         socket.on("accountsList", (accounts) => {
             accountsData = accounts;
-            renderTable(currentFilter); // 维持筛选状态
+            renderTable(currentFilter); 
         });
 
         loadAccounts();
