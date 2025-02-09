@@ -5,140 +5,18 @@ const socketIo = require("socket.io");
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
-const cookieParser = require("cookie-parser");  // 用于解析 cookie
-const bodyParser = require("body-parser");
 const cron = require("node-cron");
 const TelegramBot = require("node-telegram-bot-api");
-
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 const PORT = 3000;
-
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 const SETTINGS_FILE = path.join(__dirname, "settings.json");
-const SESSION_FILE = path.join(__dirname, "sessions.json");
-const PASSWORD_FILE = path.join(__dirname, "password.json");
 const otaScriptPath = path.join(__dirname, 'ota.sh');
-
 app.use(express.static(path.join(__dirname, "public")));
-app.use(express.json());
-app.use(cookieParser());  // 解析 cookie
-app.use(bodyParser.urlencoded({ extended: true }));
-
-let sessions = {};  // 存储会话信息
-
-// 检查是否已设置密码
-function getPassword() {
-    if (!fs.existsSync(PASSWORD_FILE)) return null;
-    return JSON.parse(fs.readFileSync(PASSWORD_FILE, 'utf-8')).password;
-}
-
-// 设置密码
-function setPassword(newPassword) {
-    fs.writeFileSync(PASSWORD_FILE, JSON.stringify({ password: newPassword }, null, 2));
-}
-
-// 生成 sessionId
-function generateSessionId() {
-    return Math.random().toString(36).substring(2);  // 示例 session ID 生成逻辑
-}
-
-// 获取会话数据
-function getSessions() {
-    if (!fs.existsSync(SESSION_FILE)) return {};
-    return JSON.parse(fs.readFileSync(SESSION_FILE, 'utf-8'));
-}
-
-// 保存会话数据
-function saveSessions(sessions) {
-    fs.writeFileSync(SESSION_FILE, JSON.stringify(sessions, null, 2));
-}
-
-// 登录保护中间件
-function checkAuth(req, res, next) {
-    const sessionId = req.cookies.sessionId;
-    if (!sessionId || !sessions[sessionId]) {
-        return res.redirect('/login');  // 未登录，重定向到登录页
-    }
-    next();  // 已登录，继续请求
-}
-
-// 主页路由，添加认证保护
-app.get('/', checkAuth, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// 账号管理路由，添加认证保护
-app.get('/accounts', checkAuth, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'accounts.html'));
-});
-
-// 节点汇集路由，添加认证保护
-app.get('/nodes', checkAuth, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'nodes.html'));
-});
-
-// 系统更新路由，添加认证保护
-app.get('/ota', checkAuth, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'ota.html'));
-});
-
-// 登录路由
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));  // 登录页面
-});
-
-// 登录验证
-app.post('/login', (req, res) => {
-    const { password } = req.body;
-    const storedPassword = getPassword();
-
-    if (!storedPassword) {
-        return res.status(400).json({ success: false, message: "密码未设置" });
-    }
-
-    if (password !== storedPassword) {
-        return res.status(401).json({ success: false, message: "密码错误" });
-    }
-
-    const sessionId = generateSessionId();
-    sessions[sessionId] = { username: "admin" };  // 用户名可以根据实际情况设置
-    saveSessions(sessions);
-
-    res.cookie('sessionId', sessionId, { maxAge: 30 * 60 * 1000 });  // 会话有效期 30分钟
-    res.redirect('/');  // 登录成功后跳转到主页
-});
-
-// 设置密码页面
-app.get('/setPassword', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'set_password.html'));  // 设置密码页面
-});
-
-// 处理设置密码
-app.post('/setPassword', (req, res) => {
-    const { password } = req.body;
-
-    if (!password || password.length < 6) {
-        return res.status(400).json({ success: false, message: "密码至少6位" });
-    }
-
-    setPassword(password);
-    res.json({ success: true, message: "密码设置成功，请登录" });
-});
-
-// 退出路由
-app.post('/logout', (req, res) => {
-    const sessionId = req.cookies.sessionId;
-    if (sessionId) {
-        delete sessions[sessionId];  // 删除会话
-    }
-    res.clearCookie('sessionId');  // 清除 Cookie
-    res.redirect('/login');  // 重定向到登录页面
-});
-
+app.use(express.json()); 
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
-
 // 获取账号数据
 async function getAccounts(excludeMainUser = true) {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
@@ -191,11 +69,9 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts(true));
     });
 });
-
 function filterNodes(nodes) {
     return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
 }
-
 async function getNodesSummary(socket) {
     const accounts = await getAccounts(true);
     if (!accounts || Object.keys(accounts).length === 0) {
@@ -352,14 +228,26 @@ async function sendCheckResultsToTG() {
     }
 }
 
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 app.get("/getMainUser", (req, res) => {
     res.json({ mainUser: MAIN_SERVER_USER });
 });
-
+app.get("/accounts", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "accounts.html"));
+});
+app.get("/nodes", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "nodes.html"));
+});
 app.get("/info", (req, res) => {
     const user = req.query.user;
     if (!user) return res.status(400).send("用户未指定");
     res.redirect(`https://${user}.serv00.net/info`);
+});
+// 发送静态HTML文件
+app.get("/checkAccountsPage", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
 });
 
 app.get("/checkAccounts", async (req, res) => {
@@ -462,6 +350,10 @@ app.get('/ota/update', (req, res) => {
         // 返回脚本执行的结果
         res.json({ success: true, output: stdout });
     });
+});
+// **前端页面 `/ota`**
+app.get('/ota', (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "ota.html"));
 });
 
 server.listen(PORT, () => {
