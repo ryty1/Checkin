@@ -355,20 +355,11 @@ async function sendCheckResultsToTG() {
 app.get("/getMainUser", (req, res) => {
     res.json({ mainUser: MAIN_SERVER_USER });
 });
-app.get("/accounts", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "accounts.html"));
-});
-app.get("/nodes", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "nodes.html"));
-});
+
 app.get("/info", (req, res) => {
     const user = req.query.user;
     if (!user) return res.status(400).send("用户未指定");
     res.redirect(`https://${user}.serv00.net/info`);
-});
-// 发送静态HTML文件
-app.get("/checkAccountsPage", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
 });
 
 app.get("/checkAccounts", async (req, res) => {
@@ -471,10 +462,6 @@ app.get('/ota/update', (req, res) => {
         // 返回脚本执行的结果
         res.json({ success: true, output: stdout });
     });
-});
-// **前端页面 `/ota`**
-app.get('/ota', (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "ota.html"));
 });
 
 server.listen(PORT, () => {
