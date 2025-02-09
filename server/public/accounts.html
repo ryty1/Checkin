@@ -36,7 +36,7 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             outline: none;
-            height: 36px; /* 确保输入框与按钮高度一致 */
+            height: 36px; /* 统一输入框和按钮的高度 */
         }
         .btn {
             padding: 6px 10px;
@@ -68,7 +68,7 @@
         th, td {
             padding: 8px;
             border-bottom: 1px solid #ddd;
-            font-size: 14px; /* 调小字体 */
+            font-size: 14px; /* 表格字体稍微缩小 */
             text-align: center;
         }
         th {
@@ -127,7 +127,8 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let accountsData = {};
+        let accountsData = {}; // 存储账号数据
+        let currentFilter = ""; // 记录当前选中的筛选赛季
 
         function loadAccounts() {
             socket.emit("loadAccounts");
@@ -154,9 +155,9 @@
 
         function updateSeasonFilterOptions() {
             const filterSelect = document.getElementById("seasonFilter");
-            filterSelect.innerHTML = '<option value="">全部</option>';
-            const uniqueSeasons = new Set();
+            filterSelect.innerHTML = '<option value="">全部</option>'; // 确保"全部"选项始终存在
 
+            const uniqueSeasons = new Set();
             Object.values(accountsData).forEach(account => {
                 if (account.season) {
                     uniqueSeasons.add(account.season);
@@ -169,15 +170,15 @@
                 option.textContent = season;
                 filterSelect.appendChild(option);
             });
+
+            // 确保当前筛选值正确更新
+            filterSelect.value = currentFilter;
         }
 
         function filterBySeason() {
             const filter = document.getElementById("seasonFilter").value;
-            if (filter === "") {
-                renderTable(); // 选择"全部"时显示所有数据
-            } else {
-                renderTable(filter);
-            }
+            currentFilter = filter; // 记录当前筛选状态
+            renderTable(filter);
         }
 
         function renderTable(filter = "") {
@@ -200,12 +201,12 @@
                 tableBody.innerHTML += row;
             });
 
-            updateSeasonFilterOptions();
+            updateSeasonFilterOptions(); // 更新赛季筛选框选项
         }
 
         socket.on("accountsList", (accounts) => {
             accountsData = accounts;
-            renderTable();
+            renderTable(currentFilter); // 维持筛选状态
         });
 
         loadAccounts();
