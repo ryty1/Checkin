@@ -38,9 +38,6 @@
             outline: none;
         }
         .btn {
-            padding: 5px 10px;
-            margin-left: 5px;
-            font-size: 16px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
@@ -49,13 +46,20 @@
         .btn-success {
             background-color: #28A745;
             color: white;
+            padding: 5px 10px;
+            font-size: 14px;
         }
-        .btn-danger {
-            background-color: #DC3545;
-            color: white;
+        .btn-primary, .btn-danger {
+            font-size: 12px;
+            padding: 2px 5px;
+            line-height: 1;
         }
         .btn-primary {
             background-color: #007bff;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #DC3545;
             color: white;
         }
         table {
@@ -67,7 +71,7 @@
         th, td {
             padding: 8px;
             border-bottom: 1px solid #ddd;
-            font-size: 14px; /* 表格字体稍微缩小 */
+            font-size: 14px;
             text-align: center;
         }
         th {
@@ -114,7 +118,7 @@
 
         <div class="input-group">
             <input type="text" id="accountUser" placeholder="请输入账号">
-            <button class="btn btn-success" onclick="saveAccount()">保存账号</button>
+            <button class="btn btn-success" onclick="saveAccount()">保存</button>
         </div>
 
         <table>
