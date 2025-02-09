@@ -331,7 +331,7 @@ app.get("/", isAuthenticated, (req, res) => {
 app.get("/getMainUser", isAuthenticated, (req, res) => {
     res.json({ mainUser: MAIN_SERVER_USER });
 });
-app.get("/accounts", , isAuthenticated, (req, res) => {
+app.get("/accounts", isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "accounts.html"));
 });
 app.get("/nodes", isAuthenticated, (req, res) => {
