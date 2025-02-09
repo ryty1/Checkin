@@ -7,10 +7,15 @@ const fs = require("fs");
 const path = require("path");
 const cron = require("node-cron");
 const TelegramBot = require("node-telegram-bot-api");
+const session = require("express-session");
+const bcrypt = require("bcrypt");
+const bodyParser = require("body-parser");
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 const PORT = 3000;
+
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 const SETTINGS_FILE = path.join(__dirname, "settings.json");
 const PASSWORD_FILE = path.join(__dirname, "password.hash");
