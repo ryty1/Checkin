@@ -30,6 +30,9 @@ async function getAccounts(excludeMainUser = true) {
 // 监听客户端连接
 io.on("connection", (socket) => {
     console.log("Client connected");
+    socket.on("startNodesSummary", () => {
+        getNodesSummary(socket);
+    });
 
     // 加载账号列表
     socket.on("loadAccounts", async () => {
