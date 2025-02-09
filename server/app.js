@@ -429,7 +429,7 @@ app.get("/notificationSettings", checkPassword, isAuthenticated, (req, res) => {
 });
 
 // **执行 OTA 更新**
-app.get('/ota/update', (req, res) => {
+app.get('/ota/update', checkPassword, isAuthenticated, (req, res) => {
     exec(otaScriptPath, (error, stdout, stderr) => {
         if (error) {
             console.error(`❌ 执行脚本错误: ${error.message}`);
