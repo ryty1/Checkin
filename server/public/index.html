@@ -69,9 +69,26 @@
         .btn-update:hover {
             background-color: #6CA6CD; 
         }
+        .btn-logout {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            background-color: #DC3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-logout:hover {
+            background-color: #b02a37;
+        }
     </style>
 </head>
 <body>
+    <!-- 退出按钮 -->
+    <button class="btn-logout" onclick="logout()">退出登录</button>
+
     <div class="container">
         <h1>Serv00 账 号 管 理</h1>
         <p>本机账号：<strong id="mainUser">加载中...</strong></p>
@@ -93,7 +110,17 @@
                 document.getElementById("mainUser").innerText = "获取失败";
             });
 
-        // 账号检测函数
+        // 退出登录函数
+        function logout() {
+            fetch("/logout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" }
+            }).then(() => {
+                window.location.href = "/login";  // 退出后跳转到登录页面
+            });
+        }
+
+        // 账号检测函数（你可以根据需求保留）
         function checkAccount() {
             fetch("/checkAccount")
                 .then(response => response.json())
