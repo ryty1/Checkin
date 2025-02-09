@@ -328,7 +328,7 @@ async function sendCheckResultsToTG() {
 app.get("/", isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "index.html"));
 });
-app.get("/getMainUser", isAuthenticated (req, res) => {
+app.get("/getMainUser", isAuthenticated, (req, res) => {
     res.json({ mainUser: MAIN_SERVER_USER });
 });
 app.get("/accounts", , isAuthenticated, (req, res) => {
