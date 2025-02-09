@@ -189,7 +189,8 @@ async function sendCheckResultsToTG() {
         Object.keys(data).forEach((user, index) => {
             const paddedUser = user.padEnd(maxUserLength, " "); 
             const season = data[user]?.season || "--";  // 获取赛季，默认为 "--"
-            results.push(`${index + 1}. ${paddedUser}:${season} - ${data[user] || "未知状态"}`);
+            const status = results[user]?.status || "未知状态";
+            results.push(`${index + 1}. ${paddedUser}:${season} - ${status}`);
         });
 
         const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
