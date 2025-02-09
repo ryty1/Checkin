@@ -1,4 +1,5 @@
 const express = require("express");
+const session = require("express-session");
 const http = require("http");
 const { exec } = require("child_process");
 const socketIo = require("socket.io");
@@ -7,117 +8,108 @@ const fs = require("fs");
 const path = require("path");
 const cron = require("node-cron");
 const TelegramBot = require("node-telegram-bot-api");
-const session = require("express-session");
-const bcrypt = require("bcrypt");
 const bodyParser = require("body-parser");
+const crypto = require("crypto");
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
-const PORT = 3000;
 
+const PORT = 3000;
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 const SETTINGS_FILE = path.join(__dirname, "settings.json");
-const PASSWORD_FILE = path.join(__dirname, "password.hash");
+const PASSWORD_FILE = path.join(__dirname, "password.json");
+const SESSION_FILE = path.join(__dirname, "session_secret.json");
 const otaScriptPath = path.join(__dirname, 'ota.sh');
 
-// Session 配置
+app.use(express.static(path.join(__dirname, "public")));
+app.use(express.json()); 
+
+// 生成或读取 session 密钥
+function getSessionSecret() {
+    if (fs.existsSync(SESSION_FILE)) {
+        return JSON.parse(fs.readFileSync(SESSION_FILE, "utf-8")).secret;
+    } else {
+        const secret = crypto.randomBytes(32).toString("hex");
+        fs.writeFileSync(SESSION_FILE, JSON.stringify({ secret }), "utf-8");
+        return secret;
+    }
+}
+
+// 设置 Express 会话
 app.use(session({
-    secret: 'your-secret-key',
+    secret: getSessionSecret(), // 读取或生成 session 密钥
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false } // 生产环境应设置为 true 并启用 HTTPS
+    cookie: { secure: false } // 生产环境应使用 `secure: true`
 }));
 
+// 解析 POST 请求体
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.json()); 
+
+// 提供静态文件
 app.use(express.static(path.join(__dirname, "public")));
 
-const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
-
-// 密码验证中间件
-const checkAuth = (req, res, next) => {
-    // 允许访问登录和设置密码页面
-    if (req.path === '/login' || req.path === '/setup-password') {
-        return next();
-    }
-    
-    // 检查是否已设置密码
+// 检查是否已设置密码
+function checkPassword(req, res, next) {
     if (!fs.existsSync(PASSWORD_FILE)) {
-        return res.redirect('/setup-password');
+        return res.redirect("/setPassword");
     }
+    next();
+}
 
-    // 检查会话是否已认证
+// 检查是否已登录
+function isAuthenticated(req, res, next) {
     if (req.session.authenticated) {
         return next();
     }
+    res.redirect("/login");
+}
 
-    res.redirect('/login');
-};
+// 设置密码页面
+app.get("/setPassword", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "set_password.html"));
+});
 
-// 应用认证中间件到所有路由（除了静态文件）
-app.use((req, res, next) => {
-    if (req.path.startsWith('/public/')) {
-        return next();
+// 处理密码设置
+app.post("/setPassword", (req, res) => {
+    const { password } = req.body;
+    if (!password) {
+        return res.status(400).send("密码不能为空");
     }
-    checkAuth(req, res, next);
+    fs.writeFileSync(PASSWORD_FILE, JSON.stringify({ password }), "utf-8");
+    res.redirect("/login");
 });
 
 // 登录页面
-app.get('/login', (req, res) => {
-    if (fs.existsSync(PASSWORD_FILE)) {
-        res.sendFile(path.join(__dirname, "public", "login.html"));
-    } else {
-        res.redirect('/setup-password');
-    }
+app.get("/login", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-// 处理登录请求
-app.post('/login', async (req, res) => {
-    try {
-        const { password } = req.body;
-        const hashedPassword = fs.readFileSync(PASSWORD_FILE, 'utf-8');
-        
-        if (await bcrypt.compare(password, hashedPassword)) {
-            req.session.authenticated = true;
-            res.redirect('/');
-        } else {
-            res.send('密码错误');
-        }
-    } catch (error) {
-        res.status(500).send('登录出错');
-    }
-});
-
-// 设置密码页面
-app.get('/setup-password', (req, res) => {
-    if (fs.existsSync(PASSWORD_FILE)) {
-        return res.redirect('/login');
-    }
-    res.sendFile(path.join(__dirname, "public", "setup-password.html"));
-});
-
-// 处理密码设置请求
-app.post('/setup-password', async (req, res) => {
-    if (fs.existsSync(PASSWORD_FILE)) {
-        return res.status(400).send('密码已设置');
+// 处理登录
+app.post("/login", (req, res) => {
+    const { password } = req.body;
+    if (!fs.existsSync(PASSWORD_FILE)) {
+        return res.status(400).send("密码文件不存在，请先设置密码");
     }
 
-    const { password, confirmPassword } = req.body;
-    if (password !== confirmPassword) {
-        return res.status(400).send('两次输入的密码不一致');
-    }
-
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        fs.writeFileSync(PASSWORD_FILE, hashedPassword);
+    const savedPassword = JSON.parse(fs.readFileSync(PASSWORD_FILE, "utf-8")).password;
+    if (password === savedPassword) {
         req.session.authenticated = true;
-        res.redirect('/');
-    } catch (error) {
-        res.status(500).send('密码设置失败');
+        res.redirect("/");
+    } else {
+        res.status(401).send("密码错误");
     }
 });
 
+// 处理登出
+app.get("/logout", (req, res) => {
+    req.session.destroy(() => {
+        res.redirect("/login");
+    });
+});
+
+const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
 // 获取账号数据
 async function getAccounts(excludeMainUser = true) {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
@@ -329,17 +321,16 @@ async function sendCheckResultsToTG() {
     }
 }
 
-app.get("/", (req, res) => {
+app.get("/", checkPassword, isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
-
 app.get("/getMainUser", (req, res) => {
     res.json({ mainUser: MAIN_SERVER_USER });
 });
-app.get("/accounts", (req, res) => {
+app.get("/accounts", checkPassword, isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "public", "accounts.html"));
 });
-app.get("/nodes", (req, res) => {
+app.get("/nodes", checkPassword, isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "public", "nodes.html"));
 });
 app.get("/info", (req, res) => {
@@ -348,7 +339,7 @@ app.get("/info", (req, res) => {
     res.redirect(`https://${user}.serv00.net/info`);
 });
 // 发送静态HTML文件
-app.get("/checkAccountsPage", (req, res) => {
+app.get("/checkAccountsPage", checkPassword, isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
 });
 
@@ -433,7 +424,7 @@ app.post("/setNotificationSettings", (req, res) => {
 
 // 启动时检查并初始化定时任务
 resetCronJob();
-app.get("/notificationSettings", (req, res) => {
+app.get("/notificationSettings", checkPassword, isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
 });
 
@@ -454,7 +445,7 @@ app.get('/ota/update', (req, res) => {
     });
 });
 // **前端页面 `/ota`**
-app.get('/ota', (req, res) => {
+app.get('/ota', checkPassword, isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "public", "ota.html"));
 });
 
