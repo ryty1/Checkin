@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>节点汇集</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            padding: 8px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .btn {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-primary {
+            background-color: #007BFF;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-danger {
+            background-color: #DC3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #b02a37;
+        }
+        .node-box {
+            border: 1px solid #ccc;
+            padding: 5px;
+            margin-top: 5px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            word-wrap: break-word;
+            text-align: left;
+            width: 98%;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .failed-box {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #ffe5e5;
+            color: #b02a37;
+            border: 1px solid #DC3545;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>节点汇集</h1>
+
+        <button class="btn btn-primary" onclick="startNodesSummary()">开始汇集</button>
+        <button class="btn btn-danger" onclick="copyNodes()">复制节点</button>
+        <div id="successfulNodes" class="node-box"></div>
+
+        <div id="failedAccounts" class="failed-box">点击“开始汇集”开始获取数据...</div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let nodesText = "";
+
+        function startNodesSummary() {
+            socket.emit("startNodesSummary");
+        }
+
+        function copyNodes() {
+            if (nodesText) {
+                navigator.clipboard.writeText(nodesText).then(() => {
+                    alert("节点已复制！");
+                });
+            } else {
+                alert("没有可复制的节点");
+            }
+        }
+
+        socket.on("nodesSummary", (data) => {
+            console.log('完整返回数据:', data);  // 打印完整返回数据，确认是否正确接收到
+
+            const successfulNodesDiv = document.getElementById("successfulNodes");
+            const failedAccountsDiv = document.getElementById("failedAccounts");
+
+            // 处理成功的节点
+            if (data.successfulNodes.length > 0) {
+                nodesText = data.successfulNodes.join("\n");
+                successfulNodesDiv.innerText = nodesText;
+            } else {
+                successfulNodesDiv.innerText = "没有成功的节点。";
+                nodesText = "";
+            }
+
+            // 处理失败的账号
+            if (data.failedAccounts && data.failedAccounts.length > 0) {
+                failedAccountsDiv.innerHTML = `<b>以下账号获取失败：</b><br>${data.failedAccounts.join("<br>")}`;
+            } else {
+                failedAccountsDiv.innerHTML = "暂无失败账号";
+            }
+        });
+    </script>
+</body>
+</html>
