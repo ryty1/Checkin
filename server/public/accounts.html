@@ -72,11 +72,14 @@
         th {
             background-color: #f2f2f2;
         }
-        td:first-child {
-            width: 50px;
-        }
-        td:nth-child(2) {
+        /* 让 # 号和账号列左对齐 */
+        th:first-child, td:first-child {
             text-align: left;
+            padding-left: 10px;
+        }
+        th:nth-child(2), td:nth-child(2) {
+            text-align: left;
+            padding-left: 10px;
         }
         td a {
             color: #007bff;
@@ -102,7 +105,7 @@
 
         <div class="input-group">
             <input type="text" id="accountUser" placeholder="请输入账号">
-            <button class="btn btn-success" onclick="saveAccount()">保存账号</button>
+            <button class="btn btn-success" onclick="saveAccount()">保存</button>
         </div>
 
         <table>
