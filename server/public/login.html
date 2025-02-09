@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+</head>
+<body>
+    <h2>请输入密码</h2>
+    <input type="password" id="password">
+    <button onclick="login()">登录</button>
+    <p id="message"></p>
+
+    <script>
+        function login() {
+            const password = document.getElementById("password").value;
+            fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = "/";
+                } else {
+                    document.getElementById("message").innerText = data.message;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
