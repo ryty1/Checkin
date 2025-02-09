@@ -162,7 +162,6 @@ app.get("/getTelegramSettings", (req, res) => {
     res.json(settings);
 });
 // 处理 Telegram 发送消息
-// 处理 Telegram 发送消息
 async function sendCheckResultsToTG() {
     try {
         const settings = getNotificationSettings();
@@ -195,10 +194,10 @@ async function sendCheckResultsToTG() {
 
         // 构建格式化的账号检测结果，确保冒号和短横线对齐
         users.forEach((user, index) => {
-            const paddedUser = user.padEnd(maxUserLength, " ").padEnd(maxSeasonLength + 1, " ");
+            const paddedUser = user.padEnd(maxUserLength, " ");
             const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 1, " ");
             const status = data[user]?.status || "未知状态";
-            results.push(`${index + 1}. ${paddedUser}: ${season}- ${status}`);
+            results.push(`${index + 1}. ${paddedUser} : ${season}- ${status}`);
         });
 
         const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
