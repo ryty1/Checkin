@@ -17,14 +17,55 @@ const otaScriptPath = path.join(__dirname, 'ota.sh');
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json()); 
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
+// 获取账号数据
 async function getAccounts(excludeMainUser = true) {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
     let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
     if (excludeMainUser) {
-        delete accounts[MAIN_SERVER_USER];
+        delete accounts[MAIN_SERVER_USER];  // 如果存在主用户，排除它
     }
     return accounts;
 }
+
+// 监听客户端连接
+io.on("connection", (socket) => {
+    console.log("Client connected");
+
+    // 加载账号列表
+    socket.on("loadAccounts", async () => {
+        const accounts = await getAccounts(true);
+        socket.emit("accountsList", accounts);
+    });
+
+    // 保存新账号
+    socket.on("saveAccount", async (accountData) => {
+        const accounts = await getAccounts(false);
+        accounts[accountData.user] = { 
+            user: accountData.user, 
+            season: accountData.season || ""  // 默认赛季为空
+        };
+        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+        socket.emit("accountsList", await getAccounts(true));
+    });
+
+    // 删除账号
+    socket.on("deleteAccount", async (user) => {
+        const accounts = await getAccounts(false);
+        delete accounts[user];
+        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+        socket.emit("accountsList", await getAccounts(true));
+    });
+
+    // 更新账号的赛季
+    socket.on("updateSeason", async (data) => {
+        const accounts = await getAccounts(false);
+        if (accounts[data.user]) {
+            accounts[data.user].season = data.season;  // 更新赛季
+            fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+        }
+        socket.emit("accountsList", await getAccounts(true));
+    });
+});
 function filterNodes(nodes) {
     return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
 }
@@ -56,29 +97,7 @@ async function getNodesSummary(socket) {
     }
     socket.emit("nodesSummary", { successfulNodes, failedAccounts });
 }
-io.on("connection", (socket) => {
-    console.log("Client connected");
-    socket.on("startNodesSummary", () => {
-        getNodesSummary(socket);
-    });
-    socket.on("saveAccount", async (accountData) => {
-        const accounts = await getAccounts(false);
-        accounts[accountData.user] = accountData;
-        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-        socket.emit("accountSaved", { message: `账号 ${accountData.user} 已保存` });
-        socket.emit("accountsList", await getAccounts(true));
-    });
-    socket.on("deleteAccount", async (user) => {
-        const accounts = await getAccounts(false);
-        delete accounts[user];
-        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-        socket.emit("accountDeleted", { message: `账号 ${user} 已删除` });
-        socket.emit("accountsList", await getAccounts(true));
-    });
-    socket.on("loadAccounts", async () => {
-        socket.emit("accountsList", await getAccounts(true));
-    });
-});
+
 let cronJob = null; // 用于存储定时任务
 
 // 读取通知设置
