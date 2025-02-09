@@ -22,6 +22,7 @@
         }
         h1 {
             color: #333;
+            font-size: 22px;
         }
         .input-group {
             display: flex;
@@ -30,21 +31,22 @@
         }
         input {
             flex: 1;
-            padding: 10px;
-            font-size: 16px;
+            padding: 8px;
+            font-size: 14px;
             border: 1px solid #ccc;
             border-radius: 5px;
             outline: none;
+            height: 36px; /* 确保输入框与按钮高度一致 */
         }
         .btn {
-            padding: 5px 10px;
+            padding: 6px 10px;
             font-size: 14px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: 0.3s;
-            display: inline-block; /* 让按钮并排 */
-            width: 70px; /* 控制按钮宽度 */
+            display: inline-block;
+            width: 60px;
         }
         .btn-success {
             background-color: #28A745;
@@ -64,18 +66,19 @@
             margin-top: 10px;
         }
         th, td {
-            padding: 10px;
+            padding: 8px;
             border-bottom: 1px solid #ddd;
-            text-align: center; /* 让所有单元格居中 */
+            font-size: 14px; /* 调小字体 */
+            text-align: center;
         }
         th {
             background-color: #f2f2f2;
         }
         td:first-child {
-            width: 50px; /* 让 # 序号列窄一些 */
+            width: 50px;
         }
         td:nth-child(2) {
-            text-align: left; /* 让账号列左对齐 */
+            text-align: left;
         }
         td a {
             color: #007bff;
@@ -86,11 +89,12 @@
         }
         select {
             padding: 5px;
+            font-size: 14px;
         }
         .action-buttons {
             display: flex;
             justify-content: center;
-            gap: 5px; /* 按钮之间留间隙 */
+            gap: 4px;
         }
     </style>
 </head>
@@ -100,7 +104,7 @@
 
         <div class="input-group">
             <input type="text" id="accountUser" placeholder="请输入账号">
-            <button class="btn btn-success" onclick="saveAccount()">保存账号</button>
+            <button class="btn btn-success" onclick="saveAccount()">保存</button>
         </div>
 
         <table>
@@ -108,7 +112,7 @@
                 <tr>
                     <th>#</th>
                     <th>账号</th>
-                    <th>赛季
+                    <th>
                         <select id="seasonFilter" onchange="filterBySeason()">
                             <option value="">全部</option>
                         </select>
@@ -150,7 +154,7 @@
 
         function updateSeasonFilterOptions() {
             const filterSelect = document.getElementById("seasonFilter");
-            filterSelect.innerHTML = '<option value="">全部</option>'; // 清空并加上默认选项
+            filterSelect.innerHTML = '<option value="">全部</option>';
             const uniqueSeasons = new Set();
 
             Object.values(accountsData).forEach(account => {
@@ -169,7 +173,11 @@
 
         function filterBySeason() {
             const filter = document.getElementById("seasonFilter").value;
-            renderTable(filter);
+            if (filter === "") {
+                renderTable(); // 选择"全部"时显示所有数据
+            } else {
+                renderTable(filter);
+            }
         }
 
         function renderTable(filter = "") {
@@ -181,7 +189,7 @@
                 const row = `<tr>
                     <td>${index + 1}</td>
                     <td><a href="/info?user=${user}">${user}</a></td>
-                    <td>${accountsData[user].season || "未设置"}</td>
+                    <td>${accountsData[user].season || "--"}</td>
                     <td>
                         <div class="action-buttons">
                             <button class="btn btn-primary" onclick="updateSeason('${user}')">修改</button>
@@ -192,7 +200,7 @@
                 tableBody.innerHTML += row;
             });
 
-            updateSeasonFilterOptions(); // 更新筛选条件
+            updateSeasonFilterOptions();
         }
 
         socket.on("accountsList", (accounts) => {
