@@ -6,20 +6,51 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 const cookieParser = require("cookie-parser");  // 用于解析 cookie
+const bodyParser = require("body-parser");
 const cron = require("node-cron");
 const TelegramBot = require("node-telegram-bot-api");
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 const PORT = 3000;
+
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 const SETTINGS_FILE = path.join(__dirname, "settings.json");
 const SESSION_FILE = path.join(__dirname, "sessions.json");
 const PASSWORD_FILE = path.join(__dirname, "password.json");
 const otaScriptPath = path.join(__dirname, 'ota.sh');
+
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json()); 
 app.use(cookieParser());  // 解析 cookie
+app.use(bodyParser.urlencoded({ extended: true }));
+const express = require("express");
+const http = require("http");
+const { exec } = require("child_process");
+const socketIo = require("socket.io");
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
+const cookieParser = require("cookie-parser"); 
+const bodyParser = require("body-parser");
+const cron = require("node-cron");
+const TelegramBot = require("node-telegram-bot-api");
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
+const PORT = 3000;
+
+const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
+const SETTINGS_FILE = path.join(__dirname, "settings.json");
+const SESSION_FILE = path.join(__dirname, "sessions.json");
+const PASSWORD_FILE = path.join(__dirname, "password.json");
+
+app.use(express.static(path.join(__dirname, "public")));
+app.use(express.json());
+app.use(cookieParser());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // 获取会话数据
 function getSessions() {
@@ -32,7 +63,7 @@ function saveSessions(sessions) {
     fs.writeFileSync(SESSION_FILE, JSON.stringify(sessions, null, 2));
 }
 
-// 检查并加载密码
+// 获取密码
 function getPassword() {
     if (!fs.existsSync(PASSWORD_FILE)) return null;
     return JSON.parse(fs.readFileSync(PASSWORD_FILE, "utf-8")).password;
@@ -48,22 +79,22 @@ function generateSessionId() {
     return Math.random().toString(36).substring(2, 15);
 }
 
-// 会话验证中间件
+// **会话验证中间件**
 function authMiddleware(req, res, next) {
     const sessions = getSessions();
     const sessionId = req.cookies.sessionId;
 
     if (sessionId && sessions[sessionId] && sessions[sessionId].expires > Date.now()) {
-        // 刷新会话过期时间
-        sessions[sessionId].expires = Date.now() + 30 * 60 * 1000;  // 延长30分钟过期
+        // **刷新会话过期时间**
+        sessions[sessionId].expires = Date.now() + 30 * 60 * 1000;  
         saveSessions(sessions);
-        return next();  // 继续处理请求
+        return next();  
     } else {
-        return res.redirect("/login");  // 如果未通过验证，跳转到登录页面
+        return res.redirect("/login");  
     }
 }
 
-// 检查是否已设置密码
+// **检查是否已设置密码**
 app.use((req, res, next) => {
     if (!getPassword() && req.path !== "/setPassword" && req.path !== "/login") {
         return res.redirect("/setPassword");
@@ -71,12 +102,12 @@ app.use((req, res, next) => {
     next();
 });
 
-// 登录页面
+// **登录页面**
 app.get("/login", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-// 处理登录
+// **处理登录**
 app.post("/login", (req, res) => {
     const { password } = req.body;
     const storedPassword = getPassword();
@@ -91,19 +122,19 @@ app.post("/login", (req, res) => {
 
     const sessionId = generateSessionId();
     const sessions = getSessions();
-    sessions[sessionId] = { expires: Date.now() + 30 * 60 * 1000 }; // 30分钟过期
+    sessions[sessionId] = { expires: Date.now() + 30 * 60 * 1000 };  
     saveSessions(sessions);
 
     res.cookie("sessionId", sessionId, { maxAge: 30 * 60 * 1000, httpOnly: true });
     res.json({ success: true });
 });
 
-// 设置密码页面
+// **设置密码页面**
 app.get("/setPassword", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "set_password.html"));
 });
 
-// 处理设置密码
+// **处理设置密码**
 app.post("/setPassword", (req, res) => {
     const { password } = req.body;
 
@@ -115,15 +146,10 @@ app.post("/setPassword", (req, res) => {
     res.json({ success: true, message: "密码设置成功，请登录" });
 });
 
-// 保护路由：保护所有路由，需要验证会话
-app.use((req, res, next) => {
-    if (req.path === "/login" || req.path === "/setPassword") {
-        return next();
-    }
-    return authMiddleware(req, res, next);
-});
+// **所有页面都必须验证会话**
+app.use(authMiddleware);
 
-// 退出登录
+// **退出登录**
 app.post("/logout", (req, res) => {
     const sessions = getSessions();
     const sessionId = req.cookies.sessionId;
@@ -135,7 +161,21 @@ app.post("/logout", (req, res) => {
     res.redirect("/login");
 });
 
+// **主页**
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// **其他受保护页面**
+const protectedRoutes = ["/accounts", "/nodes", "/ota", "/checkAccountsPage", "/notificationSettings"];
+protectedRoutes.forEach(route => {
+    app.get(route, (req, res) => {
+        res.sendFile(path.join(__dirname, "public", route.substring(1) + ".html"));
+    });
+});
+
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
+
 // 获取账号数据
 async function getAccounts(excludeMainUser = true) {
     if (!fs.existsSync(ACCOUNTS_FILE)) return {};
@@ -345,10 +385,6 @@ async function sendCheckResultsToTG() {
         console.error("❌ 发送 Telegram 失败:", error);
     }
 }
-// 主页
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
-});
 
 app.get("/getMainUser", (req, res) => {
     res.json({ mainUser: MAIN_SERVER_USER });
