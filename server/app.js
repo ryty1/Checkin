@@ -22,7 +22,6 @@ const PASSWORD_FILE = path.join(__dirname, "password.json");
 const SESSION_FILE = path.join(__dirname, "session_secret.json");
 const otaScriptPath = path.join(__dirname, 'ota.sh');
 
-app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json()); 
 
 // 生成或读取 session 密钥
@@ -38,19 +37,16 @@ function getSessionSecret() {
 
 // 设置 Express 会话
 app.use(session({
-    secret: getSessionSecret(), // 读取或生成 session 密钥
+    secret: getSessionSecret(),
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false } // 生产环境应使用 `secure: true`
+    saveUninitialized: false, // 改成 false，防止创建空 session
+    cookie: { secure: false }
 }));
 
-// 解析 POST 请求体
+// 解析 POST 请求
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// 提供静态文件
-app.use(express.static(path.join(__dirname, "public")));
-
-// 检查是否已设置密码
+// **检查是否设置密码**
 function checkPassword(req, res, next) {
     if (!fs.existsSync(PASSWORD_FILE)) {
         return res.redirect("/setPassword");
@@ -58,7 +54,7 @@ function checkPassword(req, res, next) {
     next();
 }
 
-// 检查是否已登录
+// **检查是否已登录**
 function isAuthenticated(req, res, next) {
     if (req.session.authenticated) {
         return next();
@@ -66,12 +62,12 @@ function isAuthenticated(req, res, next) {
     res.redirect("/login");
 }
 
-// 设置密码页面
+// **设置密码页面**
 app.get("/setPassword", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "set_password.html"));
 });
 
-// 处理密码设置
+// **处理密码设置**
 app.post("/setPassword", (req, res) => {
     const { password } = req.body;
     if (!password) {
@@ -81,12 +77,12 @@ app.post("/setPassword", (req, res) => {
     res.redirect("/login");
 });
 
-// 登录页面
+// **登录页面**
 app.get("/login", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-// 处理登录
+// **处理登录**
 app.post("/login", (req, res) => {
     const { password } = req.body;
     if (!fs.existsSync(PASSWORD_FILE)) {
@@ -102,12 +98,21 @@ app.post("/login", (req, res) => {
     }
 });
 
-// 处理登出
+// **处理登出**
 app.get("/logout", (req, res) => {
     req.session.destroy(() => {
         res.redirect("/login");
     });
 });
+
+// **受保护的 HTML 页面**
+const protectedRoutes = ["/", "/ota", "/accounts", "/nodes", "/checkAccountsPage", "/notificationSettings"];
+protectedRoutes.forEach(route => {
+    app.get(route, checkPassword, isAuthenticated, (req, res) => {
+        res.sendFile(path.join(__dirname, "public", route === "/" ? "index.html" : `${route.slice(1)}.html`));
+    });
+});
+
 
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
 // 获取账号数据
