@@ -22,7 +22,7 @@ const PASSWORD_FILE = path.join(__dirname, "password.json");
 const otaScriptPath = path.join(__dirname, 'ota.sh');
 
 app.use(express.static(path.join(__dirname, "public")));
-app.use(express.json()); 
+app.use(express.json());
 app.use(cookieParser());  // 解析 cookie
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -30,13 +30,13 @@ let sessions = {};  // 存储会话信息
 
 // 检查是否已设置密码
 function getPassword() {
-    if (!fs.existsSync('password.json')) return null;
-    return JSON.parse(fs.readFileSync('password.json', 'utf-8')).password;
+    if (!fs.existsSync(PASSWORD_FILE)) return null;
+    return JSON.parse(fs.readFileSync(PASSWORD_FILE, 'utf-8')).password;
 }
 
 // 设置密码
 function setPassword(newPassword) {
-    fs.writeFileSync('password.json', JSON.stringify({ password: newPassword }, null, 2));
+    fs.writeFileSync(PASSWORD_FILE, JSON.stringify({ password: newPassword }, null, 2));
 }
 
 // 生成 sessionId
@@ -46,13 +46,13 @@ function generateSessionId() {
 
 // 获取会话数据
 function getSessions() {
-    if (!fs.existsSync('sessions.json')) return {};
-    return JSON.parse(fs.readFileSync('sessions.json', 'utf-8'));
+    if (!fs.existsSync(SESSION_FILE)) return {};
+    return JSON.parse(fs.readFileSync(SESSION_FILE, 'utf-8'));
 }
 
 // 保存会话数据
 function saveSessions(sessions) {
-    fs.writeFileSync('sessions.json', JSON.stringify(sessions, null, 2));
+    fs.writeFileSync(SESSION_FILE, JSON.stringify(sessions, null, 2));
 }
 
 // 登录保护中间件
@@ -67,6 +67,21 @@ function checkAuth(req, res, next) {
 // 主页路由，添加认证保护
 app.get('/', checkAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// 账号管理路由，添加认证保护
+app.get('/accounts', checkAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'accounts.html'));
+});
+
+// 节点汇集路由，添加认证保护
+app.get('/nodes', checkAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'nodes.html'));
+});
+
+// 系统更新路由，添加认证保护
+app.get('/ota', checkAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'ota.html'));
 });
 
 // 登录路由
@@ -133,6 +148,7 @@ async function getAccounts(excludeMainUser = true) {
     }
     return accounts;
 }
+
 // 监听客户端连接
 io.on("connection", (socket) => {
     console.log("Client connected");
@@ -175,9 +191,11 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts(true));
     });
 });
+
 function filterNodes(nodes) {
     return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
 }
+
 async function getNodesSummary(socket) {
     const accounts = await getAccounts(true);
     if (!accounts || Object.keys(accounts).length === 0) {
