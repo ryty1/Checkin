@@ -39,7 +39,7 @@ function getSessionSecret() {
 app.use(session({
     secret: getSessionSecret(),
     resave: false,
-    saveUninitialized: false, // 改成 false，防止创建空 session
+    saveUninitialized: false,
     cookie: { secure: false }
 }));
 
@@ -62,9 +62,9 @@ function isAuthenticated(req, res, next) {
     res.redirect("/login");
 }
 
-// **设置密码页面**
+// **设置密码页面（无需验证）**
 app.get("/setPassword", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "set_password.html"));
+    res.sendFile(path.join(__dirname, "protected", "set_password.html"));
 });
 
 // **处理密码设置**
@@ -77,9 +77,9 @@ app.post("/setPassword", (req, res) => {
     res.redirect("/login");
 });
 
-// **登录页面**
+// **登录页面（无需验证）**
 app.get("/login", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "login.html"));
+    res.sendFile(path.join(__dirname, "protected", "login.html"));
 });
 
 // **处理登录**
@@ -109,10 +109,9 @@ app.get("/logout", (req, res) => {
 const protectedRoutes = ["/", "/ota", "/accounts", "/nodes", "/checkAccountsPage", "/notificationSettings"];
 protectedRoutes.forEach(route => {
     app.get(route, checkPassword, isAuthenticated, (req, res) => {
-        res.sendFile(path.join(__dirname, "public", route === "/" ? "index.html" : `${route.slice(1)}.html`));
+        res.sendFile(path.join(__dirname, "protected", route === "/" ? "index.html" : `${route.slice(1)}.html`));
     });
 });
-
 
 const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
 // 获取账号数据
@@ -326,17 +325,17 @@ async function sendCheckResultsToTG() {
     }
 }
 
-app.get("/", checkPassword, isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
+app.get("/", isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, "protected", "index.html"));
 });
-app.get("/getMainUser", (req, res) => {
+app.get("/getMainUser", isAuthenticated (req, res) => {
     res.json({ mainUser: MAIN_SERVER_USER });
 });
-app.get("/accounts", checkPassword, isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "accounts.html"));
+app.get("/accounts", , isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, "protected", "accounts.html"));
 });
-app.get("/nodes", checkPassword, isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "nodes.html"));
+app.get("/nodes", isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, "protected", "nodes.html"));
 });
 app.get("/info", (req, res) => {
     const user = req.query.user;
@@ -344,8 +343,8 @@ app.get("/info", (req, res) => {
     res.redirect(`https://${user}.serv00.net/info`);
 });
 // 发送静态HTML文件
-app.get("/checkAccountsPage", checkPassword, isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
+app.get("/checkAccountsPage", isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, "protected", "check_accounts.html"));
 });
 
 app.get("/checkAccounts", async (req, res) => {
@@ -429,12 +428,12 @@ app.post("/setNotificationSettings", (req, res) => {
 
 // 启动时检查并初始化定时任务
 resetCronJob();
-app.get("/notificationSettings", checkPassword, isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
+app.get("/notificationSettings", isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, "protected", "notification_settings.html"));
 });
 
 // **执行 OTA 更新**
-app.get('/ota/update', checkPassword, isAuthenticated, (req, res) => {
+app.get('/ota/update', isAuthenticated, (req, res) => {
     exec(otaScriptPath, (error, stdout, stderr) => {
         if (error) {
             console.error(`❌ 执行脚本错误: ${error.message}`);
@@ -450,8 +449,8 @@ app.get('/ota/update', checkPassword, isAuthenticated, (req, res) => {
     });
 });
 // **前端页面 `/ota`**
-app.get('/ota', checkPassword, isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "ota.html"));
+app.get('/ota', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, "protected", "ota.html"));
 });
 
 server.listen(PORT, () => {
