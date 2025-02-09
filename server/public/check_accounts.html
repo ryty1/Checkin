@@ -48,7 +48,6 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             text-align: left;
-            overflow-x: auto; /* 兼容小屏幕 */
         }
         table {
             width: 100%;
@@ -83,17 +82,17 @@
                     if (data.status === "success") {
                         const results = data.results;
                         let resultHTML = '<table>';
-                        resultHTML += '<tr><th>#</th><th>账号</th><th>赛季</th><th>状态</th></tr>';
+                        resultHTML += '<tr><th>#</th><th>账号</th><th>赛季</th><th>状态</th></tr>';  // 添加赛季列
 
                         // 按账号配置顺序显示账号
-                        const users = Object.keys(results);
+                        const users = Object.keys(results);  // 账号的顺序与配置文件一致
                         users.forEach((user, index) => {
-                            const season = results[user].season || "--";  // 赛季信息，如果没有则显示 "--"
-                            const status = results[user].status;
+                            const season = results[user].season || '--';  // 获取赛季信息，如果没有则显示 '--'
+                            const status = results[user].status;  // 获取状态
                             resultHTML += `<tr>
                                 <td>${index + 1}</td>
                                 <td>${user}</td>
-                                <td>${season}</td>
+                                <td>${season}</td>  <!-- 显示赛季 -->
                                 <td class="status">${status}</td>
                             </tr>`;
                         });
