@@ -428,6 +428,7 @@ app.post("/setNotificationSettings", (req, res) => {
 
 // 启动时检查并初始化定时任务
 resetCronJob();
+
 app.get("/notificationSettings", isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "settings.html"));
 });
