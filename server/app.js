@@ -106,10 +106,13 @@ app.get("/logout", (req, res) => {
 });
 
 // **受保护的 HTML 页面**
-const protectedRoutes = ["/", "/ota", "/accounts", "/nodes"];
+const protectedRoutes = ["/", "/ota", "/accounts", "/nodes", "/checkAccountsPage", "/notificationSettings"];
 protectedRoutes.forEach(route => {
     app.get(route, checkPassword, isAuthenticated, (req, res) => {
         res.sendFile(path.join(__dirname, "protected", route === "/" ? "index.html" : `${route.slice(1)}.html`));
+    });
+        app.get(route, checkPassword, isAuthenticated, (req, res) => {
+        res.sendFile(path.join(__dirname, "public", route === "/checkAccountsPage" ? "check_accounts.html" : `${route.slice(1)}.html`));
     });
 });
 
