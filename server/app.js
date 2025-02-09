@@ -344,7 +344,7 @@ app.get("/info", (req, res) => {
 });
 // 发送静态HTML文件
 app.get("/checkAccountsPage", isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, "protected", "check_accounts.html"));
+    res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
 });
 
 app.get("/checkAccounts", async (req, res) => {
@@ -430,7 +430,7 @@ app.post("/setNotificationSettings", (req, res) => {
 resetCronJob();
 
 app.get("/notificationSettings", isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, "protected", "notification_settings.html"));
+    res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
 });
 
 // **执行 OTA 更新**
