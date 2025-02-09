@@ -190,7 +190,8 @@ async function sendCheckResultsToTG() {
         // 构建格式化的账号检测结果，确保冒号对齐
         Object.keys(data).forEach((user, index) => {
             const paddedUser = user.padEnd(maxUserLength, " ");  // 填充用户名，确保所有用户名长度一致
-            results.push(`${index + 1}. ${paddedUser}: ${data[user] || "未知状态"}`);
+            const season = data[user]?.season || "--";  // 获取赛季，默认为 "--"
+            results.push(`${index + 1}. ${paddedUser}: ${season} -  ${data[user] || "未知状态"}`);
         });
 
         const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
