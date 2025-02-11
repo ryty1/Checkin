@@ -20,6 +20,7 @@ const PORT = 3000;
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 const SETTINGS_FILE = path.join(__dirname, "settings.json");
 const PASSWORD_FILE = path.join(__dirname, "password.json");
+const SESSION_DIR = path.join(__dirname, "sessions"); // session 存储路径
 const SESSION_FILE = path.join(__dirname, "session_secret.json");
 const otaScriptPath = path.join(__dirname, 'ota.sh');
 
@@ -47,12 +48,12 @@ function getSessionSecret() {
 
 app.use(session({
     store: new FileStore({
-        path: "./sessions",
-        ttl: 60,  // session 过期时间（单位：秒）
+        path: path.join(__dirname, "sessions"), // 明确 session 存储路径
+        ttl: 60 * 60,  // 让 session 1 小时后自动失效
         retries: 1,
-        clearInterval: 600  // 定期清理无效 session（单位：秒）
+        clearInterval: 600 // 每 10 分钟清理过期 session
     }),
-    secret: "your_secret_key",
+    secret: getSessionSecret(),  // 使用随机生成的密钥
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false, httpOnly: true }
@@ -107,28 +108,32 @@ app.post("/login", (req, res) => {
 });
 
 app.get("/logout", (req, res) => {
-    const sessionId = req.session.id; // 获取当前 session ID
-
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).send("退出失败");
         }
 
-        // 确保 session 文件被删除
-        const sessionFile = path.join("./sessions", sessionId + ".json");
-        if (fs.existsSync(sessionFile)) {
-            fs.unlinkSync(sessionFile);  // 手动删除 session 文件
-        }
-
         // 清除 session 相关的 cookie
         res.clearCookie("connect.sid");
 
-        // 防止页面缓存
+        // 强制删除整个 session 目录
+        try {
+            if (fs.existsSync(SESSION_DIR)) {
+                fs.rmSync(SESSION_DIR, { recursive: true, force: true });
+                console.log("成功删除 session 文件夹");
+            }
+        } catch (error) {
+            console.error("删除 session 文件夹失败:", error);
+        }
+
+        // 重新创建 session 目录，防止后续 session 存储失败
+        fs.mkdirSync(SESSION_DIR, { recursive: true });
+
+        // 防止浏览器缓存
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
         res.setHeader("Pragma", "no-cache");
         res.setHeader("Expires", "0");
 
-        // 跳转到登录页面
         res.redirect("/login");
     });
 });
