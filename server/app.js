@@ -291,7 +291,7 @@ async function sendCheckResultsToTG() {
         const data = response.data.results;
 
         if (!data || Object.keys(data).length === 0) {
-            await bot.sendMessage(settings.telegramChatId, "📋 账号检测结果：没有账号需要检测", { parse_mode: "MarkdownV2" });
+            await bot.sendMessage(settings.telegramChatId, "📋 账号检测结果：没有账号需要检测", { parse_mode: "HTML" });
             return;
         }
 
@@ -308,23 +308,32 @@ async function sendCheckResultsToTG() {
             maxSeasonLength = Math.max(maxSeasonLength, (data[user]?.season || "").length);
         });
 
-        // 构建格式化的账号检测结果，确保冒号和短横线对齐
+        // **HTML 需要转义的特殊字符**
+        function escapeHTML(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        // **构建格式化的账号检测结果，仅对 `user` 添加雪花遮罩**
         users.forEach((user, index) => {
-            const paddedUser = user.padEnd(maxUserLength, " ");
+            const paddedUser = `<tg-spoiler>${escapeHTML(user)}</tg-spoiler>`.padEnd(maxUserLength + 23, " ");  // 23 是 `<tg-spoiler>` 标签的长度
             const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 1, " ");
-            const status = data[user]?.status || "未知状态";
+            const status = (data[user]?.status || "未知状态").padEnd(10, " ");  // 保持状态对齐
             results.push(`${index + 1}. ${paddedUser} : ${season}- ${status}`);
         });
 
         const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
-        let message = `📢 账号检测结果：\n\`\`\`\n${results.join("\n")}\n\`\`\`\n⏰ 北京时间：${beijingTime}`;
-        await bot.sendMessage(settings.telegramChatId, message, { parse_mode: "MarkdownV2" });
+        let message = `📢 账号检测结果：\n${results.join("\n")}\n⏰ 北京时间：${beijingTime}`;
+
+        await bot.sendMessage(settings.telegramChatId, message, { parse_mode: "HTML" });
 
     } catch (error) {
         console.error("❌ 发送 Telegram 失败:", error);
     }
 }
-
 app.get("/", isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "index.html"));
 });
