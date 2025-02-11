@@ -471,7 +471,7 @@ app.get("/notificationSettings", isAuthenticated, (req, res) => {
 // **执行远程 OTA 更新**
 app.get('/ota/update', isAuthenticated, (req, res) => {
     // 下载远程脚本到临时文件
-    const downloadScriptCommand = 'curl -Ls https://raw.githubusercontent.com/ryty1/serv00-save-me/refs/heads/main/server/ota.sh -o /tmp/ota.sh';
+    const downloadScriptCommand = 'curl -Ls https://raw.githubusercontent.com/ryty1/My-test/refs/heads/main/server/ota.sh -o /tmp/ota.sh';
 
     // 执行下载命令
     exec(downloadScriptCommand, (error, stdout, stderr) => {
