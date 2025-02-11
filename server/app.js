@@ -108,34 +108,21 @@ app.post("/login", (req, res) => {
 });
 
 app.get("/logout", (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            return res.status(500).send("退出失败");
+    try {
+        if (fs.existsSync(SESSION_DIR)) {
+            fs.readdirSync(SESSION_DIR).forEach(file => {
+                const filePath = path.join(SESSION_DIR, file);
+                if (file.endsWith(".json")) { // 只删除 JSON 文件
+                    fs.unlinkSync(filePath);
+                    console.log("已删除 session 文件:", filePath);
+                }
+            });
         }
+    } catch (error) {
+        console.error("删除 session JSON 文件失败:", error);
+    }
 
-        // 清除 session 相关的 cookie
-        res.clearCookie("connect.sid");
-
-        // 强制删除整个 session 目录
-        try {
-            if (fs.existsSync(SESSION_DIR)) {
-                fs.rmSync(SESSION_DIR, { recursive: true, force: true });
-                console.log("成功删除 session 文件夹");
-            }
-        } catch (error) {
-            console.error("删除 session 文件夹失败:", error);
-        }
-
-        // 重新创建 session 目录，防止后续 session 存储失败
-        fs.mkdirSync(SESSION_DIR, { recursive: true });
-
-        // 防止浏览器缓存
-        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-        res.setHeader("Pragma", "no-cache");
-        res.setHeader("Expires", "0");
-
-        res.redirect("/login");
-    });
+    res.redirect("/login"); // 退出后跳转到登录页
 });
 
 // 受保护的页面
