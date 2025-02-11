@@ -318,18 +318,19 @@ async function sendCheckResultsToTG() {
         }
 
         // **构建格式化的账号检测结果，确保冒号和短横线对齐**
+        results.push("```"); // 使用 pre 格式化，强制使用等宽字体
         users.forEach((user, index) => {
-            // 动态补齐用户名和赛季字段
             const paddedUser = `<tg-spoiler>${escapeHTML(user)}</tg-spoiler>`.padEnd(maxUserLength, " ");  // 确保用户名对齐
-            const season = (data[user]?.season || "--").padEnd(maxSeasonLength, " ");  // 赛季和冒号对齐
+            const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 2, " ");  // 赛季和冒号对齐
             const status = data[user]?.status || "未知状态";  // 状态字段放在每行的最后
             results.push(`${index + 1}. ${paddedUser} : ${season} - ${status}`);
         });
+        results.push("```");
 
         const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
         let message = `📢 账号检测结果：\n${results.join("\n")}\n⏰ 北京时间：${beijingTime}`;
 
-        await bot.sendMessage(settings.telegramChatId, message, { parse_mode: "HTML" });
+        await bot.sendMessage(settings.telegramChatId, message, { parse_mode: "MarkdownV2" });
 
     } catch (error) {
         console.error("❌ 发送 Telegram 失败:", error);
