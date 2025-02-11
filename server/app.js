@@ -319,8 +319,11 @@ async function sendCheckResultsToTG() {
 
         // **构建格式化的账号检测结果，确保冒号和短横线对齐**
         users.forEach((user, index) => {
-            const paddedUser = `<tg-spoiler>${escapeHTML(user)}</tg-spoiler>`.padEnd(maxUserLength, " ");  // 确保用户名对齐
-            const season = (data[user]?.season || "--").padEnd(maxSeasonLength, " ");  // 确保赛季对齐
+            // 补齐用户名和赛季长度
+            const paddedUser = `<tg-spoiler>${escapeHTML(user)}</tg-spoiler>`.padEnd(maxUserLength + 2, " "); // 用户名对齐
+            const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 2, " ");  // 赛季对齐
+
+            // 计算冒号和短横线的对齐
             results.push(`${index + 1}. ${paddedUser} : ${season} - ${data[user]?.status || "未知状态"}`);
         });
 
