@@ -322,7 +322,7 @@ async function sendCheckResultsToTG() {
         }
 
         const bot = new TelegramBot(settings.telegramToken, { polling: false });
-        const response = await axios.get(`http://127.0.0.1:3000/checkAccounts`);
+        const response = await axios.get(`https://${process.env.USER}.serv00.net/checkAccounts`);
         const data = response.data.results;
 
         if (!data || Object.keys(data).length === 0) {
