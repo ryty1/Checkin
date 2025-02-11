@@ -64,6 +64,11 @@
         }
         .status {
             text-align: left;
+            white-space: nowrap; /* 防止换行 */
+            font-size: 3vw; /* 动态调整字体大小 */
+            word-wrap: break-word; /* 允许长单词换行 */
+            overflow: hidden; /* 隐藏超出内容 */
+            text-overflow: ellipsis; /* 超出内容显示省略号 */
         }
     </style>
 </head>
