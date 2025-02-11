@@ -25,12 +25,11 @@ const otaScriptPath = path.join(__dirname, 'ota.sh');
 
 app.use(express.json()); 
 app.use(express.static(path.join(__dirname, "public")));
-// 禁止页面缓存，防止退出后仍可访问
+// 禁止页面缓存，防止退出后仍能访问
 app.use((req, res, next) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
-    res.setHeader("Surrogate-Control", "no-store");
     next();
 });
 
@@ -45,7 +44,7 @@ function getSessionSecret() {
     }
 }
 
-// 设置 Express 会话存储
+// 配置 session 存储
 app.use(session({
     store: new FileStore({ path: "./sessions", logFn: function () {} }),
     secret: getSessionSecret(),
@@ -56,15 +55,16 @@ app.use(session({
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// 检查密码是否已设置
-function checkPassword(req, res, next) {
-    if (!fs.existsSync(PASSWORD_FILE)) {
-        return res.redirect("/setPassword");
+// **检查 session 是否存在**
+app.get("/checkSession", (req, res) => {
+    if (req.session.authenticated) {
+        res.status(200).json({ authenticated: true });
+    } else {
+        res.status(401).json({ authenticated: false });
     }
-    next();
-}
+});
 
-// 认证中间件
+// **检查是否已登录**
 function isAuthenticated(req, res, next) {
     if (req.session.authenticated) {
         return next();
@@ -72,23 +72,12 @@ function isAuthenticated(req, res, next) {
     res.redirect("/login");
 }
 
-// 设置密码
-app.get("/setPassword", (req, res) => {
-    res.sendFile(path.join(__dirname, "protected", "set_password.html"));
-});
-
-app.post("/setPassword", (req, res) => {
-    const { password } = req.body;
-    if (!password) return res.status(400).send("密码不能为空");
-    fs.writeFileSync(PASSWORD_FILE, JSON.stringify({ password }), "utf-8");
-    res.redirect("/login");
-});
-
-// 登录
+// **登录页面**
 app.get("/login", (req, res) => {
-    res.sendFile(path.join(__dirname, "protected", "login.html"));
+    res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
+// **处理登录**
 app.post("/login", (req, res) => {
     const { password } = req.body;
     if (!fs.existsSync(PASSWORD_FILE)) {
@@ -104,9 +93,10 @@ app.post("/login", (req, res) => {
     }
 });
 
-// 退出登录
+// **处理登出**
 app.get("/logout", (req, res) => {
     req.session.destroy(() => {
+        res.clearCookie("connect.sid");  // 确保 Cookie 被清除
         res.redirect("/login");
     });
 });
