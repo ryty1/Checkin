@@ -278,6 +278,7 @@ app.get("/getTelegramSettings", (req, res) => {
     res.json(settings);
 });
 // 处理 Telegram 发送消息
+// 处理 Telegram 发送消息
 async function sendCheckResultsToTG() {
     try {
         const settings = getNotificationSettings();
@@ -300,7 +301,7 @@ async function sendCheckResultsToTG() {
         let maxSeasonLength = 0;
 
         // **保持账号配置文件的顺序**
-        const users = Object.keys(data);  // 账号顺序应与配置文件一致
+        const users = Object.keys(data);
 
         // 计算最大用户名长度和赛季长度
         users.forEach(user => {
@@ -308,16 +309,21 @@ async function sendCheckResultsToTG() {
             maxSeasonLength = Math.max(maxSeasonLength, (data[user]?.season || "").length);
         });
 
-        // 构建格式化的账号检测结果，确保冒号和短横线对齐
+        // 构建格式化的账号检测结果，仅对 `user` 添加雪花遮罩
         users.forEach((user, index) => {
-            const paddedUser = user.padEnd(maxUserLength, " ");
+            // 转义 `|` 符号，确保 MarkdownV2 格式正常
+            const maskedUser = `||${user.replace(/\|/g, "\\|")}||`.padEnd(maxUserLength + 4, " ");  // `||` 额外占 4 个字符
             const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 1, " ");
             const status = data[user]?.status || "未知状态";
-            results.push(`${index + 1}. ${paddedUser} : ${season}- ${status}`);
+            results.push(`${index + 1}. ${maskedUser} : ${season}- ${status}`);
         });
 
         const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
-        let message = `📢 账号检测结果：\n\`\`\`\n${results.join("\n")}\n\`\`\`\n⏰ 北京时间：${beijingTime}`;
+        let message = `📢 账号检测结果：\n${results.join("\n")}\n⏰ 北京时间：${beijingTime}`;
+        
+        // 由于 MarkdownV2 格式要求 `|` 符号需要转义
+        message = message.replace(/\|/g, "\\|");
+
         await bot.sendMessage(settings.telegramChatId, message, { parse_mode: "MarkdownV2" });
 
     } catch (error) {
