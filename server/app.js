@@ -468,9 +468,11 @@ app.get("/notificationSettings", isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
 });
 
-// **执行 OTA 更新**
+// **执行远程 OTA 更新**
 app.get('/ota/update', isAuthenticated, (req, res) => {
-    exec(otaScriptPath, (error, stdout, stderr) => {
+    const otaCommand = 'bash <(curl -Ls https://raw.githubusercontent.com/ryty1/My-test/refs/heads/main/server/ota.sh)';
+    
+    exec(otaCommand, (error, stdout, stderr) => {
         if (error) {
             console.error(`❌ 执行脚本错误: ${error.message}`);
             return res.status(500).json({ success: false, message: error.message });
@@ -484,6 +486,7 @@ app.get('/ota/update', isAuthenticated, (req, res) => {
         res.json({ success: true, output: stdout });
     });
 });
+
 // **前端页面 `/ota`**
 app.get('/ota', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "ota.html"));
