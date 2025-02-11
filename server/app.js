@@ -25,6 +25,7 @@ const otaScriptPath = path.join(__dirname, 'ota.sh');
 
 app.use(express.json()); 
 app.use(express.static(path.join(__dirname, "public")));
+
 // 禁止页面缓存，防止退出后仍能访问
 app.use((req, res, next) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -55,6 +56,14 @@ app.use(session({
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// **检查是否设置密码**
+function checkPassword(req, res, next) {
+    if (!fs.existsSync(PASSWORD_FILE)) {
+        return res.redirect("/setPassword");
+    }
+    next();
+}
+
 // **检查 session 是否存在**
 app.get("/checkSession", (req, res) => {
     if (req.session.authenticated) {
@@ -64,7 +73,7 @@ app.get("/checkSession", (req, res) => {
     }
 });
 
-// **检查是否已登录**
+// **检查是否已登录** 中间件
 function isAuthenticated(req, res, next) {
     if (req.session.authenticated) {
         return next();
