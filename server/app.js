@@ -319,10 +319,10 @@ async function sendCheckResultsToTG() {
 
         // **构建格式化的账号检测结果，确保冒号和短横线对齐**
         users.forEach((user, index) => {
-            // 补齐用户名和赛季字段的空格
-            const paddedUser = `<tg-spoiler>${escapeHTML(user)}</tg-spoiler>`.padEnd(maxUserLength + 4, " ");  // 让用户名与冒号前空格对齐
-            const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 4, " ");  // 让赛季与冒号后对齐
-            const status = data[user]?.status || "未知状态";  // 状态字段直接放在每行的最后
+            // 动态补齐用户名和赛季字段
+            const paddedUser = `<tg-spoiler>${escapeHTML(user)}</tg-spoiler>`.padEnd(maxUserLength, " ");  // 确保用户名对齐
+            const season = (data[user]?.season || "--").padEnd(maxSeasonLength, " ");  // 赛季和冒号对齐
+            const status = data[user]?.status || "未知状态";  // 状态字段放在每行的最后
             results.push(`${index + 1}. ${paddedUser} : ${season} - ${status}`);
         });
 
