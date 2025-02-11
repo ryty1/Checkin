@@ -84,7 +84,7 @@ else
     X " 下载 配置文件 " 0
 fi
 unzip -q "$A2/main.zip" -d "$A2" > /dev/null 2>&1
-B1="$A2/serv00-save-me-main"
+B1="$A2/My-test-main"
 if [[ -d "$B1" ]]; then
     mv "$B1"/* "$A2/"
     rm -rf "$B1"
