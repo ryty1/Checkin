@@ -1,133 +1,127 @@
-X() {
-    local Y=$1
-    local Z=$2
-    local M=$(date +%s)
-    local N=2
-    local O=("+")
-    while true; do
-        local P=$(( $(date +%s) - M ))
-        printf "\r[%s] %s" "${O[$((P % 1))]}" "$Y"
-        if [[ $P -ge 1 ]]; then
-            break
-        fi
-        sleep 0.08
-    done
-    printf "\r                       \r"
-    if [[ $Z -eq 0 ]]; then
-        printf "[\033[0;32mOK\033[0m] %s\n" "$Y"
+#!/bin/bash
+
+USER_NAME=$(whoami)
+DOMAIN_NAME="${USER_NAME,,}.serv00.net"
+BASE_DIR="/home/$USER_NAME/domains/$DOMAIN_NAME"
+NODEJS_DIR="$BASE_DIR/public_nodejs"
+LOCAL_FILE_LIST="$NODEJS_DIR/file_list.txt"
+LOCAL_VERSION_FILE="$NODEJS_DIR/version.txt"
+
+REMOTE_DIR_URL="https://raw.githubusercontent.com/ryty1/My-test/main/single/"
+TIMESTAMP="?t=$(date +%s)"
+REMOTE_FILE_LIST_URL="${REMOTE_DIR_URL}file_list.txt${TIMESTAMP}"
+REMOTE_VERSION_URL="${REMOTE_DIR_URL}version.txt${TIMESTAMP}"
+
+get_remote_version() {
+    curl -s "$REMOTE_VERSION_URL" | tr -d '\r'
+}
+
+get_local_version() {
+    if [ ! -f "$LOCAL_VERSION_FILE" ]; then
+        echo "0.0.0"  
     else
-        printf "[\033[0;31mNO\033[0m] %s\n" "$Y"
+        cat "$LOCAL_VERSION_FILE" | tr -d '\r'
     fi
 }
 
-U=$(whoami)
-V=$(echo "$U" | tr '[:upper:]' '[:lower:]')
-W="$V.serv00.net"
-A1="/home/$U/domains/$W"
-A2="$A1/public_nodejs"
-B1="$A2/public"
-A3="https://github.com/ryty1/My-test/archive/refs/heads/main.zip"
+get_remote_file_list() {
+    curl -s "$REMOTE_FILE_LIST_URL"
+}
 
-echo "请选择保活类型："
-echo "1. 本机保活"
-echo "2. 账号服务"
-read -p "请输入选择(1 或 2): " choice
+get_local_file_list() {
+    cat "$LOCAL_FILE_LIST"
+}
 
-if [[ "$choice" -eq 1 ]]; then
-    TARGET_FOLDER="single"
-    DELETE_FOLDER="server"
-    DEPENDENCIES="dotenv basic-auth express"
-    echo "开始进行 本机保活配置"
-elif [[ "$choice" -eq 2 ]]; then
-    TARGET_FOLDER="server"
-    DELETE_FOLDER="single"
-    DEPENDENCIES="body-parser express-session dotenv express socket.io node-cron node-telegram-bot-api axios"
-    echo "开始进行 账号服务配置"
-else
-    echo "无效选择，退出脚本"
-    exit 1
-fi
+download_file() {
+    local file_path="$1"
+    local full_path="$NODEJS_DIR/$file_path"
 
-echo " ———————————————————————————————————————————————————————————— "
-cd && devil www del "$W" > /dev/null 2>&1
-if [[ $? -eq 0 ]]; then
-    X " 删除 默认域名 " 0
-else
-    X " 默认域名 删除失败 或 不存在" 1
-fi
-if [[ -d "$A1" ]]; then
-    rm -rf "$A1"
-fi
-if devil www add "$W" nodejs /usr/local/bin/node22 > /dev/null 2>&1; then
-    X " 创建 类型域名 " 0
-else
-    X " 类型域名 创建失败，请检查环境设置 " 1
-    exit 1
-fi
-if [[ -d "$B1" ]]; then
-    rm -rf "$B1"
-fi
+    curl -sL --fail -o "$full_path" "${REMOTE_DIR_URL}${file_path}${TIMESTAMP}" && \
+    echo "✅ ${file_path} 更新完成" || \
+    echo "❌ 下载失败: ${file_path}"
+}
 
-cd "$A2" && npm init -y > /dev/null 2>&1
-if npm install $DEPENDENCIES > /dev/null 2>&1; then
-    X " 安装 环境依赖 " 0
-else
-    X " 环境依赖 安装失败 " 1
-    exit 1
-fi
+delete_local_file() {
+    local file_path="$1"
+    rm -f "$NODEJS_DIR/$file_path"
+    echo "❌ ${file_path} 已删除"
+}
 
-wget "$A3" -O "$A2/main.zip" > /dev/null 2>&1
-if [[ $? -ne 0 || ! -s "$A2/main.zip" ]]; then
-    X " 下载失败：文件不存在或为空" 1
-    exit 1
-else
-    X " 下载 配置文件 " 0
-fi
-unzip -q "$A2/main.zip" -d "$A2" > /dev/null 2>&1
-B1="$A2/serv00-save-me-main"
-if [[ -d "$B1" ]]; then
-    mv "$B1"/* "$A2/"
-    rm -rf "$B1"
-fi
-rm -f "$A2/README.md" "$A2/main.zip"
+update_local_file_list() {
+    local new_file_list=$1
+    echo "$new_file_list" > "$LOCAL_FILE_LIST"
+}
 
-if [[ -d "$A2/$TARGET_FOLDER" ]]; then
-    cp -r "$A2/$TARGET_FOLDER/." "$A2/"
-    rm -rf "$A2/$TARGET_FOLDER"
-else
-    exit 1
-fi
+is_remote_version_higher() {
+    local remote_version=$1
+    local local_version=$2
 
-if [[ -d "$A2/$DELETE_FOLDER" ]]; then
-    rm -rf "$A2/$DELETE_FOLDER"
-fi
+    if [[ "$remote_version" > "$local_version" ]]; then
+        return 0  
+    else
+        return 1  
+    fi
+}
 
-if [[ "$choice" -eq 1 ]]; then
-    rm -f "$A2/ota.sh" "$A2/install.sh"
-    chmod 755 "$A2/app.js" > /dev/null 2>&1
-    chmod 755 "$A2/hy2ip.sh" > /dev/null 2>&1
+install_dependencies() {
+    echo "🛠️ 正在安装依赖..."
+    cd "$NODEJS_DIR" && npm init -y > /dev/null 2>&1
+    npm install dotenv basic-auth express > /dev/null 2>&1
+    echo "✅ 依赖安装完成"
+}
 
-    echo ""
-    echo " 【 恭 喜 】： 本机保活  部署已完成  "
-    echo " ———————————————————————————————————————————————————————————— "
-    echo ""
-    echo " |**保活网页 https://$W/info "
-    echo ""
-    echo " ———————————————————————————————————————————————————————————— "
-    echo ""
-else
-    rm -f "$A2/ota.sh"
-    chmod 755 "$A2/app.js" > /dev/null 2>&1
-    chmod 755 "$A2/ota.sh" > /dev/null 2>&1
+sync_files() {
+    local files_updated=false
 
-    echo ""
-    echo " 【 恭 喜 】： 账号服务  部署已完成  "
-    echo "  账号服务 只要 部暑 1个 多了 无用   "
-    echo "  账号服务 无需 保活 不建议  搭节点  "
-    echo " ———————————————————————————————————————————————————————————— "
-    echo ""
-    echo " |**账号服务 https://$W/"
-    echo ""
-    echo " ———————————————————————————————————————————————————————————— "
-    echo ""
-fi
+    remote_files=$(get_remote_file_list)
+    local_files=$(get_local_file_list)
+
+    for file in $remote_files; do
+        download_file "$file"
+        files_updated=true
+    done
+
+    for file in $local_files; do
+        if ! echo "$remote_files" | grep -q "^$file$"; then
+            delete_local_file "$file"
+            files_updated=true
+        fi
+    done
+
+    update_local_file_list "$remote_files"
+
+    if $files_updated; then
+        return 0  
+    else
+        return 1  
+    fi
+}
+
+display_versions() {
+    local remote_version=$(get_remote_version)
+    local local_version=$(get_local_version)
+
+    echo "📌 当前版本: $local_version  |  📌 最新版本: $remote_version"
+}
+
+check_version_and_sync() {
+    local remote_version=$(get_remote_version)
+    local local_version=$(get_local_version)
+
+    display_versions
+
+    if is_remote_version_higher "$remote_version" "$local_version"; then
+        echo "🔄 发现新版本，开始安装依赖并同步文件..."
+        install_dependencies
+        if sync_files; then
+            echo "$remote_version" > "$LOCAL_VERSION_FILE"
+            echo "📢 版本更新完成，新版本号: $remote_version"
+        else
+            echo "❌ 文件同步失败，未更新任何文件。"
+        fi
+    else
+        echo "❌ 当前已是最新版本，无需更新。"
+    fi
+}
+
+check_version_and_sync
