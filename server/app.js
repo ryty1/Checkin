@@ -298,16 +298,14 @@ async function sendCheckResultsToTG() {
         let results = [];
         let maxUserLength = 0;
         let maxSeasonLength = 0;
-        let maxStatusLength = 0;
 
         // **保持账号配置文件的顺序**
         const users = Object.keys(data);  // 账号顺序应与配置文件一致
 
-        // 计算最大用户名长度、赛季长度和状态长度
+        // 计算最大用户名长度和赛季长度
         users.forEach(user => {
             maxUserLength = Math.max(maxUserLength, user.length);
             maxSeasonLength = Math.max(maxSeasonLength, (data[user]?.season || "").length);
-            maxStatusLength = Math.max(maxStatusLength, (data[user]?.status || "未知状态").length);
         });
 
         // **HTML 需要转义的特殊字符**
@@ -321,10 +319,9 @@ async function sendCheckResultsToTG() {
 
         // **构建格式化的账号检测结果，确保冒号和短横线对齐**
         users.forEach((user, index) => {
-            const paddedUser = `<tg-spoiler>${escapeHTML(user)}</tg-spoiler>`.padEnd(maxUserLength + 23, " ");  // 23 是 `<tg-spoiler>` 标签的长度
-            const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 1, " ");
-            const status = (data[user]?.status || "未知状态").padEnd(maxStatusLength + 1, " ");  // 保持状态对齐
-            results.push(`${index + 1}. ${paddedUser} : ${season} - ${status}`);
+            const paddedUser = `<tg-spoiler>${escapeHTML(user)}</tg-spoiler>`.padEnd(maxUserLength, " ");  // 确保用户名对齐
+            const season = (data[user]?.season || "--").padEnd(maxSeasonLength, " ");  // 确保赛季对齐
+            results.push(`${index + 1}. ${paddedUser} : ${season} - ${data[user]?.status || "未知状态"}`);
         });
 
         const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
