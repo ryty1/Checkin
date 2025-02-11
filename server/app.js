@@ -83,7 +83,7 @@ function isAuthenticated(req, res, next) {
 
 // **登录页面**
 app.get("/login", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "login.html"));
+    res.sendFile(path.join(__dirname, "protected", "login.html"));
 });
 
 // **处理登录**
@@ -330,16 +330,16 @@ async function sendCheckResultsToTG() {
     }
 }
 
-app.get("/", isAuthenticated, (req, res) => {
+app.get("/", checkPassword, isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "index.html"));
 });
 app.get("/getMainUser", isAuthenticated, (req, res) => {
     res.json({ mainUser: MAIN_SERVER_USER });
 });
-app.get("/accounts", isAuthenticated, (req, res) => {
+app.get("/accounts", checkPassword, isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "accounts.html"));
 });
-app.get("/nodes", isAuthenticated, (req, res) => {
+app.get("/nodes", checkPassword, isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "nodes.html"));
 });
 app.get("/info", (req, res) => {
@@ -348,7 +348,7 @@ app.get("/info", (req, res) => {
     res.redirect(`https://${user}.serv00.net/info`);
 });
 // 发送静态HTML文件
-app.get("/checkAccountsPage", isAuthenticated, (req, res) => {
+app.get("/checkAccountsPage", checkPassword, isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
 });
 
@@ -434,7 +434,7 @@ app.post("/setNotificationSettings", (req, res) => {
 // 启动时检查并初始化定时任务
 resetCronJob();
 
-app.get("/notificationSettings", isAuthenticated, (req, res) => {
+app.get("/notificationSettings", checkPassword, isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
 });
 
@@ -455,7 +455,7 @@ app.get('/ota/update', isAuthenticated, (req, res) => {
     });
 });
 // **前端页面 `/ota`**
-app.get('/ota', isAuthenticated, (req, res) => {
+app.get('/ota', checkPassword, isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "ota.html"));
 });
 
