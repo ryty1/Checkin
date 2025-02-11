@@ -303,7 +303,7 @@ async function sendCheckResultsToTG() {
         // **保持账号配置文件的顺序**
         const users = Object.keys(data);  // 账号顺序应与配置文件一致
 
-        // 计算最大用户名、赛季、状态长度
+        // 计算最大用户名长度、赛季长度和状态长度
         users.forEach(user => {
             maxUserLength = Math.max(maxUserLength, user.length);
             maxSeasonLength = Math.max(maxSeasonLength, (data[user]?.season || "").length);
