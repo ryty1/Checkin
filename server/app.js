@@ -45,10 +45,14 @@ function getSessionSecret() {
     }
 }
 
-// 配置 session 存储
 app.use(session({
-    store: new FileStore({ path: "./sessions", logFn: function () {} }),
-    secret: getSessionSecret(),
+    store: new FileStore({
+        path: "./sessions",
+        ttl: 60,  // session 过期时间（单位：秒）
+        retries: 1,
+        clearInterval: 600  // 定期清理无效 session（单位：秒）
+    }),
+    secret: "your_secret_key",
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false, httpOnly: true }
@@ -102,19 +106,24 @@ app.post("/login", (req, res) => {
     }
 });
 
-// **处理登出**
-
 app.get("/logout", (req, res) => {
-    // 销毁 session
+    const sessionId = req.session.id; // 获取当前 session ID
+
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).send("退出失败");
         }
 
-        // 清除与 session 相关的 cookie（默认是 connect.sid）
+        // 确保 session 文件被删除
+        const sessionFile = path.join("./sessions", sessionId + ".json");
+        if (fs.existsSync(sessionFile)) {
+            fs.unlinkSync(sessionFile);  // 手动删除 session 文件
+        }
+
+        // 清除 session 相关的 cookie
         res.clearCookie("connect.sid");
 
-        // 设置 HTTP 头，防止浏览器缓存
+        // 防止页面缓存
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
         res.setHeader("Pragma", "no-cache");
         res.setHeader("Expires", "0");
