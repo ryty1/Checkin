@@ -319,12 +319,11 @@ async function sendCheckResultsToTG() {
 
         // **构建格式化的账号检测结果，确保冒号和短横线对齐**
         users.forEach((user, index) => {
-            // 补齐用户名和赛季长度
-            const paddedUser = `<tg-spoiler>${escapeHTML(user)}</tg-spoiler>`.padEnd(maxUserLength + 2, " "); // 用户名对齐
-            const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 2, " ");  // 赛季对齐
-
-            // 计算冒号和短横线的对齐
-            results.push(`${index + 1}. ${paddedUser} : ${season} - ${data[user]?.status || "未知状态"}`);
+            // 补齐用户名和赛季字段的空格
+            const paddedUser = `<tg-spoiler>${escapeHTML(user)}</tg-spoiler>`.padEnd(maxUserLength + 4, " ");  // 让用户名与冒号前空格对齐
+            const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 4, " ");  // 让赛季与冒号后对齐
+            const status = data[user]?.status || "未知状态";  // 状态字段直接放在每行的最后
+            results.push(`${index + 1}. ${paddedUser} : ${season} - ${status}`);
         });
 
         const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
