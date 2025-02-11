@@ -73,12 +73,12 @@ app.get("/checkSession", (req, res) => {
     }
 });
 
-// **检查是否已登录** 中间件
+// 检查 session 是否有效
 function isAuthenticated(req, res, next) {
     if (req.session.authenticated) {
         return next();
     }
-    res.redirect("/login");
+    res.redirect("/login");  // 未登录时跳转到登录页面
 }
 
 // **登录页面**
@@ -103,20 +103,23 @@ app.post("/login", (req, res) => {
 });
 
 // **处理登出**
+
 app.get("/logout", (req, res) => {
+    // 销毁 session
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).send("退出失败");
         }
-        // 清除会话 cookie
+
+        // 清除与 session 相关的 cookie（默认是 connect.sid）
         res.clearCookie("connect.sid");
-        
+
         // 设置 HTTP 头，防止浏览器缓存
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
         res.setHeader("Pragma", "no-cache");
         res.setHeader("Expires", "0");
 
-        // 重定向到登录页面
+        // 跳转到登录页面
         res.redirect("/login");
     });
 });
