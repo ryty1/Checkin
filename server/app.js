@@ -384,8 +384,13 @@ app.get("/checkAccountsPage", isAuthenticated, (req, res) => {
 
 app.get("/checkAccounts", async (req, res) => {
     try {
-        const accounts = await getAccounts(); // 获取所有账号（按配置文件顺序）
-        const users = Object.keys(accounts); // 保持账号配置的顺序
+        const clientIp = req.ip || req.connection.remoteAddress;
+        if (clientIp !== "127.0.0.1" && clientIp !== "::1") {
+            return res.status(403).json({ status: "error", message: "禁止外部访问" });
+        }
+
+        const accounts = await getAccounts();
+        const users = Object.keys(accounts);
 
         if (users.length === 0) {
             return res.json({ status: "success", results: {} });
@@ -419,7 +424,6 @@ app.get("/checkAccounts", async (req, res) => {
 
         await Promise.all(promises);
 
-        // **保持账号顺序与配置文件一致**
         let orderedResults = {};
         users.forEach(user => {
             orderedResults[user] = results[user];
