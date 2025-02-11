@@ -20,7 +20,7 @@ const PORT = 3000;
 const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
 const SETTINGS_FILE = path.join(__dirname, "settings.json");
 const PASSWORD_FILE = path.join(__dirname, "password.json");
-const SESSION_DIR = path.join(__dirname, "session"); // session 存储路径
+const SESSION_DIR = path.join(__dirname, "sessions"); // session 存储路径
 const SESSION_FILE = path.join(__dirname, "session_secret.json");
 const otaScriptPath = path.join(__dirname, 'ota.sh');
 
