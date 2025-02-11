@@ -300,7 +300,7 @@ async function sendCheckResultsToTG() {
         let maxSeasonLength = 0;
 
         // **保持账号配置文件的顺序**
-        const users = Object.keys(data);  // 账号顺序应与配置文件一致
+        const users = Object.keys(data);  
 
         // 计算最大用户名长度和赛季长度
         users.forEach(user => {
@@ -308,16 +308,22 @@ async function sendCheckResultsToTG() {
             maxSeasonLength = Math.max(maxSeasonLength, (data[user]?.season || "").length);
         });
 
+        // **转义 MarkdownV2 特殊字符**
+        function escapeMarkdownV2(text) {
+            return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
+        }
+
         // 构建格式化的账号检测结果，确保冒号和短横线对齐
         users.forEach((user, index) => {
-            const paddedUser = user.padEnd(maxUserLength, " ");
+            const paddedUser = `||${escapeMarkdownV2(user)}||`.padEnd(maxUserLength + 4, " ");  // 修正 `||user||` 语法错误
             const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 1, " ");
             const status = data[user]?.status || "未知状态";
-            results.push(`${index + 1}. ||${paddedUser}|| : ${season}- ${status}`);
+            results.push(`${index + 1}. ${paddedUser} : ${season}- ${status}`);
         });
 
         const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
         let message = `📢 账号检测结果：\n${results.join("\n")}\n⏰ 北京时间：${beijingTime}`;
+        
         await bot.sendMessage(settings.telegramChatId, message, { parse_mode: "MarkdownV2" });
 
     } catch (error) {
