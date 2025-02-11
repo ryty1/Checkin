@@ -86,6 +86,21 @@ function isAuthenticated(req, res, next) {
     res.redirect("/login");  // 未登录时跳转到登录页面
 }
 
+// **设置密码页面（无需验证）**
+app.get("/setPassword", (req, res) => {
+    res.sendFile(path.join(__dirname, "protected", "set_password.html"));
+});
+
+// **处理密码设置**
+app.post("/setPassword", (req, res) => {
+    const { password } = req.body;
+    if (!password) {
+        return res.status(400).send("密码不能为空");
+    }
+    fs.writeFileSync(PASSWORD_FILE, JSON.stringify({ password }), "utf-8");
+    res.redirect("/login");
+});
+
 // **登录页面**
 app.get("/login", (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "login.html"));
