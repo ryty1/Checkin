@@ -322,7 +322,7 @@ async function sendCheckResultsToTG() {
         }
 
         const bot = new TelegramBot(settings.telegramToken, { polling: false });
-        const response = await axios.get(`http://127.0.0.1:3000/checkAccounts`);
+        const response = await axios.get(`http://locadhost:3000/checkAccounts`);
         const data = response.data.results;
 
         if (!data || Object.keys(data).length === 0) {
@@ -383,9 +383,8 @@ app.get("/checkAccountsPage", isAuthenticated, (req, res) => {
 });
 
 const checkAccountsAuth = (req, res, next) => {
-    const clientIp = (req.headers['x-forwarded-for'] || req.connection.remoteAddress).split(',')[0].trim();
+    let clientIp = (req.headers['x-forwarded-for'] || req.connection.remoteAddress).split(',')[0].trim();
     clientIp = clientIp.replace(/^.*:/, "");  // 处理 IPv6 映射地址
-
     // 允许本机访问 或 已登录用户访问
     if (["127.0.0.1", "::1"].includes(clientIp) || req.session.authenticated) {
         return next();
