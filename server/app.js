@@ -384,8 +384,11 @@ app.get("/checkAccountsPage", isAuthenticated, (req, res) => {
 
 app.get("/checkAccounts", async (req, res) => {
     try {
-        const clientIp = req.ip || req.connection.remoteAddress;
-        if (clientIp !== "127.0.0.1" && clientIp !== "::1") {
+        // 获取客户端 IP
+        const clientIp = (req.headers['x-forwarded-for'] || req.connection.remoteAddress).split(',')[0].trim();
+
+        // 仅允许本机访问
+        if (!["127.0.0.1", "::1"].includes(clientIp)) {
             return res.status(403).json({ status: "error", message: "禁止外部访问" });
         }
 
