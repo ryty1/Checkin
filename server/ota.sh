@@ -4,12 +4,12 @@ USER_NAME=$(whoami)
 DOMAIN_NAME="${USER_NAME,,}.serv00.net"
 BASE_DIR="/home/$USER_NAME/domains/$DOMAIN_NAME"
 NODEJS_DIR="$BASE_DIR/public_nodejs"
-LOCAL_FILE_LIST="$NODEJS_DIR/file_list.txt"  
-LOCAL_VERSION_FILE="$NODEJS_DIR/version.txt"  
+LOCAL_FILE_LIST="$NODEJS_DIR/file_list.txt"
+LOCAL_VERSION_FILE="$NODEJS_DIR/version.txt"
 
 # **远程文件 URL（修正变量定义顺序 + 加入时间戳以绕过缓存）**
 REMOTE_DIR_URL="https://raw.githubusercontent.com/ryty1/My-test/main/server/"
-TIMESTAMP="?t=$(date +%s)" 
+TIMESTAMP="?t=$(date +%s)"
 REMOTE_FILE_LIST_URL="${REMOTE_DIR_URL}file_list.txt${TIMESTAMP}"
 REMOTE_VERSION_URL="${REMOTE_DIR_URL}version.txt${TIMESTAMP}"
 
@@ -74,6 +74,14 @@ is_remote_version_higher() {
     fi
 }
 
+# **安装依赖**
+install_dependencies() {
+    echo "🔄 正在安装依赖..."
+    cd "$NODEJS_DIR" && npm init -y > /dev/null 2>&1
+    npm install body-parser express-session session-file-store dotenv express socket.io node-cron node-telegram-bot-api axios > /dev/null 2>&1
+    echo "✅ 依赖安装完成"
+}
+
 # **同步文件**
 sync_files() {
     local files_updated=false
@@ -126,28 +134,21 @@ check_version_and_sync() {
 
     # 检查远程版本是否高于本地版本
     if is_remote_version_higher "$remote_version" "$local_version"; then
-        echo "🔄 发现新版本，开始同步文件..."
+        echo "🔄 发现新版本，开始安装依赖并同步文件..."
+        # 安装依赖
+        install_dependencies
+        # 同步文件
         if sync_files; then
             # 更新本地版本文件
             echo "$remote_version" > "$LOCAL_VERSION_FILE"
             echo "📢 版本更新完成，新版本号: $remote_version"
-
-            # **清理 Node.js 缓存并重启应用**
-            clean_and_restart_nodejs
         else
-            echo "❌ 没有需要更新的文件"
+            echo "❌ 文件同步失败，未更新任何文件。"
         fi
     else
-        echo "🔝 已是最新版本，无需更新"
+        echo "❌ 当前已是最新版本，无需更新。"
     fi
 }
 
-# **清理缓存并重启应用**
-clean_and_restart_nodejs() {
-    node -e "Object.keys(require.cache).forEach(function(key) { delete require.cache[key] });"
-    devil www restart "${USER_NAME,,}.serv00.net" > /dev/null 2>&1
-    echo "应用已重启，请1分钟后刷新网页"
-}
-
-# **执行版本检查和同步**
+# 执行检查并同步
 check_version_and_sync
