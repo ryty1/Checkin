@@ -65,10 +65,6 @@
         .status {
             text-align: left;
             white-space: nowrap; /* 防止换行 */
-            font-size: 3vw; /* 动态调整字体大小 */
-            word-wrap: break-word; /* 允许长单词换行 */
-            overflow: hidden; /* 隐藏超出内容 */
-            text-overflow: ellipsis; /* 超出内容显示省略号 */
         }
     </style>
 </head>
@@ -104,6 +100,9 @@
 
                         resultHTML += '</table>';
                         document.getElementById("results").innerHTML = resultHTML;
+
+                        // 调整字体大小
+                        adjustFontSize();
                     } else {
                         alert('检测失败，请稍后再试');
                     }
@@ -112,6 +111,21 @@
                     console.error('检测失败:', error);
                     alert('检测失败，请稍后再试');
                 });
+        }
+
+        // 调整字体大小
+        function adjustFontSize() {
+            const statusCells = document.querySelectorAll('.status');
+            statusCells.forEach(cell => {
+                let fontSize = 16; // 初始字体大小
+                const cellWidth = cell.offsetWidth;
+
+                // 计算字体大小以适应单元格
+                while (cell.scrollWidth > cellWidth && fontSize > 8) {
+                    fontSize -= 1; // 减小字体大小直到适应
+                    cell.style.fontSize = fontSize + 'px';
+                }
+            });
         }
     </script>
 </body>
