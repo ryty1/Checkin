@@ -299,7 +299,8 @@ async function sendCheckResultsToTG() {
         let results = [];
         let maxUserLength = 0;
         let maxSeasonLength = 0;
-
+        // **保持账号配置文件的顺序**
+        const users = Object.keys(data);
         // **计算最大用户名和赛季长度**
         const users = Object.keys(data);
         users.forEach(user => {
