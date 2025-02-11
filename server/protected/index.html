@@ -100,6 +100,34 @@
     </div>
 
     <script>
+        // 页面加载时检查 session 是否有效
+        fetch("/checkSession")
+            .then(response => response.json())
+            .then(data => {
+                if (!data.authenticated) {
+                    window.location.href = "/login";  // 未登录，跳转到登录页面
+                }
+            })
+            .catch(() => {
+                window.location.href = "/login";  // 请求失败，跳转到登录页面
+            });
+
+        // 监听浏览器后退事件，确保用户不能绕过验证
+        window.addEventListener("pageshow", function (event) {
+            if (event.persisted) {  // 当页面是从缓存加载时
+                fetch("/checkSession")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.authenticated) {
+                            window.location.href = "/login";  // 如果未登录，跳转到登录页面
+                        }
+                    })
+                    .catch(() => {
+                        window.location.href = "/login";  // 请求失败，跳转到登录页面
+                    });
+            }
+        });
+
         // 动态获取本机账号
         fetch("/getMainUser")
             .then(response => response.json())
