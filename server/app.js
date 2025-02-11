@@ -277,7 +277,6 @@ app.get("/getTelegramSettings", (req, res) => {
     const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
     res.json(settings);
 });
-
 // 处理 Telegram 发送消息
 async function sendCheckResultsToTG() {
     try {
@@ -300,30 +299,25 @@ async function sendCheckResultsToTG() {
         let maxUserLength = 0;
         let maxSeasonLength = 0;
 
-        // **计算最大用户名和赛季长度**
-        const users = Object.keys(data);
+        // **保持账号配置文件的顺序**
+        const users = Object.keys(data);  // 账号顺序应与配置文件一致
+
+        // 计算最大用户名长度和赛季长度
         users.forEach(user => {
             maxUserLength = Math.max(maxUserLength, user.length);
             maxSeasonLength = Math.max(maxSeasonLength, (data[user]?.season || "").length);
         });
 
-        // **MarkdownV2 需要转义的特殊字符**
-        function escapeMarkdownV2(text) {
-            return text.replace(/([_*[\]()~`>#+\-=|{}.!\\])/g, "\\$1"); // ✅ 确保 `.`、`\`、`_` 等字符全部转义
-        }
-
-        // **构建格式化的账号检测结果，仅对 `user` 添加雪花遮罩**
+        // 构建格式化的账号检测结果，确保冒号和短横线对齐
         users.forEach((user, index) => {
-            const escapedUser = escapeMarkdownV2(user);  // ✅ 先转义用户名
-            const maskedUser = `||${escapedUser}||`.padEnd(maxUserLength + 4, " ");  // ✅ 再添加 `||` 雪花遮罩
+            const paddedUser = user.padEnd(maxUserLength, " ");
             const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 1, " ");
             const status = data[user]?.status || "未知状态";
-            results.push(`${index + 1}. ${maskedUser} : ${season}- ${status}`);
+            results.push(`${index + 1}. ${paddedUser} : ${season}- ${status}`);
         });
 
         const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
-        let message = `📢 账号检测结果：\n${results.join("\n")}\n⏰ 北京时间：${beijingTime}`;
-
+        let message = `📢 账号检测结果：\n\`\`\`\n${results.join("\n")}\n\`\`\`\n⏰ 北京时间：${beijingTime}`;
         await bot.sendMessage(settings.telegramChatId, message, { parse_mode: "MarkdownV2" });
 
     } catch (error) {
