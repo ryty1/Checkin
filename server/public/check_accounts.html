@@ -55,8 +55,9 @@
             border-collapse: collapse;
         }
         th, td {
-            padding: 5px 10px;
+            padding: 3px 8px;  /* 调整字体大小的空间 */
             text-align: left;
+            font-size: 14px;  /* 字体小2个单位 */
             border-bottom: 1px solid #ddd;
         }
         th {
@@ -64,7 +65,10 @@
         }
         .status {
             text-align: left;
-            white-space: nowrap; /* 防止换行 */
+        }
+        /* 使序号右对齐 */
+        td:first-child {
+            text-align: right;
         }
     </style>
 </head>
@@ -86,10 +90,11 @@
                         let resultHTML = '<table>';
                         resultHTML += '<tr><th>#</th><th>账号</th><th>赛季</th><th>状态</th></tr>';
 
+                        // 按账号配置顺序显示账号
                         const users = Object.keys(results);
                         users.forEach((user, index) => {
-                            const season = results[user]?.season || "--";
-                            const status = results[user]?.status || "未知状态";
+                            const season = results[user]?.season || "--";  // 取 season
+                            const status = results[user]?.status || "未知状态"; // 取 status
                             resultHTML += `<tr>
                                 <td>${index + 1}</td>
                                 <td>${user}</td>
@@ -100,9 +105,6 @@
 
                         resultHTML += '</table>';
                         document.getElementById("results").innerHTML = resultHTML;
-
-                        // 调整字体大小
-                        adjustFontSize();
                     } else {
                         alert('检测失败，请稍后再试');
                     }
@@ -111,21 +113,6 @@
                     console.error('检测失败:', error);
                     alert('检测失败，请稍后再试');
                 });
-        }
-
-        // 调整字体大小
-        function adjustFontSize() {
-            const statusCells = document.querySelectorAll('.status');
-            statusCells.forEach(cell => {
-                let fontSize = 16; // 初始字体大小
-                const cellWidth = cell.offsetWidth;
-
-                // 计算字体大小以适应单元格
-                while (cell.scrollWidth > cellWidth && fontSize > 8) {
-                    fontSize -= 1; // 减小字体大小直到适应
-                    cell.style.fontSize = fontSize + 'px';
-                }
-            });
         }
     </script>
 </body>
