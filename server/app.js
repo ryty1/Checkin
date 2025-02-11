@@ -277,6 +277,7 @@ app.get("/getTelegramSettings", (req, res) => {
     const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
     res.json(settings);
 });
+
 // 处理 Telegram 发送消息
 async function sendCheckResultsToTG() {
     try {
@@ -300,7 +301,7 @@ async function sendCheckResultsToTG() {
         let maxSeasonLength = 0;
 
         // **保持账号配置文件的顺序**
-        const users = Object.keys(data);  
+        const users = Object.keys(data);
 
         // 计算最大用户名长度和赛季长度
         users.forEach(user => {
@@ -308,17 +309,17 @@ async function sendCheckResultsToTG() {
             maxSeasonLength = Math.max(maxSeasonLength, (data[user]?.season || "").length);
         });
 
-        // **转义 MarkdownV2 特殊字符**
+        // **修正 MarkdownV2 特殊字符转义**
         function escapeMarkdownV2(text) {
-            return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
+            return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");  // ✅ 现在 `.` 也会被正确转义
         }
 
-        // 构建格式化的账号检测结果，确保冒号和短横线对齐
+        // 构建格式化的账号检测结果，仅遮罩用户名
         users.forEach((user, index) => {
-            const paddedUser = `||${escapeMarkdownV2(user)}||`.padEnd(maxUserLength + 4, " ");  // 修正 `||user||` 语法错误
+            const maskedUser = `||${escapeMarkdownV2(user)}||`; // ✅ 确保用户名不会导致 Markdown 解析失败
             const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 1, " ");
             const status = data[user]?.status || "未知状态";
-            results.push(`${index + 1}. ${paddedUser} : ${season}- ${status}`);
+            results.push(`${index + 1}. ${maskedUser} : ${season}- ${status}`);
         });
 
         const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
