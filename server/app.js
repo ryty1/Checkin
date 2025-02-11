@@ -1,5 +1,6 @@
 const express = require("express");
 const session = require("express-session");
+const FileStore = require("session-file-store")(session);
 const http = require("http");
 const { exec } = require("child_process");
 const socketIo = require("socket.io");
@@ -24,6 +25,15 @@ const otaScriptPath = path.join(__dirname, 'ota.sh');
 
 app.use(express.json()); 
 app.use(express.static(path.join(__dirname, "public")));
+// 禁止页面缓存，防止退出后仍可访问
+app.use((req, res, next) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
+    next();
+});
+
 // 生成或读取 session 密钥
 function getSessionSecret() {
     if (fs.existsSync(SESSION_FILE)) {
@@ -35,18 +45,18 @@ function getSessionSecret() {
     }
 }
 
-// 设置 Express 会话
+// 设置 Express 会话存储
 app.use(session({
+    store: new FileStore({ path: "./sessions", logFn: function () {} }),
     secret: getSessionSecret(),
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }
+    cookie: { secure: false, httpOnly: true }
 }));
 
-// 解析 POST 请求
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// **检查是否设置密码**
+// 检查密码是否已设置
 function checkPassword(req, res, next) {
     if (!fs.existsSync(PASSWORD_FILE)) {
         return res.redirect("/setPassword");
@@ -54,7 +64,7 @@ function checkPassword(req, res, next) {
     next();
 }
 
-// **检查是否已登录**
+// 认证中间件
 function isAuthenticated(req, res, next) {
     if (req.session.authenticated) {
         return next();
@@ -62,27 +72,23 @@ function isAuthenticated(req, res, next) {
     res.redirect("/login");
 }
 
-// **设置密码页面（无需验证）**
+// 设置密码
 app.get("/setPassword", (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "set_password.html"));
 });
 
-// **处理密码设置**
 app.post("/setPassword", (req, res) => {
     const { password } = req.body;
-    if (!password) {
-        return res.status(400).send("密码不能为空");
-    }
+    if (!password) return res.status(400).send("密码不能为空");
     fs.writeFileSync(PASSWORD_FILE, JSON.stringify({ password }), "utf-8");
     res.redirect("/login");
 });
 
-// **登录页面（无需验证）**
+// 登录
 app.get("/login", (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "login.html"));
 });
 
-// **处理登录**
 app.post("/login", (req, res) => {
     const { password } = req.body;
     if (!fs.existsSync(PASSWORD_FILE)) {
@@ -98,14 +104,14 @@ app.post("/login", (req, res) => {
     }
 });
 
-// **处理登出**
+// 退出登录
 app.get("/logout", (req, res) => {
     req.session.destroy(() => {
         res.redirect("/login");
     });
 });
 
-// **受保护的 HTML 页面**
+// 受保护的页面
 const protectedRoutes = ["/", "/ota", "/accounts", "/nodes"];
 protectedRoutes.forEach(route => {
     app.get(route, checkPassword, isAuthenticated, (req, res) => {
