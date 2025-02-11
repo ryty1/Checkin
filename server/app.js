@@ -83,7 +83,7 @@ function isAuthenticated(req, res, next) {
 
 // **登录页面**
 app.get("/login", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "login.html"));
+    res.sendFile(path.join(__dirname, "protected", "login.html"));
 });
 
 // **处理登录**
