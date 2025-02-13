@@ -76,8 +76,8 @@ if [[ -d "$B1" ]]; then
     rm -rf "$B1"
 fi
 
-cd "$A2" && npm init -y > /dev/null 2>&1
-if npm install $DEPENDENCIES > /dev/null 2>&1; then
+cd "$A2" && npm init -y 
+if npm install $DEPENDENCIES; then
     X " 安装 环境依赖 " 0
 else
     X " 环境依赖 安装失败 " 1
