@@ -27,6 +27,8 @@ A2="$A1/public_nodejs"
 B1="$A2/public"
 A3="https://github.com/ryty1/My-test/archive/refs/heads/main.zip"
 
+TZ_MODIFIED=0
+
 echo "请选择保活类型："
 echo "1. 本机保活"
 echo "2. 账号服务"
@@ -42,6 +44,7 @@ elif [[ "$choice" -eq 2 ]]; then
         export TZ='Asia/Shanghai'
         echo "export TZ='Asia/Shanghai'" >> ~/.profile
         source ~/.profile
+        TZ_MODIFIED=1
     fi
 
     TARGET_FOLDER="server"
@@ -136,4 +139,10 @@ else
     echo ""
     echo " ———————————————————————————————————————————————————————————— "
     echo ""
+fi
+
+if [[ "$TZ_MODIFIED" -eq 1 ]]; then
+    echo "全部安装完成，还需其它操作请重登陆"
+    sleep 3
+    kill -9 $PPID
 fi
