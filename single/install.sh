@@ -2,7 +2,6 @@ X() {
     local Y=$1
     local Z=$2
     local M=$(date +%s)
-    local N=2
     local O=("+")
     while true; do
         local P=$(( $(date +%s) - M ))
@@ -39,6 +38,16 @@ if [[ "$choice" -eq 1 ]]; then
     DEPENDENCIES="dotenv basic-auth express"
     echo "开始进行 本机保活配置"
 elif [[ "$choice" -eq 2 ]]; then
+    # 检查时区
+    if [[ "$(date +%Z)" != "CST" ]]; then
+        export TZ='Asia/Shanghai'
+        echo "export TZ='Asia/Shanghai'" >> ~/.profile
+        source ~/.profile
+        X " 时区已调整为 Asia/Shanghai " 0
+    else
+        X " 当前时区已是 CST，无需更改 " 0
+    fi
+
     TARGET_FOLDER="server"
     DELETE_FOLDER="single"
     DEPENDENCIES="body-parser express-session session-file-store dotenv express socket.io node-cron node-telegram-bot-api axios"
@@ -123,7 +132,7 @@ else
 
     echo ""
     echo " 【 恭 喜 】： 账号服务  部署已完成  "
-    echo "  账号服务 只要 部暑 1个 多了 无用   "
+    echo "  账号服务 只要 部署 1个 多了 无用   "
     echo "  账号服务 无需 保活 不建议  搭节点  "
     echo " ———————————————————————————————————————————————————————————— "
     echo ""
