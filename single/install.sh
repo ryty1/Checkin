@@ -32,14 +32,13 @@ echo "1. 本机保活"
 echo "2. 账号服务"
 read -p "请输入选择(1 或 2): " choice
 
-TZ_MODIFIED=0  # 记录是否修改了时区
-
 if [[ "$choice" -eq 1 ]]; then
     TARGET_FOLDER="single"
     DELETE_FOLDER="server"
     DEPENDENCIES="dotenv basic-auth express"
     echo "开始进行 本机保活配置"
 elif [[ "$choice" -eq 2 ]]; then
+    TZ_MODIFIED=0
     if [[ "$(date +%Z)" != "CST" ]]; then
         export TZ='Asia/Shanghai'
         echo "export TZ='Asia/Shanghai'" >> ~/.profile
