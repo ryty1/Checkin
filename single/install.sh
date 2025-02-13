@@ -43,9 +43,6 @@ elif [[ "$choice" -eq 2 ]]; then
         export TZ='Asia/Shanghai'
         echo "export TZ='Asia/Shanghai'" >> ~/.profile
         source ~/.profile
-        X " 时区已调整为 Asia/Shanghai " 0
-    else
-        X " 当前时区已是 CST，无需更改 " 0
     fi
 
     TARGET_FOLDER="server"
