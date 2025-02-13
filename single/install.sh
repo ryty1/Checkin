@@ -38,7 +38,7 @@ if [[ "$choice" -eq 1 ]]; then
     DEPENDENCIES="dotenv basic-auth express"
     echo "开始进行 本机保活配置"
 elif [[ "$choice" -eq 2 ]]; then
-    # 检查时区
+    date
     if [[ "$(date +%Z)" != "CST" ]]; then
         export TZ='Asia/Shanghai'
         echo "export TZ='Asia/Shanghai'" >> ~/.profile
