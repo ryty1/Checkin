@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主页</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 渐变动画 */
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 文字流动渐变效果 */
+        .gradient-text {
+            font-size: 2.2em; /* 保持原来的大小 */
+            font-weight: bold;
+            background: linear-gradient(90deg, #ff5733, #ffbd33, #33ff57, #338aff, #ff33a1, #ff5733);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+            animation: gradientMove 3s infinite linear;
+        }
+        h1.gradient-text {
+            margin-top: 10px; 
+            margin-bottom: 10px; 
+        }
+
+        p {
+           margin-top: 5px;
+           font-size: 14px;
+        }
+
+        .btn {
+            display: block;
+            width: 90%;
+            margin: 10px auto;
+            padding: 12px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-primary { background-color: #007BFF; color: white; }
+        .btn-primary:hover { background-color: #0056b3; }
+        .btn-secondary { background-color: #28A745; color: white; }
+        .btn-secondary:hover { background-color: #1e7e34; }
+        .btn-account-check { background-color: #FF5733; color: white; }
+        .btn-account-check:hover { background-color: #C70039; }
+        .btn-notification-settings { background-color: #333333; color: white; }
+        .btn-notification-settings:hover { background-color: #1a1a1a; }
+        .btn-update { background-color: #63B8FF; color: white; }
+        .btn-update:hover { background-color: #6CA6CD; }
+        .btn-logout {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            background-color: #DC3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-logout:hover { background-color: #b02a37; }
+    </style>
+</head>
+<body>
+
+    <!-- 退出按钮 -->
+    <button class="btn-logout" onclick="logout()">退出登录</button>
+
+    <div class="container">
+        <h1 class="gradient-text">Serv00 账 号 管 理</h1>
+        <p>本机账号：<strong id="mainUser">加载中...</strong></p>
+        <button class="btn btn-primary" onclick="location.href='/accounts'">账号管理</button>
+        <button class="btn btn-secondary" onclick="location.href='/nodes'">节点汇集</button>
+        <button class="btn btn-account-check" onclick="location.href='/checkAccountsPage'">账号检测</button>
+        <button class="btn btn-notification-settings" onclick="location.href='/notificationSettings'">通知设置</button>
+        <button class="btn btn-update" onclick="location.href='/ota'">版本更新</button>
+    </div>
+
+    <script>
+        // 动态获取本机账号
+        fetch("/getMainUser")
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("mainUser").innerText = data.mainUser;
+            })
+            .catch(error => {
+                document.getElementById("mainUser").innerText = "获取失败";
+            });
+
+        // 退出登录函数（GET 请求）
+        function logout() {
+            fetch("/logout")
+                .then(() => {
+                    window.location.href = "/login";  
+                });
+        }
+
+        // 账号检测函数
+        function checkAccount() {
+            fetch("/checkAccount")
+                .then(response => response.json())
+                .then(data => {
+                    alert("账号检测结果: " + data.result);
+                })
+                .catch(error => {
+                    alert("账号检测失败，请稍后重试");
+                });
+        }
+    </script>
+</body>
+</html>
