@@ -27,12 +27,12 @@ A2="$A1/public_nodejs"
 B1="$A2/public"
 A3="https://github.com/ryty1/My-test/archive/refs/heads/main.zip"
 
-TZ_MODIFIED=0
-
 echo "请选择保活类型："
 echo "1. 本机保活"
 echo "2. 账号服务"
 read -p "请输入选择(1 或 2): " choice
+
+TZ_MODIFIED=0  # 记录是否修改了时区
 
 if [[ "$choice" -eq 1 ]]; then
     TARGET_FOLDER="single"
@@ -76,8 +76,8 @@ if [[ -d "$B1" ]]; then
     rm -rf "$B1"
 fi
 
-cd "$A2" && npm init -y 
-if npm install $DEPENDENCIES; then
+cd "$A2" && npm init -y > /dev/null 2>&1
+if npm install $DEPENDENCIES > /dev/null 2>&1; then
     X " 安装 环境依赖 " 0
 else
     X " 环境依赖 安装失败 " 1
@@ -118,13 +118,14 @@ if [[ "$choice" -eq 1 ]]; then
 
     echo ""
     echo " ┌───────────────────────────────────────────────────┐ "
-    echo " │【 恭 喜 】： 本机保活  部署已完成                 │ "
+    echo " │                  【 恭 喜 】                      │ "
+    echo " │            本机保活 部署已完成                    │ "
     echo " ├───────────────────────────────────────────────────┤ "
-    echo " │                                                   │ "
-    echo " │ 保活地址 https://$W/info "
-    echo " │                                                   │ "
+    echo " │  保活网页：                                       │ "
+    printf " │  → %-46s │\n" "https://$W/info"
     echo " └───────────────────────────────────────────────────┘ "
     echo ""
+
 else
     rm -f "$A2/ota.sh"
     chmod 755 "$A2/app.js" > /dev/null 2>&1
@@ -132,19 +133,23 @@ else
 
     echo ""
     echo " ┌───────────────────────────────────────────────────┐ "
-    echo " │【 恭 喜 】： 账号服务  部署已完成                 │ "
+    echo " │                  【 恭 喜 】                      │ "
+    echo " │            账号服务 部署已完成                    │ "
     echo " ├───────────────────────────────────────────────────┤ "
-    echo " │ 账号服务 只要部署1个 多了无用                     │ "
+    echo " │  账号服务 只要 部署 1 个，多了无用               │ "
+    echo " │  账号服务 无需 保活，不建议 搭节点               │ "
     echo " ├───────────────────────────────────────────────────┤ "
-    echo " │ 服务地址 https://$W "
-    echo " └───────────────────────────────────────────────────┘ "
-fi
-
-if [[ "$TZ_MODIFIED" -eq 1 ]]; then
-    echo " ┌───────────────────────────────────────────────────┐ "
-    echo " │全部安装完成，还需其它操作请重登陆                  │ "
+    echo " │  账号服务地址：                                   │ "
+    printf " │  → %-46s │\n" "https://$W/"
     echo " └───────────────────────────────────────────────────┘ "
     echo ""
+fi
+
+# **如果修改了时区，则安装完成后退出终端**
+if [[ "$TZ_MODIFIED" -eq 1 ]]; then
+    echo " ┌───────────────────────────────────────────────────┐ "
+    echo " │   全部安装完成，还需其它操作请重登陆              │ "
+    echo " └───────────────────────────────────────────────────┘ "
     sleep 3
     kill -9 $PPID
 fi
