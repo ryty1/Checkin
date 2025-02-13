@@ -45,7 +45,7 @@ elif [[ "$choice" -eq 2 ]]; then
         source ~/.profile
         TZ_MODIFIED=1
     fi
-
+    
     TARGET_FOLDER="server"
     DELETE_FOLDER="single"
     DEPENDENCIES="body-parser express-session session-file-store dotenv express socket.io node-cron node-telegram-bot-api axios"
@@ -117,7 +117,7 @@ if [[ "$choice" -eq 1 ]]; then
 
     echo ""
     echo " ┌───────────────────────────────────────────────────┐ "
-    echo " │ 【 恭 喜 】  本机保活 部署已完成                    │ "
+    echo " │ 【 恭 喜 】  本机保活 部署已完成                  │ "
     echo " ├───────────────────────────────────────────────────┤ "
     echo " │  保活地址：                                       │ "
     printf " │  → %-46s │\n" "https://$W/info"
@@ -127,24 +127,22 @@ if [[ "$choice" -eq 1 ]]; then
 else
     rm -f "$A2/ota.sh"
     chmod 755 "$A2/app.js" > /dev/null 2>&1
-    chmod 755 "$A2/ota.sh" > /dev/null 2>&1
 
     echo ""
     echo " ┌───────────────────────────────────────────────────┐ "
-    echo " │ 【 恭 喜 】  账号服务 部署已完成                   │ "
+    echo " │ 【 恭 喜 】  账号服务 部署已完成                  │ "
     echo " ├───────────────────────────────────────────────────┤ "
-    echo " │  账号服务 只要部署1个，多了无用                     │ "
+    echo " │  账号服务 只要部署1个，多了无用                   │ "
     echo " ├───────────────────────────────────────────────────┤ "
-    echo " │  服务地址：                                      │ "
+    echo " │  服务地址：                                       │ "
     printf " │  → %-46s │\n" "https://$W/"
     echo " └───────────────────────────────────────────────────┘ "
     echo ""
 fi
 
-# **如果修改了时区，则安装完成后退出终端**
 if [[ "$TZ_MODIFIED" -eq 1 ]]; then
     echo " ┌───────────────────────────────────────────────────┐ "
-    echo " │   全部安装完成，还需其它操作请重登陆              │ "
+    echo " │   全部安装完成，还需其它操作请重登陆               │ "
     echo " └───────────────────────────────────────────────────┘ "
     sleep 3
     kill -9 $PPID
