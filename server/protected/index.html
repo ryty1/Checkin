@@ -20,23 +20,26 @@
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         /* 渐变动画 */
         @keyframes gradientMove {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        /* 渐变文字样式 */
-        .colorful-text {
-            font-size: 2em;
+
+        /* 文字流动渐变效果 */
+        .gradient-text {
+            font-size: 1.5em; /* 保持原来的大小 */
             font-weight: bold;
-            display: inline-block;
-            background: linear-gradient(90deg, #ff5733, #ffbd33, #33ff57, #338aff, #ff33a1);
+            background: linear-gradient(90deg, #ff5733, #ffbd33, #33ff57, #338aff, #ff33a1, #ff5733);
             background-size: 200% 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            display: inline-block;
             animation: gradientMove 3s infinite linear;
         }
+
         .btn {
             display: block;
             width: 100%;
@@ -48,41 +51,16 @@
             cursor: pointer;
             transition: 0.3s;
         }
-        .btn-primary {
-            background-color: #007BFF;
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-        .btn-secondary {
-            background-color: #28A745;
-            color: white;
-        }
-        .btn-secondary:hover {
-            background-color: #1e7e34;
-        }
-        .btn-account-check {
-            background-color: #FF5733;
-            color: white;
-        }
-        .btn-account-check:hover {
-            background-color: #C70039;
-        }
-        .btn-notification-settings {
-            background-color: #333333;
-            color: white;
-        }
-        .btn-notification-settings:hover {
-            background-color: #1a1a1a;
-        }
-        .btn-update {
-            background-color: #63B8FF; 
-            color: white;
-        }
-        .btn-update:hover {
-            background-color: #6CA6CD; 
-        }
+        .btn-primary { background-color: #007BFF; color: white; }
+        .btn-primary:hover { background-color: #0056b3; }
+        .btn-secondary { background-color: #28A745; color: white; }
+        .btn-secondary:hover { background-color: #1e7e34; }
+        .btn-account-check { background-color: #FF5733; color: white; }
+        .btn-account-check:hover { background-color: #C70039; }
+        .btn-notification-settings { background-color: #333333; color: white; }
+        .btn-notification-settings:hover { background-color: #1a1a1a; }
+        .btn-update { background-color: #63B8FF; color: white; }
+        .btn-update:hover { background-color: #6CA6CD; }
         .btn-logout {
             position: absolute;
             top: 10px;
@@ -94,27 +72,16 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        .btn-logout:hover {
-            background-color: #b02a37;
-        }
+        .btn-logout:hover { background-color: #b02a37; }
     </style>
 </head>
 <body>
+
     <!-- 退出按钮 -->
     <button class="btn-logout" onclick="logout()">退出登录</button>
 
     <div class="container">
-        <h1>
-            <span class="colorful-text">S</span>
-            <span class="colorful-text">e</span>
-            <span class="colorful-text">r</span>
-            <span class="colorful-text">v</span>
-            <span class="colorful-text">00</span>
-            <span class="colorful-text">账</span>
-            <span class="colorful-text">号</span>
-            <span class="colorful-text">管</span>
-            <span class="colorful-text">理</span>
-        </h1>
+        <h1 class="gradient-text">Serv00 账 号 管 理</h1>
         <p>本机账号：<strong id="mainUser">加载中...</strong></p>
         <button class="btn btn-primary" onclick="location.href='/accounts'">账号管理</button>
         <button class="btn btn-secondary" onclick="location.href='/nodes'">节点汇集</button>
