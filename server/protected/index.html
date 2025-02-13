@@ -20,8 +20,22 @@
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        h1 {
-            color: #333;
+        /* 渐变动画 */
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        /* 渐变文字样式 */
+        .colorful-text {
+            font-size: 2em;
+            font-weight: bold;
+            display: inline-block;
+            background: linear-gradient(90deg, #ff5733, #ffbd33, #33ff57, #338aff, #ff33a1);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientMove 3s infinite linear;
         }
         .btn {
             display: block;
@@ -49,18 +63,18 @@
             background-color: #1e7e34;
         }
         .btn-account-check {
-            background-color: #FF5733; /* 橙色 */
+            background-color: #FF5733;
             color: white;
         }
         .btn-account-check:hover {
-            background-color: #C70039; /* 深红色 */
+            background-color: #C70039;
         }
         .btn-notification-settings {
-            background-color: #333333; /* 浅黑色 */
+            background-color: #333333;
             color: white;
         }
         .btn-notification-settings:hover {
-            background-color: #1a1a1a; /* 更深的黑色 */
+            background-color: #1a1a1a;
         }
         .btn-update {
             background-color: #63B8FF; 
@@ -90,7 +104,17 @@
     <button class="btn-logout" onclick="logout()">退出登录</button>
 
     <div class="container">
-        <h1>Serv00 账 号 管 理</h1>
+        <h1>
+            <span class="colorful-text">S</span>
+            <span class="colorful-text">e</span>
+            <span class="colorful-text">r</span>
+            <span class="colorful-text">v</span>
+            <span class="colorful-text">00</span>
+            <span class="colorful-text">账</span>
+            <span class="colorful-text">号</span>
+            <span class="colorful-text">管</span>
+            <span class="colorful-text">理</span>
+        </h1>
         <p>本机账号：<strong id="mainUser">加载中...</strong></p>
         <button class="btn btn-primary" onclick="location.href='/accounts'">账号管理</button>
         <button class="btn btn-secondary" onclick="location.href='/nodes'">节点汇集</button>
@@ -110,25 +134,15 @@
                 document.getElementById("mainUser").innerText = "获取失败";
             });
 
-        // 退出登录函数
+        // 退出登录函数（GET 请求）
         function logout() {
-            fetch("/logout", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" }
-            }).then(() => {
-                window.location.href = "/login";  // 退出后跳转到登录页面
-            });
-        }
-        
-                // 退出登录函数（使用 GET 请求）
-        function logout() {
-            fetch("/logout") // 改为 GET 方法
+            fetch("/logout")
                 .then(() => {
-                    window.location.href = "/login";  // 退出后跳转到登录页面
+                    window.location.href = "/login";  
                 });
         }
 
-        // 账号检测函数（你可以根据需求保留）
+        // 账号检测函数
         function checkAccount() {
             fetch("/checkAccount")
                 .then(response => response.json())
