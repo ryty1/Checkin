@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>个性设置</title>
+  <title>修改 Start 脚本</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -34,7 +34,6 @@
       margin-bottom: 15px;
     }
 
-    /* 开关样式 */
     .switch {
       position: relative;
       display: inline-block;
@@ -80,7 +79,6 @@
       transform: translateX(18px);
     }
 
-    /* 输入框 */
     input[type="text"] {
       width: calc(100% - 20px);
       padding: 8px;
@@ -90,7 +88,6 @@
       text-align: center;
     }
 
-    /* 按钮 */
     .button-group {
       display: flex;
       justify-content: space-between;
@@ -122,8 +119,14 @@
   <script>
     function submitForm() {
       const userSwitch = document.getElementById('userSwitch').checked;
-      const vmessPrefix = document.getElementById('vmessPrefix').value;
-      const hy2Prefix = document.getElementById('hy2Prefix').value;
+      const vmessPrefix = document.getElementById('vmessPrefix').value.trim();
+      const hy2Prefix = document.getElementById('hy2Prefix').value.trim();
+
+      // 检查输入是否合法
+      if (!vmessPrefix || !hy2Prefix) {
+        alert("请填写完整的前缀信息！");
+        return;
+      }
 
       const data = {
         userSwitch: userSwitch,
@@ -138,9 +141,14 @@
         },
         body: JSON.stringify(data),
       })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('请求失败');
+        }
+        return response.json();
+      })
       .then(data => {
-        alert('修改成功，正在重启服务...');
+        alert('脚本修改成功，正在重启服务...');
       })
       .catch((error) => {
         console.error('Error:', error);
@@ -164,9 +172,8 @@
 <body>
 
   <div class="container">
-    <h1>个性设置</h1>
+    <h1>修改 Start 脚本</h1>
 
-    <!-- 开关 -->
     <div class="switch-container">
       <label>节点隐藏用户名</label>
       <label class="switch">
@@ -175,14 +182,12 @@
       </label>
     </div>
 
-    <!-- 输入框 -->
-    <label>修改 vmess 前缀:</label>
+    <label>vmess 前缀:</label>
     <input type="text" id="vmessPrefix" placeholder="输入新的 vmess 前缀"><br>
 
-    <label>修改 hy2 前缀:</label>
+    <label>hy2 前缀:</label>
     <input type="text" id="hy2Prefix" placeholder="输入新的 hy2 前缀"><br>
 
-    <!-- 按钮 -->
     <div class="button-group">
       <button class="reset" onclick="restoreUser()">恢复默认用户名</button>
       <button class="reset" onclick="restoreVmessPrefix()">恢复默认 vmess</button>
