@@ -112,7 +112,7 @@ app.post("/hy2ip/execute", (req, res) => {
     }
 });
 app.get("/getnode", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "node.html"));
+    res.sendFile(path.join(__dirname, "public", "getnode.html"));
 });
 app.get('/node', (req, res) => {
     const filePath = path.join(process.env.HOME, "serv00-play/singbox/list");
