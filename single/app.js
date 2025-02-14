@@ -147,108 +147,38 @@ app.get("/node", (req, res) => {
     });
 });
 
-
-app.get("/log", (req, res) => {
+// 日志和进程详情接口
+app.get("/api/log", (req, res) => {
     const command = "ps aux"; 
+
     exec(command, (err, stdout, stderr) => {
         if (err) {
-            return res.type("html").send(`
-                <pre><b>最近日志:</b>\n${logs[logs.length - 1] || "暂无日志"}</pre>
-                <pre><b>进程详情:</b>\n执行错误: ${err.message}</pre>
-            `);
+            return res.json({
+                error: true,
+                message: `执行错误: ${err.message}`,
+                logs: "暂无日志",
+                processOutput: ""
+            });
         }
+
         const processOutput = stdout.trim(); 
         const latestLog = logs[logs.length - 1] || "暂无日志";
-        res.type("html").send(`
-            <html>
-                <head>
-                    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-                    <title>日志与进程详情</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            margin: 0;
-                            padding: 0;
-                            background-color: #f4f4f4;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            height: 100vh;
-                        }
-
-                        .container {
-                            width: 95%; /* 让内容接近屏幕边缘 */
-                            max-width: 1200px; /* 避免大屏过宽 */
-                            background-color: #fff;
-                            padding: 15px;
-                            border-radius: 8px;
-                            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-                            text-align: left;
-                            box-sizing: border-box;
-                            min-height: 95vh; /* 适配 16:9，减少上下留白 */
-                            display: flex;
-                            flex-direction: column;
-                            justify-content: center;
-                        }
-
-                        /* 最近日志部分 */
-                        pre.log {
-                            margin-bottom: 15px;
-                            white-space: pre-wrap; /* 自动换行 */
-                            word-wrap: break-word;
-                            overflow-wrap: break-word;
-                            border: 1px solid #ccc;
-                            padding: 10px;
-                            background-color: #f9f9f9;
-                            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
-                            border-radius: 5px;
-                        }
-
-                        /* 进程详情部分 */
-                        .scrollable {
-                            max-height: 60vh;
-                            overflow-x: auto;
-                            white-space: nowrap;
-                            border: 1px solid #ccc;
-                            padding: 10px;
-                            background-color: #f9f9f9;
-                            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
-                            border-radius: 5px;
-                        }
-
-                        pre {
-                            margin: 0;
-                        }
-
-                        @media (max-width: 600px) {
-                            .container {
-                                width: 98%; /* 在手机上更贴边 */
-                                min-height: 98vh; /* 贴合屏幕 */
-                            }
-                            .scrollable {
-                                max-height: 50vh;
-                            }
-                        }
-
-                        @media (min-width: 1200px) {
-                            .container {
-                                max-width: 1000px; /* 避免超宽屏幕内容过散 */
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <pre class="log"><b>最近日志:</b>\n${latestLog}</pre>
-                        <div class="scrollable">
-                            <pre><b>进程详情:</b>\n${processOutput}</pre>
-                        </div>
-                    </div>
-                </body>
-            </html>
-        `);
+        
+        res.json({
+            error: false,
+            message: "成功获取数据",
+            logs: latestLog,
+            processOutput: processOutput
+        });
     });
 });
+
+// 提供静态页面
+app.get("/log", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "log.html"));
+});
+
+
 // **执行 OTA 更新**
 app.get('/ota/update', (req, res) => {
   const downloadScriptCommand = 'curl -Ls https://raw.githubusercontent.com/ryty1/My-test/refs/heads/main/single/ota.sh -o /tmp/ota.sh';
