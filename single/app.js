@@ -327,7 +327,7 @@ app.post('/seting', (req, res) => {
   const { userSwitch, vmessPrefix, hy2Prefix } = req.body;
 
   // 获取脚本路径
-  const scriptPath = `${process.env.HOME}/serv00-play/singbox/start.sh`; // 需要根据实际情况调整
+  const scriptPath = `${process.env.HOME}/serv00-play/singbox/start.sh`;
 
   // 读取脚本内容
   fs.readFile(scriptPath, 'utf8', (err, data) => {
@@ -359,7 +359,15 @@ app.post('/seting', (req, res) => {
       if (err) {
         return res.status(500).json({ message: '保存脚本失败' });
       }
-      res.json({ message: '脚本修改成功' });
+
+      // 先停止进程
+      stopShellCommand();
+
+      // 等待 3 秒后重启进程
+      setTimeout(() => {
+        runShellCommand();
+        res.json({ message: '修改并重启' });
+      }, 3000);
     });
   });
 });
