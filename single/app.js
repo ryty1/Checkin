@@ -111,8 +111,10 @@ app.post("/hy2ip/execute", (req, res) => {
         res.json({ success: false, errorMessage: "命令执行失败", logs: logMessages });
     }
 });
-
-app.get('/node', (req, res) => {
+app.get("/node", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "node.html"));
+});
+app.get('/getnode', (req, res) => {
     const filePath = path.join(process.env.HOME, "serv00-play/singbox/list");
 
     fs.readFile(filePath, "utf8", (err, data) => {
