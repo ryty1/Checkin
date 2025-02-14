@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>修改 Start 脚本</title>
+  <title>个性设置</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -140,7 +140,7 @@
       })
       .then(response => response.json())
       .then(data => {
-        alert('脚本修改成功，正在重启服务...');
+        alert('修改成功，正在重启服务...');
       })
       .catch((error) => {
         console.error('Error:', error);
@@ -164,7 +164,7 @@
 <body>
 
   <div class="container">
-    <h1>修改 Start 脚本</h1>
+    <h1>个性设置</h1>
 
     <!-- 开关 -->
     <div class="switch-container">
@@ -176,10 +176,10 @@
     </div>
 
     <!-- 输入框 -->
-    <label>vmess 前缀:</label>
+    <label>修改 vmess 前缀:</label>
     <input type="text" id="vmessPrefix" placeholder="输入新的 vmess 前缀"><br>
 
-    <label>hy2 前缀:</label>
+    <label>修改 hy2 前缀:</label>
     <input type="text" id="hy2Prefix" placeholder="输入新的 hy2 前缀"><br>
 
     <!-- 按钮 -->
