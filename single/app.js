@@ -7,8 +7,6 @@ const app = express();
 
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
-// 定义 OTA 脚本路径
-const otaScriptPath = path.join(__dirname, 'ota.sh');
 
 // 允许静态文件访问
 app.use(express.static(path.join(__dirname, 'public')));
