@@ -107,14 +107,8 @@
 </head>
 <body>
     <div class="content-container">
-        <div class="dynamic-text">
-            ${"SingBox 已 复 活".split("").map((char, index) => 
-                `<span style="--char-index: ${index};">${char}</span>`).join("")}
-        </div>
-        <div class="dynamic-text">
-            ${"HtmlOnLive 守护中".split("").map((char, index) => 
-                `<span style="--char-index: ${index + 10};">${char}</span>`).join("")}
-        </div>
+        <div class="dynamic-text" id="firstText"></div>
+        <div class="dynamic-text" id="secondText"></div>
         <div class="button-container">
             <button onclick="window.location.href='/hy2ip'">换HY2_IP</button>
             <button onclick="window.location.href='/node'">节点信息</button>
@@ -122,5 +116,23 @@
             <button onclick="window.location.href='/ota'">检查更新</button>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstText = "SingBox 已 复 活";
+            const secondText = "HtmlOnLive 守护中";
+
+            // 生成动态文字
+            function generateDynamicText(text, elementId) {
+                const element = document.getElementById(elementId);
+                element.innerHTML = text.split("").map((char, index) => 
+                    `<span style="--char-index: ${index};">${char}</span>`
+                ).join("");
+            }
+
+            generateDynamicText(firstText, "firstText");
+            generateDynamicText(secondText, "secondText");
+        });
+    </script>
 </body>
 </html>
