@@ -116,7 +116,7 @@ app.get("/node", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "node.html"));
 });
 
-app.get('/node/alling', (req, res) => {
+app.get('/api/node', (req, res) => {
     const filePath = path.join(process.env.HOME, "serv00-play/singbox/list");
 
     fs.readFile(filePath, "utf8", (err, data) => {
