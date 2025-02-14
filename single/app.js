@@ -112,12 +112,6 @@ app.post("/hy2ip/execute", (req, res) => {
     }
 });
 
-const express = require("express");
-const path = require("path");
-const fs = require("fs");
-
-const app = express();
-
 // 提供静态文件
 app.get("/node", (req, res) => {
     const filePath = path.join(process.env.HOME, "serv00-play/singbox/list");
