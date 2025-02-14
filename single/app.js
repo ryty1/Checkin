@@ -322,7 +322,7 @@ app.post('/seting', (req, res) => {
   const { userSwitch, vmessPrefix, hy2Prefix } = req.body;
 
   // 获取脚本路径
-  const scriptPath = 'process.env.HOME, "serv00-play/singbox/start.sh"'; // 需要根据实际情况调整
+  const scriptPath = `${process.env.HOME}/serv00-play/singbox/start.sh`; // 需要根据实际情况调整
 
   // 读取脚本内容
   fs.readFile(scriptPath, 'utf8', (err, data) => {
