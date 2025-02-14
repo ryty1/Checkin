@@ -214,7 +214,7 @@ app.get('/ota', (req, res) => {
 });
 
 app.use((req, res, next) => {
-    const validPaths = ["/info", "/hy2ip", "/node", "/log", "/ota"];
+    const validPaths = ["/info", "/hy2ip", "/node", "/getnode", "/log", "/ota"];
     if (validPaths.includes(req.path)) {
         return next();
     }
