@@ -113,11 +113,15 @@ app.post("/hy2ip/execute", (req, res) => {
 });
 
 app.get("/node", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "node.html"));
+});
+
+app.get('/node/alling', (req, res) => {
     const filePath = path.join(process.env.HOME, "serv00-play/singbox/list");
+
     fs.readFile(filePath, "utf8", (err, data) => {
         if (err) {
-            res.status(500).json({ error: `无法读取文件: ${err.message}` });
-            return;
+            return res.status(500).json({ error: `无法读取文件: ${err.message}` });
         }
 
         const cleanedData = data
