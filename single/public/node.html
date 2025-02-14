@@ -83,7 +83,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            fetch('/node/alling')
+            fetch('/api/node')
                 .then(response => response.json())
                 .then(data => {
                     const configBox = document.getElementById('configBox');
