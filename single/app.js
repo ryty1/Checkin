@@ -112,37 +112,28 @@ app.post("/hy2ip/execute", (req, res) => {
     }
 });
 
-// 处理 "/node" 路由，返回节点信息的 JSON 数据
 app.get("/node", (req, res) => {
     const filePath = path.join(process.env.HOME, "serv00-play/singbox/list");
-
     fs.readFile(filePath, "utf8", (err, data) => {
         if (err) {
-            res.status(500).send(`<pre>无法读取文件: ${err.message}</pre>`);
+            res.status(500).json({ error: `无法读取文件: ${err.message}` });
             return;
         }
 
-        // 清理数据
         const cleanedData = data
             .replace(/(vmess:\/\/|hysteria2:\/\/|proxyip:\/\/|https:\/\/)/g, '\n$1')
             .trim();
 
-        // 正则匹配
         const vmessPattern = /vmess:\/\/[^\n]+/g;
         const hysteriaPattern = /hysteria2:\/\/[^\n]+/g;
         const httpsPattern = /https:\/\/[^\n]+/g;
         const proxyipPattern = /proxyip:\/\/[^\n]+/g;
-
-        // 提取不同类型的配置
         const vmessConfigs = cleanedData.match(vmessPattern) || [];
         const hysteriaConfigs = cleanedData.match(hysteriaPattern) || [];
         const httpsConfigs = cleanedData.match(httpsPattern) || [];
         const proxyipConfigs = cleanedData.match(proxyipPattern) || [];
-
-        // 合并所有配置
         const allConfigs = [...vmessConfigs, ...hysteriaConfigs, ...httpsConfigs, ...proxyipConfigs];
 
-        // 返回配置数据
         res.json({ configs: allConfigs });
     });
 });
