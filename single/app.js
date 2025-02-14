@@ -217,7 +217,7 @@ app.get('/ota/update', (req, res) => {
 });
 
 app.get('/ota', (req, res) => {
-    res.sendFile(path.join(__dirname, "protected", "ota.html"));
+    res.sendFile(path.join(__dirname, "public", "ota.html"));
 });
 
 app.use((req, res, next) => {
