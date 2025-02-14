@@ -112,40 +112,60 @@ app.post("/hy2ip/execute", (req, res) => {
     }
 });
 
-// 提供静态文件
+// 处理 GET 请求，返回节点信息页面
 app.get("/node", (req, res) => {
-    const filePath = path.join(process.env.HOME, "serv00-play/singbox/list");
-    
-    fs.readFile(filePath, "utf8", (err, data) => {
-        if (err) {
-            res.type("html").send(`<pre>无法读取文件: ${err.message}</pre>`);
-            return;
-        }
-
-        const cleanedData = data
-            .replace(/(vmess:\/\/|hysteria2:\/\/|proxyip:\/\/|https:\/\/)/g, '\n$1')
-            .trim();
-
-        const vmessPattern = /vmess:\/\/[^\n]+/g;
-        const hysteriaPattern = /hysteria2:\/\/[^\n]+/g;
-        const httpsPattern = /https:\/\/[^\n]+/g;
-        const proxyipPattern = /proxyip:\/\/[^\n]+/g;
-
-        const vmessConfigs = cleanedData.match(vmessPattern) || [];
-        const hysteriaConfigs = cleanedData.match(hysteriaPattern) || [];
-        const httpsConfigs = cleanedData.match(httpsPattern) || [];
-        const proxyipConfigs = cleanedData.match(proxyipPattern) || [];
-        const allConfigs = [...vmessConfigs, ...hysteriaConfigs, ...httpsConfigs, ...proxyipConfigs];
-
-        // 返回节点信息接口
-        app.get("/api/node", (req, res) => {
-            res.json({ configs: allConfigs });
-        });
-
-        // 提供静态页面
-        res.sendFile(path.join(__dirname, "public", "node.html"));
-    });
+    res.sendFile(path.join(__dirname, "public", "node.html"));
 });
+
+// 处理 POST 请求，执行节点操作并返回结果
+app.post("/node/execute", (req, res) => {
+    // 从请求体获取确认信息
+    const confirmation = req.body.confirmation?.trim();
+
+    if (confirmation !== "更新") {
+        return res.json({ success: false, errorMessage: "输入错误！请返回并输入“更新”以确认。" });
+    }
+
+    try {
+        let logMessages = [];
+
+        // 执行节点脚本的逻辑
+        executeNodeScript(logMessages, (error, stdout, stderr) => {
+            let updatedIp = "";
+
+            // 在执行输出中查找 IP
+            if (stdout) {
+                let outputMessages = stdout.split("\n");
+                outputMessages.forEach(line => {
+                    if (line.includes("SingBox 配置文件成功更新IP为")) {
+                        updatedIp = line.split("SingBox 配置文件成功更新IP为")[1].trim();
+                    }
+                    if (line.includes("Config 配置文件成功更新IP为")) {
+                        updatedIp = line.split("Config 配置文件成功更新IP为")[1].trim();
+                    }
+                });
+                updatedIp = updatedIp.replace(/\x1B\[[0-9;]*m/g, "");
+
+                // 返回执行结果
+                if (updatedIp && updatedIp !== "未找到可用的 IP！") {
+                    logMessages.push("命令执行成功");
+                    logMessages.push(`SingBox 配置文件成功更新IP为 ${updatedIp}`);
+                    logMessages.push(`Config 配置文件成功更新IP为 ${updatedIp}`);
+                    logMessages.push("sing-box 已重启");
+                    res.json({ success: true, ip: updatedIp, logs: logMessages });
+                } else {
+                    logMessages.push("命令执行成功");
+                    logMessages.push("没有找到有效 IP");
+                    res.json({ success: false, errorMessage: "没有找到有效的 IP", logs: logMessages });
+                }
+            }
+        });
+    } catch (error) {
+        let logMessages = ["命令执行成功", "没有找到有效 IP"];
+        res.json({ success: false, errorMessage: "命令执行失败", logs: logMessages });
+    }
+});
+
 
 // 日志和进程详情接口
 app.get("/api/log", (req, res) => {
