@@ -2,5 +2,6 @@ app.js
 hy2ip.sh
 public/info.html
 public/hy2ip.html
+public/node.html
 public/log.html
 public/ota.html
