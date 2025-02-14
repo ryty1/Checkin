@@ -40,8 +40,8 @@ function runShellCommand() {
     executeCommand(command, "start.sh", true);
 }
 function stopShellCommand() {
-    const command = `cd ${process.env.HOME}/serv00-play/singbox/ && bash kill.sh`;
-    executeCommand(command, "start.sh", true);
+    const command = `cd ${process.env.HOME}/serv00-play/singbox/ && bash killsing-box.sh`;
+    executeCommand(command, "killsing-box.sh", true);
 }
 
 function executeHy2ipScript(logMessages, callback) {
