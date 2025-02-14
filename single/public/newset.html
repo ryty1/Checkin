@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>修改 Start 脚本</title>
+  <script>
+    // Function to submit the form
+    function submitForm() {
+      const userSwitch = document.getElementById('userSwitch').checked;
+      const vmessPrefix = document.getElementById('vmessPrefix').value;
+      const hy2Prefix = document.getElementById('hy2Prefix').value;
+
+      // Collect the data
+      const data = {
+        userSwitch: userSwitch,
+        vmessPrefix: vmessPrefix,
+        hy2Prefix: hy2Prefix
+      };
+
+      // Send the data via AJAX
+      fetch('/modify-script', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert('Script modified successfully!');
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        alert('Failed to modify the script.');
+      });
+    }
+
+    // Function to restore username to default
+    function restoreUser() {
+      document.getElementById('userSwitch').checked = false;
+    }
+
+    // Function to restore vmess prefix to default
+    function restoreVmessPrefix() {
+      document.getElementById('vmessPrefix').value = "Argo-vmess";
+    }
+
+    // Function to restore hy2 prefix to default
+    function restoreHy2Prefix() {
+      document.getElementById('hy2Prefix').value = "Hy2";
+    }
+  </script>
+</head>
+<body>
+  <h1>修改 Start 脚本</h1>
+
+  <label for="userSwitch">节点隐藏用户名:</label>
+  <input type="checkbox" id="userSwitch"><br><br>
+  <button onclick="restoreUser()">恢复默认用户名</button><br><br>
+
+  <label for="vmessPrefix">vmess 前缀:</label>
+  <input type="text" id="vmessPrefix" placeholder="输入新的 vmess 前缀"><br><br>
+  <button onclick="restoreVmessPrefix()">恢复默认 vmess 前缀</button><br><br>
+
+  <label for="hy2Prefix">hy2 前缀:</label>
+  <input type="text" id="hy2Prefix" placeholder="输入新的 hy2 前缀"><br><br>
+  <button onclick="restoreHy2Prefix()">恢复默认 hy2 前缀</button><br><br>
+
+  <button onclick="submitForm()">提交</button>
+</body>
+</html>
