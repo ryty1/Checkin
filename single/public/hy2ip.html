@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>HY2_IP 更新</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+        .container {
+            width: 95%;
+            max-width: 600px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            text-align: left;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        p {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #555;
+            line-height: 1.5;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            text-align: center;
+            transition: 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .scrollable {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HY2_IP 更新</h1>
+
+        <!-- 成功或失败提示 -->
+        <p id="status-message"></p>
+
+        <!-- 更新表单 -->
+        <form id="update-form">
+            <input type="text" id="confirmation" name="confirmation" placeholder="更新" required>
+            <button type="submit">提交</button>
+        </form>
+
+        <div>
+            <h2>日志:</h2>
+            <div class="scrollable" id="log-container"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("update-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const confirmation = document.getElementById("confirmation").value.trim();
+
+            fetch("/hy2ip/execute", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ confirmation: confirmation }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const statusMessage = document.getElementById("status-message");
+                const logContainer = document.getElementById("log-container");
+
+                // 清空日志容器
+                logContainer.innerHTML = "";
+
+                // 显示返回信息
+                if (data.success) {
+                    statusMessage.textContent = `更新成功！有效 IP: ${data.ip}`;
+                    statusMessage.className = "success";
+                } else {
+                    statusMessage.textContent = data.errorMessage || "未知错误";
+                    statusMessage.className = "error";
+                }
+
+                // 显示日志
+                if (data.logs) {
+                    data.logs.forEach(log => {
+                        const logItem = document.createElement("p");
+                        logItem.textContent = log;
+                        logContainer.appendChild(logItem);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+        });
+    </script>
+</body>
+</html>
