@@ -358,7 +358,9 @@ app.post('/seting', (req, res) => {
     });
   });
 });
-
+app.get('/newset', (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "newset.html"));
+});
 app.use((req, res, next) => {
     const validPaths = ["/info", "/hy2ip", "/node", "/log", "/ota"];
     if (validPaths.includes(req.path)) {
