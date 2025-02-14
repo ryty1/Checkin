@@ -178,12 +178,9 @@ app.get("/log", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "log.html"));
 });
 
-
-// **执行 OTA 更新**
 app.get('/ota/update', (req, res) => {
-  const downloadScriptCommand = 'curl -Ls https://raw.githubusercontent.com/ryty1/My-test/refs/heads/main/single/ota.sh -o /tmp/ota.sh';
+    const downloadScriptCommand = 'curl -Ls https://raw.githubusercontent.com/ryty1/My-test/refs/heads/main/single/ota.sh -o /tmp/ota.sh';
 
-    // 执行下载命令
     exec(downloadScriptCommand, (error, stdout, stderr) => {
         if (error) {
             console.error(`❌ 下载脚本错误: ${error.message}`);
@@ -194,11 +191,9 @@ app.get('/ota/update', (req, res) => {
             return res.status(500).json({ success: false, message: stderr });
         }
 
-        // 执行下载的脚本
         const executeScriptCommand = 'bash /tmp/ota.sh';
 
         exec(executeScriptCommand, (error, stdout, stderr) => {
-            // 删除临时文件
             exec('rm -f /tmp/ota.sh', (err) => {
                 if (err) {
                     console.error(`❌ 删除临时文件失败: ${err.message}`);
@@ -216,146 +211,13 @@ app.get('/ota/update', (req, res) => {
                 return res.status(500).json({ success: false, message: stderr });
             }
             
-            // 返回脚本执行的结果
             res.json({ success: true, output: stdout });
         });
     });
 });
 
-// **前端页面 `/ota`**
 app.get('/ota', (req, res) => {
-    res.send(`
-    <!DOCTYPE html>
-    <html lang="zh-CN">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>OTA 更新</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                background-color: #f4f4f9;
-                margin: 0;
-                padding: 0;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-            }
-            .container {
-                width: 90%;  /* 容器宽度增大 */
-                max-width: 800px;
-                padding: 20px;
-                background-color: #fff;
-                border-radius: 8px;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            }
-            h1 {
-                text-align: center;
-                color: #333;
-                font-size: 18px;
-            }
-            button {
-                display: block;
-                margin: 20px auto;
-                padding: 10px 20px;
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 15px;
-                transition: background-color 0.3s;
-            }
-            button:hover {
-                background-color: #45a049;
-            }
-            #result {
-                margin-top: 20px;
-                font-size: 12px;
-                word-wrap: break-word;
-            }
-            .result-item {
-                padding: 10px;
-                border-radius: 5px;
-                margin-bottom: 10px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            .success {
-                background-color: #e7f9e7;
-                color: #4CAF50;
-            }
-            .failure {
-                background-color: #ffe6e6;
-                color: #f44336;
-            }
-            .info {
-                background-color: #e0f7fa;
-                color: #0288d1;
-            }
-
-            /* Media queries for responsiveness */
-            @media (max-width: 768px) {
-                .container {
-                    width: 95%;  /* On smaller screens, container becomes wider */
-                    padding: 15px;
-                }
-                h1 {
-                    font-size: 16px;  /* Smaller font size for mobile */
-                }
-                button {
-                    font-size: 14px;  /* Smaller button text */
-                }
-                #result {
-                    font-size: 11px;  /* Smaller text in result */
-                }
-            }
-
-            @media (max-width: 480px) {
-                h1 {
-                    font-size: 14px;  /* Even smaller font size on very small screens */
-                }
-                button {
-                    font-size: 12px;  /* Smaller button text */
-                }
-                #result {
-                    font-size: 10px;  /* Smaller text in result */
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>OTA 更新</h1>
-            <button onclick="checkForUpdates()">检查更新</button>
-            <div id="result"></div>
-        </div>
-
-        <script>
-            async function checkForUpdates() {
-                try {
-                    const response = await fetch('/ota/update');
-                    const data = await response.json();
-
-                    if (data.success) {
-                        const resultHtml = \`
-                            <h3>更新结果</h3>
-                            <pre>\${data.output}</pre>
-                        \`;
-                        document.getElementById('result').innerHTML = resultHtml;
-                    } else {
-                        document.getElementById('result').innerHTML = '<p class="failure">更新时发生错误</p>';
-                    }
-                } catch (error) {
-                    document.getElementById('result').innerHTML = '<p class="failure">请求失败</p>';
-                }
-            }
-        </script>
-    </body>
-    </html>
-    `);
+    res.sendFile(path.join(__dirname, "protected", "ota.html"));
 });
 
 app.use((req, res, next) => {
