@@ -1,24 +1,136 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>修改 Start 脚本</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+      display: inline-block;
+      max-width: 400px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+
+    .switch-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    /* 开关样式 */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      border-radius: 34px;
+      transition: 0.4s;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      border-radius: 50%;
+      transition: 0.4s;
+    }
+
+    input:checked + .slider {
+      background-color: #4CAF50;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    /* 输入框 */
+    input[type="text"] {
+      width: calc(100% - 20px);
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      text-align: center;
+    }
+
+    /* 按钮 */
+    .button-group {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .reset {
+      background-color: #ff9800;
+      color: white;
+    }
+
+    .submit {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    button:hover {
+      opacity: 0.8;
+    }
+  </style>
   <script>
-    // Function to submit the form
     function submitForm() {
       const userSwitch = document.getElementById('userSwitch').checked;
       const vmessPrefix = document.getElementById('vmessPrefix').value;
       const hy2Prefix = document.getElementById('hy2Prefix').value;
 
-      // Collect the data
       const data = {
         userSwitch: userSwitch,
         vmessPrefix: vmessPrefix,
         hy2Prefix: hy2Prefix
       };
 
-      // Send the data via AJAX
       fetch('/seting', {
         method: 'POST',
         headers: {
@@ -28,45 +140,59 @@
       })
       .then(response => response.json())
       .then(data => {
-        alert('Script modified successfully!');
+        alert('脚本修改成功，正在重启服务...');
       })
       .catch((error) => {
         console.error('Error:', error);
-        alert('Failed to modify the script.');
+        alert('修改失败，请检查服务器状态。');
       });
     }
 
-    // Function to restore username to default
     function restoreUser() {
       document.getElementById('userSwitch').checked = false;
     }
 
-    // Function to restore vmess prefix to default
     function restoreVmessPrefix() {
       document.getElementById('vmessPrefix').value = "Argo-vmess";
     }
 
-    // Function to restore hy2 prefix to default
     function restoreHy2Prefix() {
       document.getElementById('hy2Prefix').value = "Hy2";
     }
   </script>
 </head>
 <body>
-  <h1>修改 Start 脚本</h1>
 
-  <label for="userSwitch">节点隐藏用户名:</label>
-  <input type="checkbox" id="userSwitch"><br><br>
-  <button onclick="restoreUser()">恢复默认用户名</button><br><br>
+  <div class="container">
+    <h1>修改 Start 脚本</h1>
 
-  <label for="vmessPrefix">vmess 前缀:</label>
-  <input type="text" id="vmessPrefix" placeholder="输入新的 vmess 前缀"><br><br>
-  <button onclick="restoreVmessPrefix()">恢复默认 vmess 前缀</button><br><br>
+    <!-- 开关 -->
+    <div class="switch-container">
+      <label>节点隐藏用户名</label>
+      <label class="switch">
+        <input type="checkbox" id="userSwitch">
+        <span class="slider"></span>
+      </label>
+    </div>
 
-  <label for="hy2Prefix">hy2 前缀:</label>
-  <input type="text" id="hy2Prefix" placeholder="输入新的 hy2 前缀"><br><br>
-  <button onclick="restoreHy2Prefix()">恢复默认 hy2 前缀</button><br><br>
+    <!-- 输入框 -->
+    <label>vmess 前缀:</label>
+    <input type="text" id="vmessPrefix" placeholder="输入新的 vmess 前缀"><br>
 
-  <button onclick="submitForm()">提交</button>
+    <label>hy2 前缀:</label>
+    <input type="text" id="hy2Prefix" placeholder="输入新的 hy2 前缀"><br>
+
+    <!-- 按钮 -->
+    <div class="button-group">
+      <button class="reset" onclick="restoreUser()">恢复默认用户名</button>
+      <button class="reset" onclick="restoreVmessPrefix()">恢复默认 vmess</button>
+      <button class="reset" onclick="restoreHy2Prefix()">恢复默认 hy2</button>
+    </div>
+
+    <br>
+    <button class="submit" onclick="submitForm()">提交修改</button>
+
+  </div>
+
 </body>
 </html>
