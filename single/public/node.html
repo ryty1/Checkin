@@ -77,31 +77,26 @@
 <body>
     <div class="content-container">
         <h3>节点信息</h3>
-        <div class="config-box" id="configBox"></div>
+        <div class="config-box" id="configBox">加载中...</div>
         <button class="copy-btn" onclick="copyToClipboard()">一键复制</button>
+        <div>
+            <input type="text" id="confirmation" placeholder="请输入“更新”确认操作">
+            <button onclick="executeNodeOperation()">确认执行</button>
+        </div>
     </div>
 
     <script>
-        // 获取节点信息并更新页面
-        fetch("/api/node")
-            .then(response => response.json())
+        // 获取节点信息
+        fetch("/node")
+            .then(response => response.text())
             .then(data => {
-                const configBox = document.getElementById("configBox");
-                if (data.configs) {
-                    data.configs.forEach(config => {
-                        const div = document.createElement("div");
-                        div.textContent = config.trim();
-                        configBox.appendChild(div);
-                    });
-                } else {
-                    configBox.innerHTML = "<p>没有节点信息</p>";
-                }
+                document.getElementById("configBox").innerHTML = data;
             })
             .catch(err => {
-                document.getElementById("configBox").innerHTML = `<p>加载节点信息失败: ${err}</p>`;
+                document.getElementById("configBox").textContent = "获取数据失败";
             });
 
-        // 一键复制功能
+        // 复制到剪贴板
         function copyToClipboard() {
             const element = document.getElementById("configBox");
             let text = Array.from(element.children)
@@ -112,6 +107,30 @@
                 alert("已复制到剪贴板！");
             }).catch(() => {
                 alert("复制失败，请手动复制！");
+            });
+        }
+
+        // 执行节点操作
+        function executeNodeOperation() {
+            const confirmation = document.getElementById("confirmation").value.trim();
+
+            fetch("/node/execute", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ confirmation: confirmation })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`操作成功，更新的 IP: ${data.ip}`);
+                } else {
+                    alert(`操作失败: ${data.errorMessage}`);
+                }
+            })
+            .catch(err => {
+                alert("操作失败，请稍后再试！");
             });
         }
     </script>
