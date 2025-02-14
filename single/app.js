@@ -39,6 +39,11 @@ function runShellCommand() {
     const command = `cd ${process.env.HOME}/serv00-play/singbox/ && bash start.sh`;
     executeCommand(command, "start.sh", true);
 }
+function stopShellCommand() {
+    const command = `cd ${process.env.HOME}/serv00-play/singbox/ && bash kill.sh`;
+    executeCommand(command, "start.sh", true);
+}
+
 function executeHy2ipScript(logMessages, callback) {
 
     const command = `cd ${process.env.HOME}/domains/${username}.serv00.net/public_nodejs/ && bash hy2ip.sh`;
