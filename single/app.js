@@ -111,34 +111,6 @@ app.post("/hy2ip/execute", (req, res) => {
         res.json({ success: false, errorMessage: "命令执行失败", logs: logMessages });
     }
 });
-app.get("/getnode", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "getnode.html"));
-});
-app.get('/node', (req, res) => {
-    const filePath = path.join(process.env.HOME, "serv00-play/singbox/list");
-
-    fs.readFile(filePath, "utf8", (err, data) => {
-        if (err) {
-            return res.status(500).json({ error: `无法读取文件: ${err.message}` });
-        }
-
-        const cleanedData = data
-            .replace(/(vmess:\/\/|hysteria2:\/\/|proxyip:\/\/|https:\/\/)/g, '\n$1')
-            .trim();
-
-        const vmessPattern = /vmess:\/\/[^\n]+/g;
-        const hysteriaPattern = /hysteria2:\/\/[^\n]+/g;
-        const httpsPattern = /https:\/\/[^\n]+/g;
-        const proxyipPattern = /proxyip:\/\/[^\n]+/g;
-        const vmessConfigs = cleanedData.match(vmessPattern) || [];
-        const hysteriaConfigs = cleanedData.match(hysteriaPattern) || [];
-        const httpsConfigs = cleanedData.match(httpsPattern) || [];
-        const proxyipConfigs = cleanedData.match(proxyipPattern) || [];
-        const allConfigs = [...vmessConfigs, ...hysteriaConfigs, ...httpsConfigs, ...proxyipConfigs];
-
-        res.json({ configs: allConfigs });
-    });
-});
 
 // 日志和进程详情接口
 app.get("/api/log", (req, res) => {
@@ -213,8 +185,142 @@ app.get('/ota', (req, res) => {
     res.sendFile(path.join(__dirname, "public", "ota.html"));
 });
 
+app.get("/node", (req, res) => {
+    const filePath = path.join(process.env.HOME, "serv00-play/singbox/list");
+    fs.readFile(filePath, "utf8", (err, data) => {
+        if (err) {
+            res.type("html").send(`<pre>无法读取文件: ${err.message}</pre>`);
+            return;
+        }
+
+        const cleanedData = data
+            .replace(/(vmess:\/\/|hysteria2:\/\/|proxyip:\/\/|https:\/\/)/g, '\n$1')
+            .trim();
+
+        const vmessPattern = /vmess:\/\/[^\n]+/g;
+        const hysteriaPattern = /hysteria2:\/\/[^\n]+/g;
+        const httpsPattern = /https:\/\/[^\n]+/g;
+        const proxyipPattern = /proxyip:\/\/[^\n]+/g;
+        const vmessConfigs = cleanedData.match(vmessPattern) || [];
+        const hysteriaConfigs = cleanedData.match(hysteriaPattern) || [];
+        const httpsConfigs = cleanedData.match(httpsPattern) || [];
+        const proxyipConfigs = cleanedData.match(proxyipPattern) || [];
+        const allConfigs = [...vmessConfigs, ...hysteriaConfigs, ...httpsConfigs, ...proxyipConfigs];
+
+        let htmlContent = `
+            <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+                <title>节点信息</title>
+                <style>
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        font-family: Arial, sans-serif;
+                        background-color: #f4f4f4;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        min-height: 100vh;
+                        padding: 10px;
+                    }
+                    .content-container {
+                        width: 90%;
+                        max-width: 600px;
+                        background-color: #fff;
+                        padding: 15px;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                        text-align: left;
+                        box-sizing: border-box;
+                    }
+                    h3 {
+                        font-size: 20px;
+                        margin-bottom: 10px;
+                        text-align: center;
+                    }
+                    .config-box {
+                        max-height: 65vh;
+                        overflow-y: auto;
+                        border: 1px solid #ccc;
+                        padding: 8px;
+                        background-color: #f9f9f9;
+                        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+                        border-radius: 5px;
+                        white-space: pre-wrap;
+                        word-break: break-word;
+                        font-size: 14px;
+                    }
+                    .copy-btn {
+                        display: block;
+                        width: 100%;
+                        padding: 12px;
+                        font-size: 16px;
+                        background-color: #007bff;
+                        color: white;
+                        border: none;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        text-align: center;
+                        margin-top: 15px;
+                        transition: background-color 0.3s;
+                    }
+                    .copy-btn:hover {
+                        background-color: #0056b3;
+                    }
+                    @media (max-width: 600px) {
+                        .content-container {
+                            padding: 12px;
+                        }
+                        .config-box {
+                            font-size: 13px;
+                        }
+                        .copy-btn {
+                            font-size: 15px;
+                            padding: 10px;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="content-container">
+                    <h3>节点信息</h3>
+                    <div class="config-box" id="configBox">
+        `;
+
+        allConfigs.forEach((config) => {
+            htmlContent += `<div>${config.trim()}</div>`; // 去掉首尾空格
+        });
+
+        htmlContent += `
+                    </div>
+                    <button class="copy-btn" onclick="copyToClipboard()">一键复制</button>
+                </div>
+
+                <script>
+                    function copyToClipboard() {
+                        const element = document.getElementById("configBox");
+                        let text = Array.from(element.children)
+                            .map(child => child.textContent.trim())
+                            .join("\\n");
+
+                        navigator.clipboard.writeText(text).then(() => {
+                            alert("已复制到剪贴板！");
+                        }).catch(() => {
+                            alert("复制失败，请手动复制！");
+                        });
+                    }
+                </script>
+            </body>
+            </html>
+        `;
+        res.type("html").send(htmlContent);
+    });
+});
+
+
 app.use((req, res, next) => {
-    const validPaths = ["/info", "/hy2ip", "/node", "/getnode", "/log", "/ota"];
+    const validPaths = ["/info", "/hy2ip", "/node", "/log", "/ota"];
     if (validPaths.includes(req.path)) {
         return next();
     }
