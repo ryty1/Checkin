@@ -359,18 +359,16 @@ app.post('/seting', (req, res) => {
       if (err) {
         return res.status(500).json({ message: '保存脚本失败' });
       }
-
-      // 先停止进程
-      stopShellCommand();
-
-      // 等待 3 秒后重启进程
-      setTimeout(() => {
+      res.json({ message: '脚本修改成功' });
+    stopShellCommand();
+          setTimeout(() => {
         runShellCommand();
         res.json({ message: '修改并重启' });
       }, 3000);
     });
   });
 });
+  
 app.get('/newset', (req, res) => {
     res.sendFile(path.join(__dirname, "public", "newset.html"));
 });
