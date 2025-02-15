@@ -185,19 +185,17 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts(true));
     });
 });
-function filterNodes(nodes) {
-    return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
-}
 async function getNodesSummary(socket) {
     const accounts = await getAccounts(true);
     if (!accounts || Object.keys(accounts).length === 0) {
         console.log("⚠️ 未找到账号数据！");
-        socket.emit("nodesSummary", { successfulNodes: [], failedAccounts: [] });
+        socket.emit("nodesSummary", { nodesSummary: [], failedAccounts: [] });
         return;
     }
 
-    const users = Object.keys(accounts); 
-    let successfulNodes = [];
+    const users = Object.keys(accounts);
+    let hysteria2Nodes = [];  // hysteria2 节点列表
+    let vmessNodes = [];      // vmess 节点列表
     let failedAccounts = [];
 
     for (let i = 0; i < users.length; i++) {
@@ -210,13 +208,19 @@ async function getNodesSummary(socket) {
             const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
             const nodeData = nodeResponse.data;
 
-            const nodeLinks = filterNodes([
-                ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []),
-                ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])
-            ]);
+            const nodes = [
+                ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []).map(() => `vmess:// ${user}`),
+                ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || []).map(() => `hysteria2:// ${user}`)
+            ];
 
-            if (nodeLinks.length > 0) {
-                successfulNodes.push(...nodeLinks);
+            if (nodes.length > 0) {
+                nodes.forEach(node => {
+                    if (node.startsWith("hysteria2://")) {
+                        hysteria2Nodes.push(node);
+                    } else if (node.startsWith("vmess://")) {
+                        vmessNodes.push(node);
+                    }
+                });
             } else {
                 console.log(`账号 ${user} 连接成功但无有效节点`);
                 failedAccounts.push(user);
@@ -227,10 +231,12 @@ async function getNodesSummary(socket) {
         }
     }
 
-    console.log("成功的节点:", successfulNodes);
+    const nodesSummary = [...hysteria2Nodes, ...vmessNodes];
+
+    console.log("汇总结果:", nodesSummary);
     console.log("失败的账号:", failedAccounts);
 
-    socket.emit("nodesSummary", { successfulNodes, failedAccounts });
+    socket.emit("nodesSummary", { nodesSummary, failedAccounts });
 }
 
 let cronJob = null; 
