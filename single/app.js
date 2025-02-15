@@ -325,7 +325,12 @@ app.get("/node", (req, res) => {
     });
 });
 
-(fs.existsSync(configFilePath)) {
+// 检查并读取配置文件
+function getConfigFile() {
+    console.log('检查配置文件是否存在:', configFilePath);
+    
+    try {
+        if (fs.existsSync(configFilePath)) {
             console.log('配置文件已存在，读取文件内容...');
             return JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
         } else {
@@ -347,6 +352,8 @@ app.get("/node", (req, res) => {
         return null;
     }
 }
+
+// 写
 
 // 写入默认配置到 start.sh 脚本
 function writeDefaultConfigToScript(config) {
