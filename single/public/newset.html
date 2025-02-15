@@ -1,72 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>修改 Start 脚本</title>
-  <script>
-    // Function to submit the form
-    function submitForm() {
-      const userSwitch = document.getElementById('userSwitch').checked;
-      const vmessPrefix = document.getElementById('vmessPrefix').value;
-      const hy2Prefix = document.getElementById('hy2Prefix').value;
-
-      // Collect the data
-      const data = {
-        userSwitch: userSwitch,
-        vmessPrefix: vmessPrefix,
-        hy2Prefix: hy2Prefix
-      };
-
-      // Send the data via AJAX
-      fetch('/seting', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
-      .then(response => response.json())
-      .then(data => {
-        alert('Script modified successfully!');
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-        alert('Failed to modify the script.');
-      });
-    }
-
-    // Function to restore username to default
-    function restoreUser() {
-      document.getElementById('userSwitch').checked = false;
-    }
-
-    // Function to restore vmess prefix to default
-    function restoreVmessPrefix() {
-      document.getElementById('vmessPrefix').value = "Argo-vmess";
-    }
-
-    // Function to restore hy2 prefix to default
-    function restoreHy2Prefix() {
-      document.getElementById('hy2Prefix').value = "Hy2";
-    }
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修改 Start.sh 配置</title>
 </head>
 <body>
-  <h1>修改 Start 脚本</h1>
 
-  <label for="userSwitch">节点隐藏用户名:</label>
-  <input type="checkbox" id="userSwitch"><br><br>
-  <button onclick="restoreUser()">恢复默认用户名</button><br><br>
+    <h2>修改 Start.sh 配置</h2>
 
-  <label for="vmessPrefix">vmess 前缀:</label>
-  <input type="text" id="vmessPrefix" placeholder="输入新的 vmess 前缀"><br><br>
-  <button onclick="restoreVmessPrefix()">恢复默认 vmess 前缀</button><br><br>
+    <label for="vmessname">VMess 前缀：</label>
+    <input type="text" id="vmessname">
+    <br><br>
 
-  <label for="hy2Prefix">hy2 前缀:</label>
-  <input type="text" id="hy2Prefix" placeholder="输入新的 hy2 前缀"><br><br>
-  <button onclick="restoreHy2Prefix()">恢复默认 hy2 前缀</button><br><br>
+    <label for="hy2name">Hy2 前缀：</label>
+    <input type="text" id="hy2name">
+    <br><br>
 
-  <button onclick="submitForm()">提交</button>
+    <label for="hidden_username">隐藏用户名：</label>
+    <input type="checkbox" id="hidden_username">
+    <br><br>
+
+    <button onclick="submitChanges()">提交修改</button>
+
+    <p id="result"></p>
+
+    <script>
+        // 读取当前变量
+        function loadConfig() {
+            fetch("/api/get-config")
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("vmessname").value = data.vmessname;
+                document.getElementById("hy2name").value = data.hy2name;
+                document.getElementById("hidden_username").checked = data.hidden_username;
+            })
+            .catch(err => console.error("获取配置失败:", err));
+        }
+
+        function submitChanges() {
+            const vmessname = document.getElementById("vmessname").value.trim();
+            const hy2name = document.getElementById("hy2name").value.trim();
+            const hidden_username = document.getElementById("hidden_username").checked;
+
+            if (!vmessname || !hy2name) {
+                document.getElementById("result").innerText = "VMess 和 Hy2 前缀不能为空";
+                return;
+            }
+
+            fetch("/api/update-script", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ vmessname, hy2name, hidden_username })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("result").innerText = data.message;
+            })
+            .catch(err => console.error(err));
+        }
+
+        window.onload = loadConfig;
+    </script>
+
 </body>
 </html>
