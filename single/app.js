@@ -489,6 +489,7 @@ async function updateConfigFile(config) {
         } catch (error) {
             console.error(`查找进程 ${process} 时出错:`, error);
         }
+        runShellCommand();
     }
 }
 
