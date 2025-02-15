@@ -353,13 +353,11 @@ function getConfigFile() {
     }
 }
 
-// 写
-
 // 写入默认配置到 start.sh 脚本
 function writeDefaultConfigToScript(config) {
     console.log('写入默认配置到脚本:', scriptPath);
     let scriptContent;
-    
+
     try {
         scriptContent = fs.readFileSync(scriptPath, 'utf8');
     } catch (error) {
@@ -382,8 +380,8 @@ function writeDefaultConfigToScript(config) {
             exportListContent = `  custom_hy2="${config.hy2name}"\n` + exportListContent;
         }
 
-        // 替换 export_list() 函数内容
-        scriptContent = scriptContent.replace(exportListFuncPattern, `export_list() {\n${exportListContent}\n}`);
+        // 替换 export_list() 函数内容，避免空行
+        scriptContent = scriptContent.replace(exportListFuncPattern, `export_list() {\n${exportListContent.trim()}\n}`);
     } else {
         console.log("没有找到 export_list() 函数，无法插入变量定义。");
     }
