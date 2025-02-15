@@ -185,17 +185,20 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts(true));
     });
 });
+function filterNodes(nodes) {
+    return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
+}
+
 async function getNodesSummary(socket) {
     const accounts = await getAccounts(true);
     if (!accounts || Object.keys(accounts).length === 0) {
         console.log("⚠️ 未找到账号数据！");
-        socket.emit("nodesSummary", { nodesSummary: [], failedAccounts: [] });
+        socket.emit("nodesSummary", { successfulNodes: { hysteria2: [], vmess: [] }, failedAccounts: [] });
         return;
     }
 
-    const users = Object.keys(accounts);
-    let hysteria2Nodes = [];  // hysteria2 节点列表
-    let vmessNodes = [];      // vmess 节点列表
+    const users = Object.keys(accounts); 
+    let successfulNodes = { hysteria2: [], vmess: [] }; // hytseria2 放前，vmess 放后
     let failedAccounts = [];
 
     for (let i = 0; i < users.length; i++) {
@@ -208,20 +211,22 @@ async function getNodesSummary(socket) {
             const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
             const nodeData = nodeResponse.data;
 
-            const nodes = [
-                ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []).map(() => `vmess:// ${user}`),
-                ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || []).map(() => `hysteria2:// ${user}`)
-            ];
+            // 获取 vmess 和 hysteria2 节点链接
+            const nodeLinks = filterNodes([
+                ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []),
+                ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])
+            ]);
 
-            if (nodes.length > 0) {
-                nodes.forEach(node => {
-                    if (node.startsWith("hysteria2://")) {
-                        hysteria2Nodes.push(node);
-                    } else if (node.startsWith("vmess://")) {
-                        vmessNodes.push(node);
-                    }
-                });
-            } else {
+            // 按协议分类节点
+            nodeLinks.forEach(link => {
+                if (link.startsWith("hysteria2://")) {
+                    successfulNodes.hysteria2.push(link);
+                } else if (link.startsWith("vmess://")) {
+                    successfulNodes.vmess.push(link);
+                }
+            });
+
+            if (nodeLinks.length === 0) {
                 console.log(`账号 ${user} 连接成功但无有效节点`);
                 failedAccounts.push(user);
             }
@@ -231,12 +236,24 @@ async function getNodesSummary(socket) {
         }
     }
 
-    const nodesSummary = [...hysteria2Nodes, ...vmessNodes];
+    // 确保成功节点按账号顺序排列
+    successfulNodes.hysteria2 = successfulNodes.hysteria2.sort((a, b) => {
+        const userA = a.split('@')[0].split('//')[1];
+        const userB = b.split('@')[0].split('//')[1];
+        return users.indexOf(userA) - users.indexOf(userB);
+    });
 
-    console.log("汇总结果:", nodesSummary);
+    successfulNodes.vmess = successfulNodes.vmess.sort((a, b) => {
+        const userA = a.split('@')[0].split('//')[1];
+        const userB = b.split('@')[0].split('//')[1];
+        return users.indexOf(userA) - users.indexOf(userB);
+    });
+
+    console.log("成功的 hysteria2 节点:", successfulNodes.hysteria2);
+    console.log("成功的 vmess 节点:", successfulNodes.vmess);
     console.log("失败的账号:", failedAccounts);
 
-    socket.emit("nodesSummary", { nodesSummary, failedAccounts });
+    socket.emit("nodesSummary", { successfulNodes, failedAccounts });
 }
 
 let cronJob = null; 
