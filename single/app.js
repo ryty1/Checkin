@@ -403,12 +403,12 @@ function writeDefaultConfigToScript(config) {
     // 根据 HIDE_USERNAME 配置，修改 user 变量定义
     if (config.HIDE_USERNAME) {
         // 启用隐藏用户名
-        scriptContent = scriptContent.replace(/user="\$\(whoami\)"/, `
+        scriptContent = scriptContent.replace(/user=".*?"/, `
             user="\$(whoami | cut -c \$(\$(whoami | wc -m) - 1)-)"
         `);
     } else {
         // 禁用隐藏用户名
-        scriptContent = scriptContent.replace(/user="\$\(whoami\)"/, `user="\$(whoami)"`);
+        scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami)"`);
     }
 
     // 将更新后的内容写回脚本
