@@ -8,7 +8,7 @@ const app = express();
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
 const scriptPath = path.join(process.env.HOME, "serv00-play", "singbox", "start.sh");
-const configFilePath = path.join(DOMAIN_DIR, "config.json");
+const configFilePath = path.join(__dirname, 'config.json');
 
 // 允许静态文件访问
 app.use(express.static(path.join(__dirname, 'public')));
@@ -329,52 +329,41 @@ app.get("/node", (req, res) => {
 function getConfigFile() {
     console.log('检查配置文件是否存在:', configFilePath);
     
-    if (fs.existsSync(configFilePath)) {
-        console.log('配置文件已存在，读取文件内容...');
-        return JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
-    } else {
-        console.log('配置文件不存在，创建默认配置并写入...');
-        const defaultConfig = {
-            vmessname: "Argo-vmess",
-            hy2name: "Hy2",
-            HIDE_USERNAME: false  // 默认不隐藏用户名
-        };
-        fs.writeFileSync(configFilePath, JSON.stringify(defaultConfig, null, 2));
-        console.log('配置文件已创建:', configFilePath);
-        
-        // 同时写入到 start.sh 脚本
-        writeDefaultConfigToScript(defaultConfig);
-        return defaultConfig;
-    }
-}
-
-// 检查并读取配置文件
-function getConfigFile() {
-    console.log('检查配置文件是否存在:', configFilePath);
-    
-    if (fs.existsSync(configFilePath)) {
-        console.log('配置文件已存在，读取文件内容...');
-        return JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
-    } else {
-        console.log('配置文件不存在，创建默认配置并写入...');
-        const defaultConfig = {
-            vmessname: "Argo-vmess",
-            hy2name: "Hy2",
-            HIDE_USERNAME: false // 添加默认的 HIDE_USERNAME 配置
-        };
-        fs.writeFileSync(configFilePath, JSON.stringify(defaultConfig, null, 2));
-        console.log('配置文件已创建:', configFilePath);
-        
-        // 同时写入到 start.sh 脚本
-        writeDefaultConfigToScript(defaultConfig);
-        return defaultConfig;
+    try {
+        if (fs.existsSync(configFilePath)) {
+            console.log('配置文件已存在，读取文件内容...');
+            return JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
+        } else {
+            console.log('配置文件不存在，创建默认配置并写入...');
+            const defaultConfig = {
+                vmessname: "Argo-vmess",
+                hy2name: "Hy2",
+                HIDE_USERNAME: false // 添加默认的 HIDE_USERNAME 配置
+            };
+            fs.writeFileSync(configFilePath, JSON.stringify(defaultConfig, null, 2));
+            console.log('配置文件已创建:', configFilePath);
+            
+            // 同时写入到 start.sh 脚本
+            writeDefaultConfigToScript(defaultConfig);
+            return defaultConfig;
+        }
+    } catch (error) {
+        console.error('读取配置文件时出错:', error);
+        return null;
     }
 }
 
 // 写入默认配置到 start.sh 脚本
 function writeDefaultConfigToScript(config) {
     console.log('写入默认配置到脚本:', scriptPath);
-    let scriptContent = fs.readFileSync(scriptPath, 'utf8');
+    let scriptContent;
+    
+    try {
+        scriptContent = fs.readFileSync(scriptPath, 'utf8');
+    } catch (error) {
+        console.error('读取脚本文件时出错:', error);
+        return;
+    }
 
     // 找到 export_list() 函数的位置
     const exportListFuncPattern = /export_list\(\)\s*{([^}]*)}/;
@@ -413,8 +402,12 @@ function writeDefaultConfigToScript(config) {
     }
 
     // 将更新后的内容写回脚本
-    fs.writeFileSync(scriptPath, scriptContent);
-    console.log('脚本已更新:', scriptPath);
+    try {
+        fs.writeFileSync(scriptPath, scriptContent);
+        console.log('脚本已更新:', scriptPath);
+    } catch (error) {
+        console.error('写入脚本文件时出错:', error);
+    }
     
     // 停止进程，等待3秒后再启动
     stopShellCommand();
@@ -427,7 +420,7 @@ function writeDefaultConfigToScript(config) {
 // 更新配置文件和脚本内容
 function updateConfigFile(config) {
     console.log('更新配置文件:', configFilePath);
-    // 更新配置文件，确保包含 HIDE_USERNAME
+    // 更新配置文件
     fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2));
     console.log('配置文件更新成功');
 
@@ -443,12 +436,10 @@ function updateConfigFile(config) {
 
     // 同步更新 HIDE_USERNAME
     if (config.HIDE_USERNAME) {
-        // 启用隐藏用户名
         scriptContent = scriptContent.replace(/user=".*?"/, `
             user="\$(whoami | cut -c \$(\$(whoami | wc -m) - 1)-)"
         `);
     } else {
-        // 禁用隐藏用户名
         scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami)"`);
     }
 
@@ -465,9 +456,9 @@ app.get('/api/get-config', (req, res) => {
 
 // 路由：更新配置
 app.post('/api/update-config', (req, res) => {
-    const { vmessname, hy2name } = req.body;
+    const { vmessname, hy2name, HIDE_USERNAME } = req.body;
 
-    const newConfig = { vmessname, hy2name };
+    const newConfig = { vmessname, hy2name, HIDE_USERNAME };
 
     // 更新配置文件和脚本内容
     updateConfigFile(newConfig);
@@ -477,8 +468,9 @@ app.post('/api/update-config', (req, res) => {
 
 // 路由：渲染前端页面
 app.get('/newset', (req, res) => {
-    res.sendFile(path.join(__dirname, 'path_to_newset.html'));
+    res.sendFile(path.join(__dirname, "public", 'newset.html'));
 });
+
 app.use((req, res, next) => {
     const validPaths = ["/info", "/hy2ip", "/node", "/log", "/seting", "/ota"];
     if (validPaths.includes(req.path)) {
