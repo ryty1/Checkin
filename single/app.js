@@ -454,16 +454,15 @@ app.get('/api/get-config', (req, res) => {
     res.json(config);
 });
 
-// 路由：更新配置
+// 更新配置
 app.post('/api/update-config', (req, res) => {
     const { vmessname, hy2name, HIDE_USERNAME } = req.body;
-
     const newConfig = { vmessname, hy2name, HIDE_USERNAME };
 
-    // 更新配置文件和脚本内容
-    updateConfigFile(newConfig);
+    // 保存到配置文件
+    fs.writeFileSync(configFilePath, JSON.stringify(newConfig, null, 2));
 
-    res.json({ success: true, message: '配置更新成功' });
+    res.json({ success: true });
 });
 
 // 路由：渲染前端页面
