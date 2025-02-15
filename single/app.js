@@ -406,23 +406,16 @@ function writeDefaultConfigToScript(config) {
     } catch (error) {
         console.error('写入脚本文件时出错:', error);
     }
+    // 停止进程，等待3秒后再启动
+        setTimeout(() => {
+        stopShellCommand();
+    }, 3000);  // 3秒后启动
 
-    // 杀掉 serv00sb 和 cloudflared 进程
-    stopProcesses();
+    setTimeout(() => {
+        runShellCommand();
+    }, 5000);  // 3秒后启动
 }
 
-// 停止 serv00sb 和 cloudflared 进程
-function stopProcesses() {
-    console.log('停止 serv00sb 和 cloudflared 进程...');
-    try {
-        // 杀掉 serv00sb 和 cloudflared 进程
-        execSync('pkill -f serv00sb');
-        execSync('pkill -f cloudflared');
-        console.log('进程已停止: serv00sb 和 cloudflared');
-    } catch (error) {
-        console.error('停止进程时出错:', error);
-    }
-}
 
 // 更新配置文件和脚本内容
 function updateConfigFile(config) {
