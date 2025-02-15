@@ -406,7 +406,7 @@ function writeDefaultConfigToScript(config) {
     } catch (error) {
         console.error('写入脚本文件时出错:', error);
     }
-进程，等待3秒后执行
+    
     setTimeout(() => {
         // 定义要杀死的进程
         const processes = ['cloudflare', 'serv00sb'];
