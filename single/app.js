@@ -441,7 +441,13 @@ function updateConfigFile(config) {
     scriptContent = scriptContent.replace(/hy2name=".*?"/, `hy2name="\$custom_hy2-\$host-\$user"`);
 
     // 同步更新 HIDE_USERNAME
-    scriptContent = scriptContent.replace(/HIDE_USERNAME=\w+/g, `HIDE_USERNAME=${config.HIDE_USERNAME}`);
+    if (config.HIDE_USERNAME) {
+        scriptContent = scriptContent.replace(/user=".*?"/, `
+            user="\$(whoami | cut -c \$(\$(whoami | wc -m) - 1)-)"
+        `);
+    } else {
+        scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami)"`);
+    }
 
     // 写回修改后的脚本
     fs.writeFileSync(scriptPath, scriptContent);
