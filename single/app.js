@@ -406,50 +406,33 @@ function writeDefaultConfigToScript(config) {
     } catch (error) {
         console.error('写入脚本文件时出错:', error);
     }
-    
-    setTimeout(() => {
-        // 定义要杀死的进程
-        const processes = ['cloudflare', 'serv00sb'];
-
-        processes.forEach(process => {
-            // 查找进程 ID
-            exec(`pgrep ${process}`, (error, stdout, stderr) => {
-                if (error) {
-                    console.error(`查找进程 ${process} 时出错:`, error);
-                    return;
-                }
-
-                if (stdout) {
-                    const pids = stdout.split('\n').filter(pid => pid.trim() !== ''); // 获取PID
-                    console.log(`Killing process: ${process} (PIDs: ${pids.join(', ')})`);
-
-                    // 逐个杀死进程
-                    pids.forEach(pid => {
-                        exec(`kill -9 ${pid}`, (killError, killStdout, killStderr) => {
-                            if (killError) {
-                                console.error(`杀死进程 ${pid} 时出错:`, killError);
-                            } else {
-                                console.log(`进程 ${pid} 已被杀死`);
-                            }
-                        });
-                    });
-                }
-            });
-        });
-    }, 3000);  // 3秒后杀死进程
 }
 
 
 // 更新配置文件和脚本内容
-function updateConfigFile(config) {
+async function updateConfigFile(config) {
     console.log('更新配置文件:', configFilePath);
-    // 更新配置文件
-    fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2));
-    console.log('配置文件更新成功');
+
+    try {
+        // 更新配置文件
+        fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2));
+        console.log('配置文件更新成功');
+    } catch (error) {
+        console.error('更新配置文件时出错:', error);
+        return;
+    }
 
     console.log('更新脚本内容:', scriptPath);
-    // 更新脚本中的变量
-    let scriptContent = fs.readFileSync(scriptPath, 'utf8');
+    let scriptContent;
+
+    try {
+        // 更新脚本中的变量
+        scriptContent = fs.readFileSync(scriptPath, 'utf8');
+    } catch (error) {
+        console.error('读取脚本文件时出错:', error);
+        return;
+    }
+
     scriptContent = scriptContent.replace(/custom_vmess=".*?"/, `custom_vmess="${config.vmessname}"`);
     scriptContent = scriptContent.replace(/custom_hy2=".*?"/, `custom_hy2="${config.hy2name}"`);
 
@@ -464,39 +447,62 @@ function updateConfigFile(config) {
         scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami)"`);
     }
 
-    // 写回修改后的脚本
-    fs.writeFileSync(scriptPath, scriptContent);
-    console.log('脚本更新成功:', scriptPath);
-        setTimeout(() => {
-        // 定义要杀死的进程
-        const processes = ['cloudflare', 'serv00sb'];
+    try {
+        // 写回修改后的脚本
+        fs.writeFileSync(scriptPath, scriptContent);
+        console.log('脚本更新成功:', scriptPath);
+    } catch (error) {
+        console.error('写入脚本文件时出错:', error);
+        return;
+    }
 
-        processes.forEach(process => {
+    // 延迟3秒后杀死进程
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    // 定义要杀死的进程
+    const processes = ['cloudflare', 'serv00sb'];
+
+    // 使用 async/await 处理进程的杀死操作
+    for (const process of processes) {
+        try {
             // 查找进程 ID
-            exec(`pgrep ${process}`, (error, stdout, stderr) => {
-                if (error) {
-                    console.error(`查找进程 ${process} 时出错:`, error);
-                    return;
-                }
+            const { stdout, stderr } = await execAsync(`pgrep ${process}`);
+            if (stderr) {
+                console.error(`查找进程 ${process} 时出错:`, stderr);
+                return;
+            }
 
-                if (stdout) {
-                    const pids = stdout.split('\n').filter(pid => pid.trim() !== ''); // 获取PID
-                    console.log(`Killing process: ${process} (PIDs: ${pids.join(', ')})`);
+            if (stdout) {
+                const pids = stdout.split('\n').filter(pid => pid.trim() !== ''); // 获取PID
+                console.log(`Killing process: ${process} (PIDs: ${pids.join(', ')})`);
 
-                    // 逐个杀死进程
-                    pids.forEach(pid => {
-                        exec(`kill -9 ${pid}`, (killError, killStdout, killStderr) => {
-                            if (killError) {
-                                console.error(`杀死进程 ${pid} 时出错:`, killError);
-                            } else {
-                                console.log(`进程 ${pid} 已被杀死`);
-                            }
-                        });
-                    });
+                // 逐个杀死进程
+                for (const pid of pids) {
+                    try {
+                        await execAsync(`kill -9 ${pid}`);
+                        console.log(`进程 ${pid} 已被杀死`);
+                    } catch (killError) {
+                        console.error(`杀死进程 ${pid} 时出错:`, killError);
+                    }
                 }
-            });
+            }
+        } catch (error) {
+            console.error(`查找进程 ${process} 时出错:`, error);
+        }
+    }
+}
+
+// 将 exec 转换为返回 Promise 的异步函数
+function execAsync(command) {
+    return new Promise((resolve, reject) => {
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve({ stdout, stderr });
+            }
         });
-    }, 3000);  // 3秒后杀死进程
+    });
 }
 
 // 路由：获取配置
