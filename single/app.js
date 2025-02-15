@@ -325,12 +325,7 @@ app.get("/node", (req, res) => {
     });
 });
 
-// 检查并读取配置文件
-function getConfigFile() {
-    console.log('检查配置文件是否存在:', configFilePath);
-    
-    try {
-        if (fs.existsSync(configFilePath)) {
+(fs.existsSync(configFilePath)) {
             console.log('配置文件已存在，读取文件内容...');
             return JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
         } else {
@@ -459,8 +454,8 @@ app.post('/api/update-config', (req, res) => {
     const { vmessname, hy2name, HIDE_USERNAME } = req.body;
     const newConfig = { vmessname, hy2name, HIDE_USERNAME };
 
-    // 保存到配置文件
-    fs.writeFileSync(configFilePath, JSON.stringify(newConfig, null, 2));
+    // 更新配置文件
+    updateConfigFile(newConfig);
 
     res.json({ success: true });
 });
