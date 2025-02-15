@@ -406,14 +406,20 @@ function writeDefaultConfigToScript(config) {
     } catch (error) {
         console.error('写入脚本文件时出错:', error);
     }
-    // 停止进程，等待3秒后再启动
-        setTimeout(() => {
-        stopShellCommand();
-    }, 3000);  // 3秒后启动
-
+    // 杀死进程，等待3秒后执行
     setTimeout(() => {
-        runShellCommand();
-    }, 5000);  // 3秒后启动
+        // 杀死 serv00sb 和 cloudflared 进程
+        exec('pkill serv00sb cloudflared', (error, stdout, stderr) => {
+            if (error) {
+                console.error(`执行错误: ${error}`);
+                return;
+            }
+            console.log(`进程已终止: ${stdout}`);
+            if (stderr) {
+                console.error(`错误信息: ${stderr}`);
+            }
+        });
+    }, 3000); 
 }
 
 
