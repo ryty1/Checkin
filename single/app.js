@@ -390,11 +390,6 @@ function writeDefaultConfigToScript(config) {
             exportListContent = `custom_hy2="${config.hy2name}"\n` + exportListContent;
         }
 
-        // 添加隐藏用户名的功能
-        if (!exportListContent.includes('HIDE_USERNAME')) {
-            exportListContent = `HIDE_USERNAME=${config.HIDE_USERNAME}\n` + exportListContent;
-        }
-
         // 替换 export_list() 函数内容
         scriptContent = scriptContent.replace(exportListFuncPattern, `export_list() {\n${exportListContent}\n}`);
     } else {
@@ -405,14 +400,16 @@ function writeDefaultConfigToScript(config) {
     scriptContent = scriptContent.replace(/vmessname=".*?"/, `vmessname="\$custom_vmess-\$host-\$user"`);
     scriptContent = scriptContent.replace(/hy2name=".*?"/, `hy2name="\$custom_hy2-\$host-\$user"`);
 
-    // 替换隐藏用户名逻辑
-    scriptContent = scriptContent.replace(/user="\$\(whoami\)"/, `
-        if [ "\$HIDE_USERNAME" = "true" ]; then
+    // 根据 HIDE_USERNAME 配置，修改 user 变量定义
+    if (config.HIDE_USERNAME) {
+        // 启用隐藏用户名
+        scriptContent = scriptContent.replace(/user="\$\(whoami\)"/, `
             user="\$(whoami | cut -c \$(\$(whoami | wc -m) - 1)-)"
-        else
-            user="\$(whoami)"
-        fi
-    `);
+        `);
+    } else {
+        // 禁用隐藏用户名
+        scriptContent = scriptContent.replace(/user="\$\(whoami\)"/, `user="\$(whoami)"`);
+    }
 
     // 将更新后的内容写回脚本
     fs.writeFileSync(scriptPath, scriptContent);
