@@ -336,7 +336,8 @@ function getConfigFile() {
         console.log('配置文件不存在，创建默认配置并写入...');
         const defaultConfig = {
             vmessname: "Argo-vmess",
-            hy2name: "Hy2"
+            hy2name: "Hy2",
+            HIDE_USERNAME: false  // 默认不隐藏用户名
         };
         fs.writeFileSync(configFilePath, JSON.stringify(defaultConfig, null, 2));
         console.log('配置文件已创建:', configFilePath);
@@ -391,7 +392,7 @@ function writeDefaultConfigToScript(config) {
 
         // 添加隐藏用户名的功能
         if (!exportListContent.includes('HIDE_USERNAME')) {
-            exportListContent = `HIDE_USERNAME=false\n` + exportListContent;  // 默认不隐藏用户名
+            exportListContent = `HIDE_USERNAME=${config.HIDE_USERNAME}\n` + exportListContent;
         }
 
         // 替换 export_list() 函数内容
@@ -416,6 +417,7 @@ function writeDefaultConfigToScript(config) {
     // 将更新后的内容写回脚本
     fs.writeFileSync(scriptPath, scriptContent);
     console.log('脚本已更新:', scriptPath);
+    
     // 停止进程，等待3秒后再启动
     stopShellCommand();
     
@@ -440,6 +442,9 @@ function updateConfigFile(config) {
     // 同步更新 vmessname 和 hy2name 的定义
     scriptContent = scriptContent.replace(/vmessname=".*?"/, `vmessname="\$custom_vmess-\$host-\$user"`);
     scriptContent = scriptContent.replace(/hy2name=".*?"/, `hy2name="\$custom_hy2-\$host-\$user"`);
+
+    // 同步更新 HIDE_USERNAME
+    scriptContent = scriptContent.replace(/HIDE_USERNAME=\w+/g, `HIDE_USERNAME=${config.HIDE_USERNAME}`);
 
     // 写回修改后的脚本
     fs.writeFileSync(scriptPath, scriptContent);
