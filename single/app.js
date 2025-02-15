@@ -327,16 +327,20 @@ app.get("/node", (req, res) => {
 
 // 检查并读取配置文件
 function getConfigFile() {
+    console.log('检查配置文件是否存在:', configFilePath);
+    
     if (fs.existsSync(configFilePath)) {
-        // 配置文件存在，读取并返回
+        console.log('配置文件已存在，读取文件内容...');
         return JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
     } else {
-        // 配置文件不存在，生成默认配置文件
+        console.log('配置文件不存在，创建默认配置并写入...');
         const defaultConfig = {
             vmessname: "Argo-vmess",
             hy2name: "Hy2"
         };
         fs.writeFileSync(configFilePath, JSON.stringify(defaultConfig, null, 2));
+        console.log('配置文件已创建:', configFilePath);
+        
         // 同时写入到 start.sh 脚本
         writeDefaultConfigToScript(defaultConfig);
         return defaultConfig;
@@ -345,6 +349,7 @@ function getConfigFile() {
 
 // 写入默认配置到 start.sh 脚本
 function writeDefaultConfigToScript(config) {
+    console.log('写入默认配置到脚本:', scriptPath);
     let scriptContent = fs.readFileSync(scriptPath, 'utf8');
 
     // 写入 custom_vmess 和 custom_hy2 变量
@@ -361,13 +366,17 @@ function writeDefaultConfigToScript(config) {
 
     // 将更新后的内容写回脚本
     fs.writeFileSync(scriptPath, scriptContent);
+    console.log('脚本已更新:', scriptPath);
 }
 
 // 更新配置文件和脚本内容
 function updateConfigFile(config) {
+    console.log('更新配置文件:', configFilePath);
     // 更新配置文件
     fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2));
+    console.log('配置文件更新成功');
 
+    console.log('更新脚本内容:', scriptPath);
     // 更新脚本中的变量
     let scriptContent = fs.readFileSync(scriptPath, 'utf8');
     scriptContent = scriptContent.replace(/custom_vmess=".*?"/, `custom_vmess="${config.vmessname}"`);
@@ -379,6 +388,7 @@ function updateConfigFile(config) {
 
     // 写回修改后的脚本
     fs.writeFileSync(scriptPath, scriptContent);
+    console.log('脚本更新成功:', scriptPath);
 }
 
 // 路由：获取配置
