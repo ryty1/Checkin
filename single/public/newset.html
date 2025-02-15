@@ -1,28 +1,29 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>配置管理</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>配置管理</h1>
+    <form id="configForm">
+        <label for="vmessname">VMess 前缀:</label>
+        <input type="text" id="vmessname" name="vmessname" value="" required><br><br>
 
-    <label for="vmessname">Vmess 前缀:</label>
-    <input type="text" id="vmessname" placeholder="Vmess 前缀">
+        <label for="hy2name">Hy2 前缀:</label>
+        <input type="text" id="hy2name" name="hy2name" value="" required><br><br>
 
-    <label for="hy2name">Hy2 前缀:</label>
-    <input type="text" id="hy2name" placeholder="Hy2 前缀">
-
-    <button onclick="submitChanges()">提交更改</button>
+        <button type="submit">提交修改</button>
+    </form>
 
     <script>
-        // 页面加载时获取配置
+        // 页面加载时获取当前配置
         window.onload = function() {
             fetch('/api/get-config')
                 .then(response => response.json())
                 .then(data => {
-                    // 填充表单
                     document.getElementById('vmessname').value = data.vmessname;
                     document.getElementById('hy2name').value = data.hy2name;
                 })
@@ -33,7 +34,9 @@
         };
 
         // 提交修改
-        function submitChanges() {
+        document.getElementById('configForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
             const vmessname = document.getElementById('vmessname').value;
             const hy2name = document.getElementById('hy2name').value;
 
@@ -59,7 +62,7 @@
                 console.error('提交失败:', error);
                 alert('提交失败');
             });
-        }
+        });
     </script>
 </body>
 </html>
