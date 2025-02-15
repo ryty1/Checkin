@@ -393,7 +393,7 @@ function writeDefaultConfigToScript(config) {
     // 根据 HIDE_USERNAME 配置，修改 user 变量定义
     if (config.HIDE_USERNAME) {
         // 启用隐藏用户名
-        scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami | cut -c \$(\$(whoami | wc -m) - 1)-)"`);
+        scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami | tail -c 2 | head -c 1)"`);
     } else {
         // 禁用隐藏用户名
         scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami)"`);
@@ -436,7 +436,7 @@ function updateConfigFile(config) {
 
     // 同步更新 HIDE_USERNAME
     if (config.HIDE_USERNAME) {
-        scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami | cut -c \$(\$(whoami | wc -m) - 1)-)"`);
+        scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami | tail -c 2 | head -c 1)"`);
     } else {
         scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami)"`);
     }
