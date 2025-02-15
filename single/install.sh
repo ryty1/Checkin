@@ -49,7 +49,7 @@ read -p "请输入选择(1 或 2): " choice
 if [[ "$choice" -eq 1 ]]; then
     TARGET_FOLDER="single"
     DELETE_FOLDER="server"
-    DEPENDENCIES="dotenv basic-auth express"
+    DEPENDENCIES="dotenv body-parser basic-auth express"
     echo "开始进行 本机保活配置"
 elif [[ "$choice" -eq 2 ]]; then
     TZ_MODIFIED=0
