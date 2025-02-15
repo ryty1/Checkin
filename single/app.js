@@ -374,15 +374,28 @@ function writeDefaultConfigToScript(config) {
     console.log('写入默认配置到脚本:', scriptPath);
     let scriptContent = fs.readFileSync(scriptPath, 'utf8');
 
-    // 检查是否已经定义了 custom_vmess 和 custom_hy2 变量，若没有，则写入
-    if (!scriptContent.includes('custom_vmess')) {
-        scriptContent += `\ncustom_vmess="${config.vmessname}"\n`;
-    }
-    if (!scriptContent.includes('custom_hy2')) {
-        scriptContent += `custom_hy2="${config.hy2name}"\n`;
+    // 找到 export_list() 函数的位置
+    const exportListFuncPattern = /export_list\(\)\s*{([^}]*)}/;
+    const match = scriptContent.match(exportListFuncPattern);
+
+    if (match) {
+        let exportListContent = match[1];
+
+        // 在 export_list() 函数内部定义 custom_vmess 和 custom_hy2 变量
+        if (!exportListContent.includes('custom_vmess')) {
+            exportListContent = `custom_vmess="${config.vmessname}"\n` + exportListContent;
+        }
+        if (!exportListContent.includes('custom_hy2')) {
+            exportListContent = `custom_hy2="${config.hy2name}"\n` + exportListContent;
+        }
+
+        // 替换 export_list() 函数内容
+        scriptContent = scriptContent.replace(exportListFuncPattern, `export_list() {\n${exportListContent}\n}`);
+    } else {
+        console.log("没有找到 export_list() 函数，无法插入变量定义。");
     }
 
-    // 替换 vmessname 和 hy2name
+    // 替换 vmessname 和 hy2name 使用变量的格式
     scriptContent = scriptContent.replace(/vmessname=".*?"/, `vmessname="\$custom_vmess-\$host-\$user"`);
     scriptContent = scriptContent.replace(/hy2name=".*?"/, `hy2name="\$custom_hy2-\$host-\$user"`);
 
