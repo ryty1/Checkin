@@ -467,7 +467,7 @@ app.get('/newset', (req, res) => {
 });
 
 app.use((req, res, next) => {
-    const validPaths = ["/info", "/hy2ip", "/node", "/log", "/seting", "/ota"];
+    const validPaths = ["/info", "/hy2ip", "/node", "/log", "/newset", "/ota"];
     if (validPaths.includes(req.path)) {
         return next();
     }
