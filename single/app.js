@@ -387,7 +387,9 @@ app.post('/api/update-script', (req, res) => {
 
     res.json({ success: true, message: "修改成功，已生效" });
 });
-
+app.get('/newset', (req, res) => {
+    res.sendFile(path.join(__dirname, 'path_to_newset.html'));
+});
 app.use((req, res, next) => {
     const validPaths = ["/info", "/hy2ip", "/node", "/log", "/seting", "/ota"];
     if (validPaths.includes(req.path)) {
