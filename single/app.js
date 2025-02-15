@@ -376,10 +376,10 @@ function writeDefaultConfigToScript(config) {
 
         // 在 export_list() 函数内部定义 custom_vmess 和 custom_hy2 变量
         if (!exportListContent.includes('custom_vmess')) {
-            exportListContent = `custom_vmess="${config.vmessname}"\n` + exportListContent;
+            exportListContent = `  custom_vmess="${config.vmessname}"\n` + exportListContent;
         }
         if (!exportListContent.includes('custom_hy2')) {
-            exportListContent = `custom_hy2="${config.hy2name}"\n` + exportListContent;
+            exportListContent = `  custom_hy2="${config.hy2name}"\n` + exportListContent;
         }
 
         // 替换 export_list() 函数内容
@@ -410,7 +410,7 @@ function writeDefaultConfigToScript(config) {
     } catch (error) {
         console.error('写入脚本文件时出错:', error);
     }
-    
+
     // 停止进程，等待3秒后再启动
     stopShellCommand();
     
