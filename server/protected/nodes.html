@@ -53,12 +53,12 @@
             margin-top: 5px;
             border-radius: 5px;
             background-color: #f9f9f9;
-            word-wrap: break-word;
             text-align: left;
             width: 98%;
             height: 320px;
             overflow-y: auto;
-            white-space: pre-wrap;
+            white-space: pre-wrap; /* 允许超长内容换行 */
+            word-wrap: break-word; /* 确保超长单词也换行 */
         }
         .failed-box {
             margin-top: 15px;
@@ -108,25 +108,17 @@
             const allNodesDiv = document.getElementById("allNodes");
             const failedAccountsDiv = document.getElementById("failedAccounts");
 
-            let nodesContent = "";
+            // 整理所有节点，hysteria2 先，vmess 后，不加分类标题
+            let allNodes = [...data.successfulNodes.hysteria2, ...data.successfulNodes.vmess];
 
-            // 显示 hysteria2 节点
-            if (data.successfulNodes.hysteria2.length > 0) {
-                nodesContent += `<h3>hysteria2 节点:</h3>`;
-                nodesContent += `<pre>${data.successfulNodes.hysteria2.join("\n")}</pre>`;
+            // 更新节点内容，无空行
+            if (allNodes.length > 0) {
+                nodesText = allNodes.join("\n");
+                allNodesDiv.innerText = nodesText;
             } else {
-                nodesContent += `<h3>hysteria2 节点:</h3><p>没有成功的 hysteria2 节点。</p>`;
+                allNodesDiv.innerText = "没有成功的资源。";
+                nodesText = "";
             }
-
-            // 显示 vmess 节点
-            if (data.successfulNodes.vmess.length > 0) {
-                nodesContent += `<h3>vmess 节点:</h3>`;
-                nodesContent += `<pre>${data.successfulNodes.vmess.join("\n")}</pre>`;
-            } else {
-                nodesContent += `<h3>vmess 节点:</h3><p>没有成功的 vmess 节点。</p>`;
-            }
-
-            allNodesDiv.innerHTML = nodesContent;
 
             // 显示失败的账号
             if (data.failedAccounts && data.failedAccounts.length > 0) {
