@@ -406,20 +406,37 @@ function writeDefaultConfigToScript(config) {
     } catch (error) {
         console.error('写入脚本文件时出错:', error);
     }
-    // 杀死进程，等待3秒后执行
+进程，等待3秒后执行
     setTimeout(() => {
-        // 杀死 serv00sb 和 cloudflared 进程
-        exec('pkill serv00sb cloudflared', (error, stdout, stderr) => {
-            if (error) {
-                console.error(`执行错误: ${error}`);
-                return;
-            }
-            console.log(`进程已终止: ${stdout}`);
-            if (stderr) {
-                console.error(`错误信息: ${stderr}`);
-            }
+        // 定义要杀死的进程
+        const processes = ['cloudflare', 'serv00sb'];
+
+        processes.forEach(process => {
+            // 查找进程 ID
+            exec(`pgrep ${process}`, (error, stdout, stderr) => {
+                if (error) {
+                    console.error(`查找进程 ${process} 时出错:`, error);
+                    return;
+                }
+
+                if (stdout) {
+                    const pids = stdout.split('\n').filter(pid => pid.trim() !== ''); // 获取PID
+                    console.log(`Killing process: ${process} (PIDs: ${pids.join(', ')})`);
+
+                    // 逐个杀死进程
+                    pids.forEach(pid => {
+                        exec(`kill -9 ${pid}`, (killError, killStdout, killStderr) => {
+                            if (killError) {
+                                console.error(`杀死进程 ${pid} 时出错:`, killError);
+                            } else {
+                                console.log(`进程 ${pid} 已被杀死`);
+                            }
+                        });
+                    });
+                }
+            });
         });
-    }, 3000); 
+    }, 3000);  // 3秒后杀死进程
 }
 
 
