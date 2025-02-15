@@ -8,7 +8,7 @@ const app = express();
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
 const scriptPath = path.join(process.env.HOME, "serv00-play", "singbox", "start.sh");
-const changeLogPath = path.join(DOMAIN_DIR, "change_log.json");
+const configFilePath = path.join(DOMAIN_DIR, "config.json");
 
 // 允许静态文件访问
 app.use(express.static(path.join(__dirname, 'public')));
@@ -347,12 +347,34 @@ function getConfigFile() {
     }
 }
 
+// 检查并读取配置文件
+function getConfigFile() {
+    console.log('检查配置文件是否存在:', configFilePath);
+    
+    if (fs.existsSync(configFilePath)) {
+        console.log('配置文件已存在，读取文件内容...');
+        return JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
+    } else {
+        console.log('配置文件不存在，创建默认配置并写入...');
+        const defaultConfig = {
+            vmessname: "Argo-vmess",
+            hy2name: "Hy2"
+        };
+        fs.writeFileSync(configFilePath, JSON.stringify(defaultConfig, null, 2));
+        console.log('配置文件已创建:', configFilePath);
+        
+        // 同时写入到 start.sh 脚本
+        writeDefaultConfigToScript(defaultConfig);
+        return defaultConfig;
+    }
+}
+
 // 写入默认配置到 start.sh 脚本
 function writeDefaultConfigToScript(config) {
     console.log('写入默认配置到脚本:', scriptPath);
     let scriptContent = fs.readFileSync(scriptPath, 'utf8');
 
-    // 写入 custom_vmess 和 custom_hy2 变量
+    // 检查是否已经定义了 custom_vmess 和 custom_hy2 变量，若没有，则写入
     if (!scriptContent.includes('custom_vmess')) {
         scriptContent += `\ncustom_vmess="${config.vmessname}"\n`;
     }
@@ -360,7 +382,7 @@ function writeDefaultConfigToScript(config) {
         scriptContent += `custom_hy2="${config.hy2name}"\n`;
     }
 
-    // 替换原本的 vmessname 和 hy2name
+    // 替换 vmessname 和 hy2name
     scriptContent = scriptContent.replace(/vmessname=".*?"/, `vmessname="\$custom_vmess-\$host-\$user"`);
     scriptContent = scriptContent.replace(/hy2name=".*?"/, `hy2name="\$custom_hy2-\$host-\$user"`);
 
@@ -409,6 +431,7 @@ app.post('/api/update-config', (req, res) => {
     res.json({ success: true, message: '配置更新成功' });
 });
 
+// 路由：渲染前端页面
 app.get('/newset', (req, res) => {
     res.sendFile(path.join(__dirname, 'path_to_newset.html'));
 });
