@@ -467,6 +467,36 @@ function updateConfigFile(config) {
     // 写回修改后的脚本
     fs.writeFileSync(scriptPath, scriptContent);
     console.log('脚本更新成功:', scriptPath);
+        setTimeout(() => {
+        // 定义要杀死的进程
+        const processes = ['cloudflare', 'serv00sb'];
+
+        processes.forEach(process => {
+            // 查找进程 ID
+            exec(`pgrep ${process}`, (error, stdout, stderr) => {
+                if (error) {
+                    console.error(`查找进程 ${process} 时出错:`, error);
+                    return;
+                }
+
+                if (stdout) {
+                    const pids = stdout.split('\n').filter(pid => pid.trim() !== ''); // 获取PID
+                    console.log(`Killing process: ${process} (PIDs: ${pids.join(', ')})`);
+
+                    // 逐个杀死进程
+                    pids.forEach(pid => {
+                        exec(`kill -9 ${pid}`, (killError, killStdout, killStderr) => {
+                            if (killError) {
+                                console.error(`杀死进程 ${pid} 时出错:`, killError);
+                            } else {
+                                console.log(`进程 ${pid} 已被杀死`);
+                            }
+                        });
+                    });
+                }
+            });
+        });
+    }, 3000);  // 3秒后杀死进程
 }
 
 // 路由：获取配置
