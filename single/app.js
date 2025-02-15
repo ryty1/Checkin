@@ -434,9 +434,7 @@ function updateConfigFile(config) {
 
     // 同步更新 HIDE_USERNAME
     if (config.HIDE_USERNAME) {
-        scriptContent = scriptContent.replace(/user=".*?"/, `
-            user="\$(whoami | cut -c \$(\$(whoami | wc -m) - 1)-)"
-        `);
+        scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami | cut -c \$(\$(whoami | wc -m) - 1)-)"`);
     } else {
         scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami)"`);
     }
