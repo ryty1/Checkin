@@ -325,72 +325,78 @@ app.get("/node", (req, res) => {
     });
 });
 
-// 检查并写入默认配置到脚本
-function writeDefaultConfigToScript() {
-    let scriptContent = fs.readFileSync(scriptPath, 'utf8');
-
-    // 如果脚本中没有 custom_vmess 和 custom_hy2 变量，写入默认值
-    if (!scriptContent.includes('custom_vmess')) {
-        scriptContent += '\ncustom_vmess="Argo-vmess"\n';
-    }
-    if (!scriptContent.includes('custom_hy2')) {
-        scriptContent += 'custom_hy2="Hy2"\n';
-    }
-
-    // 写回脚本
-    fs.writeFileSync(scriptPath, scriptContent);
-}
-
-// 获取配置（优先读取配置文件，如果文件不存在则写入默认值）
+// 检查并读取配置文件
 function getConfigFile() {
     if (fs.existsSync(configFilePath)) {
+        // 配置文件存在，读取并返回
         return JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
     } else {
-        // 配置文件不存在，写入默认配置到脚本并生成配置文件
-        writeDefaultConfigToScript();
+        // 配置文件不存在，生成默认配置文件
         const defaultConfig = {
             vmessname: "Argo-vmess",
             hy2name: "Hy2"
         };
         fs.writeFileSync(configFilePath, JSON.stringify(defaultConfig, null, 2));
+        // 同时写入到 start.sh 脚本
+        writeDefaultConfigToScript(defaultConfig);
         return defaultConfig;
     }
 }
 
-// 更新脚本中的配置
-function updateScriptWithConfig(config) {
+// 写入默认配置到 start.sh 脚本
+function writeDefaultConfigToScript(config) {
     let scriptContent = fs.readFileSync(scriptPath, 'utf8');
 
-    // 更新 custom_vmess 和 custom_hy2
-    scriptContent = scriptContent.replace(/custom_vmess=".*?"/, `custom_vmess="${config.vmessname}"`);
-    scriptContent = scriptContent.replace(/custom_hy2=".*?"/, `custom_hy2="${config.hy2name}"`);
+    // 写入 custom_vmess 和 custom_hy2 变量
+    if (!scriptContent.includes('custom_vmess')) {
+        scriptContent += `\ncustom_vmess="${config.vmessname}"\n`;
+    }
+    if (!scriptContent.includes('custom_hy2')) {
+        scriptContent += `custom_hy2="${config.hy2name}"\n`;
+    }
 
+    // 替换原本的 vmessname 和 hy2name
+    scriptContent = scriptContent.replace(/vmessname=".*?"/, `vmessname="\$custom_vmess-\$host-\$user"`);
+    scriptContent = scriptContent.replace(/hy2name=".*?"/, `hy2name="\$custom_hy2-\$host-\$user"`);
+
+    // 将更新后的内容写回脚本
     fs.writeFileSync(scriptPath, scriptContent);
 }
 
-// 更新配置文件
+// 更新配置文件和脚本内容
 function updateConfigFile(config) {
+    // 更新配置文件
     fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2));
+
+    // 更新脚本中的变量
+    let scriptContent = fs.readFileSync(scriptPath, 'utf8');
+    scriptContent = scriptContent.replace(/custom_vmess=".*?"/, `custom_vmess="${config.vmessname}"`);
+    scriptContent = scriptContent.replace(/custom_hy2=".*?"/, `custom_hy2="${config.hy2name}"`);
+
+    // 同步更新 vmessname 和 hy2name 的定义
+    scriptContent = scriptContent.replace(/vmessname=".*?"/, `vmessname="\$custom_vmess-\$host-\$user"`);
+    scriptContent = scriptContent.replace(/hy2name=".*?"/, `hy2name="\$custom_hy2-\$host-\$user"`);
+
+    // 写回修改后的脚本
+    fs.writeFileSync(scriptPath, scriptContent);
 }
 
-// 提供API给前端获取和更新配置
+// 路由：获取配置
 app.get('/api/get-config', (req, res) => {
     const config = getConfigFile();
     res.json(config);
 });
 
+// 路由：更新配置
 app.post('/api/update-config', (req, res) => {
     const { vmessname, hy2name } = req.body;
 
     const newConfig = { vmessname, hy2name };
 
-    // 更新配置文件
+    // 更新配置文件和脚本内容
     updateConfigFile(newConfig);
 
-    // 更新脚本
-    updateScriptWithConfig(newConfig);
-
-    res.json({ success: true, message: '配置已更新' });
+    res.json({ success: true, message: '配置更新成功' });
 });
 
 app.get('/newset', (req, res) => {
