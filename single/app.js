@@ -374,14 +374,14 @@ function writeDefaultConfigToScript(config) {
 
         // 在 export_list() 函数内部定义 custom_vmess 和 custom_hy2 变量
         if (!exportListContent.includes('custom_vmess')) {
-            exportListContent = `  custom_vmess="${config.vmessname}"\n` + exportListContent;
+            exportListContent = `  custom_vmess="${config.vmessname}"` + exportListContent;
         }
         if (!exportListContent.includes('custom_hy2')) {
-            exportListContent = `  custom_hy2="${config.hy2name}"\n` + exportListContent;
+            exportListContent = `  custom_hy2="${config.hy2name}"` + exportListContent;
         }
 
         // 替换 export_list() 函数内容
-        scriptContent = scriptContent.replace(exportListFuncPattern, `export_list() {${exportListContent}}`);
+        scriptContent = scriptContent.replace(exportListFuncPattern, `export_list() {\n${exportListContent}}`);
     } else {
         console.log("没有找到 export_list() 函数，无法插入变量定义。");
     }
