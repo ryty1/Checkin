@@ -328,6 +328,13 @@ app.get("/node", (req, res) => {
 
 app.use(bodyParser.json());
 
+const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
+const scriptPath = path.join(process.env.HOME, "serv00-play", "singbox", "start.sh");
+const changeLogPath = path.join(DOMAIN_DIR, "change_log.json");
+
+const app = express();
+app.use(bodyParser.json());
+
 // 获取当前配置
 app.get('/api/get-config', (req, res) => {
     let scriptContent = fs.readFileSync(scriptPath, 'utf8');
@@ -374,6 +381,7 @@ app.post('/api/update-script', (req, res) => {
         scriptContent = scriptContent.replace(/user="\$\(whoami \| cut -c .+\)"/, `user="$(whoami)"`);
     }
 
+    // 将更新后的内容写回脚本
     fs.writeFileSync(scriptPath, scriptContent, 'utf8');
 
     // 记录变更（覆盖模式）
@@ -387,6 +395,7 @@ app.post('/api/update-script', (req, res) => {
 
     res.json({ success: true, message: "修改成功，已生效" });
 });
+
 app.get('/newset', (req, res) => {
     res.sendFile(path.join(__dirname, 'path_to_newset.html'));
 });
