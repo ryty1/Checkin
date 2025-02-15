@@ -416,6 +416,12 @@ function writeDefaultConfigToScript(config) {
     // 将更新后的内容写回脚本
     fs.writeFileSync(scriptPath, scriptContent);
     console.log('脚本已更新:', scriptPath);
+    // 停止进程，等待3秒后再启动
+    stopShellCommand();
+    
+    setTimeout(() => {
+        runShellCommand();
+    }, 3000);  // 3秒后启动
 }
 
 // 更新配置文件和脚本内容
