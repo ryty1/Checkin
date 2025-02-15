@@ -1,12 +1,15 @@
 require('dotenv').config();
 const express = require("express");
 const { exec } = require("child_process");
+const bodyParser = require('body-parser');
 const fs = require("fs");
 const path = require("path");
 const app = express();
 
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
+const scriptPath = path.join(process.env.HOME, "serv00-play", "singbox", "start.sh");
+const changeLogPath = path.join(DOMAIN_DIR, "change_log.json");
 
 // 允许静态文件访问
 app.use(express.static(path.join(__dirname, 'public')));
@@ -323,55 +326,68 @@ app.get("/node", (req, res) => {
     });
 });
 
-app.post('/seting', (req, res) => {
-  const { userSwitch, vmessPrefix, hy2Prefix } = req.body;
+app.use(bodyParser.json());
 
-  // 获取脚本路径
-  const scriptPath = `${process.env.HOME}/serv00-play/singbox/start.sh`;
+// 获取当前配置
+app.get('/api/get-config', (req, res) => {
+    let scriptContent = fs.readFileSync(scriptPath, 'utf8');
 
-  // 读取脚本内容
-  fs.readFile(scriptPath, 'utf8', (err, data) => {
-    if (err) {
-      return res.status(500).json({ message: '读取脚本失败' });
+    const vmessMatch = scriptContent.match(/custom_vmess="(.+?)"/);
+    const hy2Match = scriptContent.match(/custom_hy2="(.+?)"/);
+    const hiddenMatch = scriptContent.match(/user="\$\(whoami \| cut -c .+\)"/);
+
+    const currentConfig = {
+        vmessname: vmessMatch ? vmessMatch[1] : "Argo-vmess",
+        hy2name: hy2Match ? hy2Match[1] : "Hy2",
+        hidden_username: !!hiddenMatch
+    };
+
+    res.json(currentConfig);
+});
+
+// 修改 start.sh
+app.post('/api/update-script', (req, res) => {
+    const { vmessname, hy2name, hidden_username } = req.body;
+
+    if (!vmessname || !hy2name) {
+        return res.status(400).json({ error: "vmessname 和 hy2name 不能为空" });
     }
 
-    let modifiedData = data;
+    let scriptContent = fs.readFileSync(scriptPath, 'utf8');
 
-    // 修改用户名部分
-    if (userSwitch) {
-      modifiedData = modifiedData.replace(/user="\$\(whoami\)"/, 'user="$(whoami | cut -c $(($(whoami | wc -m) - 1))-)"');
+    // 确保 custom_vmess 和 custom_hy2 存在
+    if (!scriptContent.includes('custom_vmess=')) {
+        scriptContent = `custom_vmess="Argo-vmess"\n` + scriptContent;
+    }
+    if (!scriptContent.includes('custom_hy2=')) {
+        scriptContent = `custom_hy2="Hy2"\n` + scriptContent;
+    }
+
+    // 更新变量
+    scriptContent = scriptContent.replace(/custom_vmess="[^"]+"/, `custom_vmess="${vmessname}"`);
+    scriptContent = scriptContent.replace(/custom_hy2="[^"]+"/, `custom_hy2="${hy2name}"`);
+
+    // 处理隐藏用户名
+    if (hidden_username) {
+        scriptContent = scriptContent.replace(/user="\$\(whoami\)"/, `user="$(whoami | cut -c $(($(whoami | wc -m) - 1))-)"`);
     } else {
-      modifiedData = modifiedData.replace(/user="\$\(whoami\) \| cut -c \$(\$\((whoami \| wc -m) - 1\))-"$/, 'user="$(whoami)"');
+        scriptContent = scriptContent.replace(/user="\$\(whoami \| cut -c .+\)"/, `user="$(whoami)"`);
     }
 
-    // 修改 vmessname 前缀
-    if (vmessPrefix) {
-      modifiedData = modifiedData.replace(/vmessname="Argo-vmess-(.*)"/, `vmessname="${vmessPrefix}-$1"`);
-    }
+    fs.writeFileSync(scriptPath, scriptContent, 'utf8');
 
-    // 修改 hy2name 前缀
-    if (hy2Prefix) {
-      modifiedData = modifiedData.replace(/hy2name="Hy2-(.*)"/, `hy2name="${hy2Prefix}-$1"`);
-    }
+    // 记录变更（覆盖模式）
+    const changeLog = {
+        timestamp: new Date().toISOString(),
+        vmessname,
+        hy2name,
+        hidden_username
+    };
+    fs.writeFileSync(changeLogPath, JSON.stringify(changeLog, null, 2));
 
-    // 将修改后的内容写回脚本
-    fs.writeFile(scriptPath, modifiedData, 'utf8', (err) => {
-      if (err) {
-        return res.status(500).json({ message: '保存脚本失败' });
-      }
-      res.json({ message: '脚本修改成功' });
-    stopShellCommand();
-          setTimeout(() => {
-        runShellCommand();
-        res.json({ message: '修改并重启' });
-      }, 3000);
-    });
-  });
+    res.json({ success: true, message: "修改成功，已生效" });
 });
-  
-app.get('/newset', (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "newset.html"));
-});
+
 app.use((req, res, next) => {
     const validPaths = ["/info", "/hy2ip", "/node", "/log", "/seting", "/ota"];
     if (validPaths.includes(req.path)) {
