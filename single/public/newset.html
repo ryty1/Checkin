@@ -3,65 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>修改 Start.sh 配置</title>
+    <title>配置管理</title>
 </head>
 <body>
+    <h1>配置管理</h1>
 
-    <h2>修改 Start.sh 配置</h2>
+    <label for="vmessname">Vmess 前缀:</label>
+    <input type="text" id="vmessname" placeholder="Vmess 前缀">
 
-    <label for="vmessname">VMess 前缀：</label>
-    <input type="text" id="vmessname">
-    <br><br>
+    <label for="hy2name">Hy2 前缀:</label>
+    <input type="text" id="hy2name" placeholder="Hy2 前缀">
 
-    <label for="hy2name">Hy2 前缀：</label>
-    <input type="text" id="hy2name">
-    <br><br>
-
-    <label for="hidden_username">隐藏用户名：</label>
-    <input type="checkbox" id="hidden_username">
-    <br><br>
-
-    <button onclick="submitChanges()">提交修改</button>
-
-    <p id="result"></p>
+    <button onclick="submitChanges()">提交更改</button>
 
     <script>
-        // 读取当前变量
-        function loadConfig() {
-            fetch("/api/get-config")
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("vmessname").value = data.vmessname;
-                document.getElementById("hy2name").value = data.hy2name;
-                document.getElementById("hidden_username").checked = data.hidden_username;
-            })
-            .catch(err => console.error("获取配置失败:", err));
-        }
+        // 页面加载时获取配置
+        window.onload = function() {
+            fetch('/api/get-config')
+                .then(response => response.json())
+                .then(data => {
+                    // 填充表单
+                    document.getElementById('vmessname').value = data.vmessname;
+                    document.getElementById('hy2name').value = data.hy2name;
+                })
+                .catch(error => {
+                    console.error('无法获取配置:', error);
+                    alert('获取配置失败');
+                });
+        };
 
+        // 提交修改
         function submitChanges() {
-            const vmessname = document.getElementById("vmessname").value.trim();
-            const hy2name = document.getElementById("hy2name").value.trim();
-            const hidden_username = document.getElementById("hidden_username").checked;
+            const vmessname = document.getElementById('vmessname').value;
+            const hy2name = document.getElementById('hy2name').value;
 
-            if (!vmessname || !hy2name) {
-                document.getElementById("result").innerText = "VMess 和 Hy2 前缀不能为空";
-                return;
-            }
-
-            fetch("/api/update-script", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ vmessname, hy2name, hidden_username })
+            fetch('/api/update-config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    vmessname,
+                    hy2name
+                })
             })
-            .then(res => res.json())
+            .then(response => response.json())
             .then(data => {
-                document.getElementById("result").innerText = data.message;
+                if (data.success) {
+                    alert('配置更新成功');
+                } else {
+                    alert('更新失败');
+                }
             })
-            .catch(err => console.error(err));
+            .catch(error => {
+                console.error('提交失败:', error);
+                alert('提交失败');
+            });
         }
-
-        window.onload = loadConfig;
     </script>
-
 </body>
 </html>
