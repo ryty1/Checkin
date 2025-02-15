@@ -377,7 +377,7 @@ function writeDefaultConfigToScript(config) {
             exportListContent = `  custom_vmess="${config.vmessname}\n"` + exportListContent;
         }
         if (!exportListContent.includes('custom_hy2')) {
-            exportListContent = `  custom_hy2="${config.hy2name}"` + exportListContent;
+            exportListContent = `  custom_hy2="${config.hy2name}\n"` + exportListContent;
         }
 
         // 替换 export_list() 函数内容
