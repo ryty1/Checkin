@@ -381,7 +381,7 @@ function writeDefaultConfigToScript(config) {
         }
 
         // 替换 export_list() 函数内容
-        scriptContent = scriptContent.replace(exportListFuncPattern, `export_list() {\n${exportListContent}\n}`);
+        scriptContent = scriptContent.replace(exportListFuncPattern, `export_list() {\n${exportListContent}}`);
     } else {
         console.log("没有找到 export_list() 函数，无法插入变量定义。");
     }
