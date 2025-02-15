@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require("express");
 const { exec } = require("child_process");
-const bodyParser = require('body-parser');
 const fs = require("fs");
 const path = require("path");
 const app = express();
@@ -326,74 +325,72 @@ app.get("/node", (req, res) => {
     });
 });
 
-app.use(bodyParser.json());
-
-const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
-const scriptPath = path.join(process.env.HOME, "serv00-play", "singbox", "start.sh");
-const changeLogPath = path.join(DOMAIN_DIR, "change_log.json");
-
-const app = express();
-app.use(bodyParser.json());
-
-// 获取当前配置
-app.get('/api/get-config', (req, res) => {
+// 检查并写入默认配置到脚本
+function writeDefaultConfigToScript() {
     let scriptContent = fs.readFileSync(scriptPath, 'utf8');
 
-    const vmessMatch = scriptContent.match(/custom_vmess="(.+?)"/);
-    const hy2Match = scriptContent.match(/custom_hy2="(.+?)"/);
-    const hiddenMatch = scriptContent.match(/user="\$\(whoami \| cut -c .+\)"/);
+    // 如果脚本中没有 custom_vmess 和 custom_hy2 变量，写入默认值
+    if (!scriptContent.includes('custom_vmess')) {
+        scriptContent += '\ncustom_vmess="Argo-vmess"\n';
+    }
+    if (!scriptContent.includes('custom_hy2')) {
+        scriptContent += 'custom_hy2="Hy2"\n';
+    }
 
-    const currentConfig = {
-        vmessname: vmessMatch ? vmessMatch[1] : "Argo-vmess",
-        hy2name: hy2Match ? hy2Match[1] : "Hy2",
-        hidden_username: !!hiddenMatch
-    };
+    // 写回脚本
+    fs.writeFileSync(scriptPath, scriptContent);
+}
 
-    res.json(currentConfig);
+// 获取配置（优先读取配置文件，如果文件不存在则写入默认值）
+function getConfigFile() {
+    if (fs.existsSync(configFilePath)) {
+        return JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
+    } else {
+        // 配置文件不存在，写入默认配置到脚本并生成配置文件
+        writeDefaultConfigToScript();
+        const defaultConfig = {
+            vmessname: "Argo-vmess",
+            hy2name: "Hy2"
+        };
+        fs.writeFileSync(configFilePath, JSON.stringify(defaultConfig, null, 2));
+        return defaultConfig;
+    }
+}
+
+// 更新脚本中的配置
+function updateScriptWithConfig(config) {
+    let scriptContent = fs.readFileSync(scriptPath, 'utf8');
+
+    // 更新 custom_vmess 和 custom_hy2
+    scriptContent = scriptContent.replace(/custom_vmess=".*?"/, `custom_vmess="${config.vmessname}"`);
+    scriptContent = scriptContent.replace(/custom_hy2=".*?"/, `custom_hy2="${config.hy2name}"`);
+
+    fs.writeFileSync(scriptPath, scriptContent);
+}
+
+// 更新配置文件
+function updateConfigFile(config) {
+    fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2));
+}
+
+// 提供API给前端获取和更新配置
+app.get('/api/get-config', (req, res) => {
+    const config = getConfigFile();
+    res.json(config);
 });
 
-// 修改 start.sh
-app.post('/api/update-script', (req, res) => {
-    const { vmessname, hy2name, hidden_username } = req.body;
+app.post('/api/update-config', (req, res) => {
+    const { vmessname, hy2name } = req.body;
 
-    if (!vmessname || !hy2name) {
-        return res.status(400).json({ error: "vmessname 和 hy2name 不能为空" });
-    }
+    const newConfig = { vmessname, hy2name };
 
-    let scriptContent = fs.readFileSync(scriptPath, 'utf8');
+    // 更新配置文件
+    updateConfigFile(newConfig);
 
-    // 确保 custom_vmess 和 custom_hy2 存在
-    if (!scriptContent.includes('custom_vmess=')) {
-        scriptContent = `custom_vmess="Argo-vmess"\n` + scriptContent;
-    }
-    if (!scriptContent.includes('custom_hy2=')) {
-        scriptContent = `custom_hy2="Hy2"\n` + scriptContent;
-    }
+    // 更新脚本
+    updateScriptWithConfig(newConfig);
 
-    // 更新变量
-    scriptContent = scriptContent.replace(/custom_vmess="[^"]+"/, `custom_vmess="${vmessname}"`);
-    scriptContent = scriptContent.replace(/custom_hy2="[^"]+"/, `custom_hy2="${hy2name}"`);
-
-    // 处理隐藏用户名
-    if (hidden_username) {
-        scriptContent = scriptContent.replace(/user="\$\(whoami\)"/, `user="$(whoami | cut -c $(($(whoami | wc -m) - 1))-)"`);
-    } else {
-        scriptContent = scriptContent.replace(/user="\$\(whoami \| cut -c .+\)"/, `user="$(whoami)"`);
-    }
-
-    // 将更新后的内容写回脚本
-    fs.writeFileSync(scriptPath, scriptContent, 'utf8');
-
-    // 记录变更（覆盖模式）
-    const changeLog = {
-        timestamp: new Date().toISOString(),
-        vmessname,
-        hy2name,
-        hidden_username
-    };
-    fs.writeFileSync(changeLogPath, JSON.stringify(changeLog, null, 2));
-
-    res.json({ success: true, message: "修改成功，已生效" });
+    res.json({ success: true, message: '配置已更新' });
 });
 
 app.get('/newset', (req, res) => {
