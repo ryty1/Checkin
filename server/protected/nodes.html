@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>节点汇集</title>
+    <title>科学采集</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -56,7 +56,7 @@
             word-wrap: break-word;
             text-align: left;
             width: 98%;
-            height: 300px;
+            height: 320px;
             overflow-y: auto;
             white-space: pre-wrap;
         }
@@ -73,16 +73,14 @@
 </head>
 <body>
     <div class="container">
-        <h1>节点汇集</h1>
+        <h1>科学采集</h1>
 
-        <button class="btn btn-primary" onclick="startNodesSummary()">开始汇集</button>
-        <button class="btn btn-danger" onclick="copyNodes()">复制节点</button>
+        <button class="btn btn-primary" onclick="startNodesSummary()">开始采集</button>
+        <button class="btn btn-danger" onclick="copyNodes()">提取资源</button>
 
-        <h3>成功的节点</h3>
-        <div id="successfulNodes" class="node-box"></div>
+        <div id="allNodes" class="node-box"></div>
 
-        <h3>失败的账号</h3>
-        <div id="failedAccounts" class="failed-box">点击“开始汇集”开始获取数据...</div>
+        <div id="failedAccounts" class="failed-box">点击“开始采集”开始获取数据...</div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -97,29 +95,40 @@
         function copyNodes() {
             if (nodesText) {
                 navigator.clipboard.writeText(nodesText).then(() => {
-                    alert("节点已复制！");
+                    alert("资源已复制！");
                 });
             } else {
-                alert("没有可复制的节点");
+                alert("没有可复制的资源");
             }
         }
 
         socket.on("nodesSummary", (data) => {
             console.log('完整返回数据:', data);  // 打印完整返回数据，确认是否正确接收到
 
-            const successfulNodesDiv = document.getElementById("successfulNodes");
+            const allNodesDiv = document.getElementById("allNodes");
             const failedAccountsDiv = document.getElementById("failedAccounts");
 
-            // 处理成功的节点
-            if (data.nodesSummary.length > 0) {
-                nodesText = data.nodesSummary.join("\n");
-                successfulNodesDiv.innerText = nodesText;
+            let nodesContent = "";
+
+            // 显示 hysteria2 节点
+            if (data.successfulNodes.hysteria2.length > 0) {
+                nodesContent += `<h3>hysteria2 节点:</h3>`;
+                nodesContent += `<pre>${data.successfulNodes.hysteria2.join("\n")}</pre>`;
             } else {
-                successfulNodesDiv.innerText = "没有成功的节点。";
-                nodesText = "";
+                nodesContent += `<h3>hysteria2 节点:</h3><p>没有成功的 hysteria2 节点。</p>`;
             }
 
-            // 处理失败的账号
+            // 显示 vmess 节点
+            if (data.successfulNodes.vmess.length > 0) {
+                nodesContent += `<h3>vmess 节点:</h3>`;
+                nodesContent += `<pre>${data.successfulNodes.vmess.join("\n")}</pre>`;
+            } else {
+                nodesContent += `<h3>vmess 节点:</h3><p>没有成功的 vmess 节点。</p>`;
+            }
+
+            allNodesDiv.innerHTML = nodesContent;
+
+            // 显示失败的账号
             if (data.failedAccounts && data.failedAccounts.length > 0) {
                 failedAccountsDiv.innerHTML = `<b>以下账号获取失败：</b><br>${data.failedAccounts.join("<br>")}`;
             } else {
