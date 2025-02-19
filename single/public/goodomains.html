@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,129 +8,108 @@
     /* 基本样式 */
     body {
       font-family: 'Arial', sans-serif;
-      background-color: #f7f7f7;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      background-color: #f4f4f4;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
       color: #333;
     }
-
-    .container {
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      width: 400px;
+    #currentDomain {
+      font-weight: bold;
+      color: #007bff;
     }
-
-    h1 {
-      margin-bottom: 20px;
-    }
-
     form {
-      margin-bottom: 20px;
-    }
-
-    input {
-      padding: 10px;
-      margin: 10px 0;
-      width: 100%;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    button {
-      padding: 10px 20px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #45a049;
-    }
-
-    h2 {
       margin-top: 20px;
     }
-
-    .error {
-      color: red;
+    label {
+      font-size: 18px;
     }
-
-    .success {
-      color: green;
+    input {
+      padding: 8px;
+      font-size: 16px;
+      margin: 10px;
+    }
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>修改优选域名</h1>
-    <form id="domainForm">
-      <label for="goodDomain">新 GOOD_DOMAIN:</label>
-      <input type="text" id="goodDomain" name="goodDomain" placeholder="www.visa.com.sg" required>
-      <button type="submit">提交</button>
-    </form>
+  <h1>修改 GOOD_DOMAIN</h1>
+  
+  <p>当前 GOOD_DOMAIN: <span id="currentDomain">加载中...</span></p>
 
-    <h2>当前 GOOD_DOMAIN: <span id="currentDomain">加载中...</span></h2>
-    <p id="statusMessage"></p>
-  </div>
+  <form id="domainForm">
+    <label for="goodDomain">新 GOOD_DOMAIN：</label>
+    <input type="text" id="goodDomain" required>
+    <button type="submit">提交</button>
+  </form>
 
   <script>
-    // 获取当前 GOOD_DOMAIN 值并显示
-    function fetchCurrentDomain() {
-      fetch('/getGoodDomain')
+    document.addEventListener("DOMContentLoaded", function () {
+      const currentDomainSpan = document.getElementById("currentDomain");
+      const domainForm = document.getElementById("domainForm");
+      const goodDomainInput = document.getElementById("goodDomain");
+
+      // 获取当前 GOOD_DOMAIN
+      fetch("/getGoodDomain")
         .then(response => response.json())
         .then(data => {
           if (data.GOOD_DOMAIN) {
-            document.getElementById('currentDomain').textContent = data.GOOD_DOMAIN;
+            currentDomainSpan.textContent = data.GOOD_DOMAIN;
           } else {
-            document.getElementById('currentDomain').textContent = '未获取到域名';
+            currentDomainSpan.textContent = "获取失败";
           }
         })
         .catch(error => {
-          document.getElementById('currentDomain').textContent = '加载失败';
+          console.error("获取域名失败:", error);
+          currentDomainSpan.textContent = "加载失败";
         });
-    }
 
-    // 初始化加载当前 GOOD_DOMAIN
-    fetchCurrentDomain();
+      // 处理表单提交
+      domainForm.addEventListener("submit", function (event) {
+        event.preventDefault();
 
-    // 提交表单
-    document.getElementById('domainForm').addEventListener('submit', function(event) {
-      event.preventDefault();
-
-      const newGoodDomain = document.getElementById('goodDomain').value;
-      const statusMessage = document.getElementById('statusMessage');
-      statusMessage.textContent = ''; // 清空之前的消息
-
-      fetch('/updateGoodDomain', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ GOOD_DOMAIN: newGoodDomain })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          statusMessage.textContent = 'GOOD_DOMAIN 更新成功，并已尝试杀掉相关进程';
-          statusMessage.className = 'success';
-          fetchCurrentDomain(); // 更新当前的 GOOD_DOMAIN
-        } else {
-          statusMessage.textContent = `更新失败: ${data.error || '未知错误'}`;
-          statusMessage.className = 'error';
+        const newDomain = goodDomainInput.value.trim();
+        if (!newDomain) {
+          alert("请输入新的 GOOD_DOMAIN");
+          return;
         }
-      })
-      .catch(error => {
-        statusMessage.textContent = `请求失败: ${error.message}`;
-        statusMessage.className = 'error';
+
+        fetch("/updateGoodDomain", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ GOOD_DOMAIN: newDomain })
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("服务器返回错误");
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.success) {
+            alert("更新成功！");
+            currentDomainSpan.textContent = newDomain;
+          } else {
+            alert("更新失败：" + data.message);
+          }
+        })
+        .catch(error => {
+          console.error("请求失败:", error);
+          alert("请求失败，请稍后再试！");
+        });
       });
     });
   </script>
