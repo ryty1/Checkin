@@ -92,7 +92,7 @@
       border-radius: 8px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       text-align: center;
-      width: 300px;
+      width: 200px;
     }
 
     .modal button {
@@ -134,7 +134,7 @@
 
   <div class="container">
     <h1>更新优选域名</h1>
-    <h2>当前 GOOD_DOMAIN: <span id="currentDomain">加载中...</span></h2>
+    <h2>当前优选: <span id="currentDomain">加载中...</span></h2>
     <form id="domainForm">
       <input type="text" id="goodDomain" name="goodDomain" placeholder="例如：www.visa.com.sg" required>
       <button type="submit">提交</button>
@@ -145,7 +145,6 @@
   <div id="successModal" class="modal">
     <div class="modal-content">
       <h3>修改成功</h3>
-      <p>域名已成功更新!</p>
       <button id="closeModalBtn">关闭</button>
     </div>
   </div>
@@ -153,7 +152,6 @@
   <div id="errorModal" class="modal">
     <div class="modal-content">
       <h3>请求失败</h3>
-      <p>请稍后再试。</p>
       <button id="closeErrorModalBtn">关闭</button>
     </div>
   </div>
