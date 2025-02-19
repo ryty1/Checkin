@@ -40,12 +40,21 @@
       font-weight: bold;
       color: #007BFF;
     }
-    input {
-      width: 90%;
-      padding: 12px;
-      margin-bottom: 20px;
-      border-radius: 4px;
+     /* 基本样式 */
+    input[type="text"] {
+      font-size: 16px;
+      padding: 10px;
+      width: 100%;
+      box-sizing: border-box;
       border: 1px solid #ccc;
+      border-radius: 4px;
+      transition: none; /* 禁止输入框的过渡效果 */
+    }
+
+    input[type="text"]:focus {
+      outline: none; /* 移除聚焦时的默认边框 */
+      border-color: #4A90E2; /* 聚焦时边框的颜色 */
+      box-shadow: none; /* 禁用聚焦时的阴影效果 */
     }
 
     button {
