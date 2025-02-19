@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>优选域名</title>
+  <title>修改 GOOD_DOMAIN</title>
   <style>
     /* 基本样式 */
     body {
@@ -35,10 +35,16 @@
     }
 
     h2 {
-      font-size: 14px;
+      font-size: 18px;
       color: #555;
       margin-top: 20px;
-      text-align: left;
+    }
+
+    label {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 10px;
+      display: block;
     }
 
     input[type="text"] {
@@ -71,29 +77,6 @@
 
     button:hover {
       background-color: #45a049;
-    }
-
-    .alert {
-      margin-top: 10px;
-      padding: 12px;
-      border-radius: 5px;
-      display: none;
-      text-align: center;
-    }
-
-    .alert.success {
-      background-color: #4CAF50;
-      color: white;
-    }
-
-    .alert.error {
-      background-color: #f44336;
-      color: white;
-    }
-
-    #currentDomain {
-      font-weight: bold;
-      color: #007BFF;
     }
 
     /* 弹窗样式 */
@@ -131,6 +114,11 @@
       background-color: #45a049;
     }
 
+    #currentDomain {
+      font-weight: bold;
+      color: #007BFF;
+    }
+
     /* 响应式设计 */
     @media (max-width: 480px) {
       .container {
@@ -151,24 +139,31 @@
 <body>
 
   <div class="container">
-    <h1>更新优选域名</h1>
-    <h2>当前优选: <span id="currentDomain">加载中...</span></h2>
-
-    <!-- 显示成功/失败消息 -->
-    <div id="alertMessage" class="alert"></div>
+    <h1>修改 GOOD_DOMAIN</h1>
 
     <form id="domainForm">
+      <label for="goodDomain">新 GOOD_DOMAIN:</label>
       <input type="text" id="goodDomain" name="goodDomain" placeholder="例如：www.visa.com.sg" required>
       <button type="submit">提交</button>
     </form>
+
+    <h2>当前 GOOD_DOMAIN: <span id="currentDomain">加载中...</span></h2>
   </div>
 
   <!-- 弹窗 -->
+  <div id="successModal" class="modal">
+    <div class="modal-content">
+      <h3>修改成功</h3>
+      <p>域名已成功更新!</p>
+      <button id="closeModalBtn">关闭</button>
+    </div>
+  </div>
+
   <div id="errorModal" class="modal">
     <div class="modal-content">
       <h3>请求失败</h3>
       <p>请稍后再试。</p>
-      <button id="closeModalBtn">关闭</button>
+      <button id="closeErrorModalBtn">关闭</button>
     </div>
   </div>
 
@@ -180,7 +175,7 @@
         document.getElementById('currentDomain').innerText = data.GOOD_DOMAIN;
       })
       .catch(error => {
-        console.error('获取 优选域名 失败:', error);
+        console.error('获取 GOOD_DOMAIN 失败:', error);
         document.getElementById('currentDomain').innerText = '加载失败';
       });
 
@@ -189,7 +184,6 @@
       event.preventDefault();
 
       const newDomain = document.getElementById('goodDomain').value;
-      const alertMessage = document.getElementById('alertMessage');
 
       fetch('/updateGoodDomain', {
         method: 'POST',
@@ -201,27 +195,32 @@
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          alertMessage.textContent = '修改成功';
-          alertMessage.className = 'alert success';
+          // 显示成功弹窗
+          const modal = document.getElementById('successModal');
+          modal.style.display = 'flex';
           document.getElementById('currentDomain').innerText = newDomain;
         } else {
-          alertMessage.textContent = '修改失败，请稍后再试';
-          alertMessage.className = 'alert error';
+          // 显示失败弹窗
+          const modal = document.getElementById('errorModal');
+          modal.style.display = 'flex';
         }
-        alertMessage.style.display = 'block';
       })
       .catch(error => {
-        // 弹出失败请求的弹窗
+        // 请求失败，显示错误弹窗
         const modal = document.getElementById('errorModal');
         modal.style.display = 'flex';
-
-        // 关闭弹窗
-        document.getElementById('closeModalBtn').addEventListener('click', function() {
-          modal.style.display = 'none';
-        });
-
-        console.error(error);
+        console.error('请求失败:', error);
       });
+    });
+
+    // 关闭成功弹窗
+    document.getElementById('closeModalBtn').addEventListener('click', function() {
+      document.getElementById('successModal').style.display = 'none';
+    });
+
+    // 关闭错误弹窗
+    document.getElementById('closeErrorModalBtn').addEventListener('click', function() {
+      document.getElementById('errorModal').style.display = 'none';
     });
   </script>
 
