@@ -119,7 +119,7 @@
         });
         const result = await response.json();
         if (result.success) {
-          alert(`更新成功`);
+          alert(`更新成功,singbox 己重启！`);
           fetchCurrentDomain(); // 刷新当前域名
         } else {
           alert(`更新失败：${result.error}`);
