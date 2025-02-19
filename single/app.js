@@ -557,7 +557,8 @@ app.post('/updateGoodDomain', (req, res) => {
       if (err) {
         return res.status(500).json({ success: false, error: '保存配置文件失败' });
       }
-       // 延迟3秒后杀死进程
+      res.json({ success: true });
+           // 延迟3秒后杀死进程
     await new Promise(resolve => setTimeout(resolve, 3000));
 
     // 定义要杀死的进程
@@ -592,8 +593,6 @@ app.post('/updateGoodDomain', (req, res) => {
         }
         runShellCommand();
     }
-
-      res.json({ success: true });
     });
   });
 });
