@@ -558,35 +558,6 @@ app.post('/updateGoodDomain', (req, res) => {
         return res.status(500).json({ success: false, error: '保存配置文件失败' });
       }
       res.json({ success: true });
-    // 使用 async/await 处理进程的杀死操作
-    for (const process of processes) {
-        try {
-            // 查找进程 ID
-            const { stdout, stderr } = await execAsync(`pgrep ${process}`);
-            if (stderr) {
-                console.error(`查找进程 ${process} 时出错:`, stderr);
-                return;
-            }
-
-            if (stdout) {
-                const pids = stdout.split('\n').filter(pid => pid.trim() !== ''); // 获取PID
-                console.log(`Killing process: ${process} (PIDs: ${pids.join(', ')})`);
-
-                // 逐个杀死进程
-                for (const pid of pids) {
-                    try {
-                        await execAsync(`kill -9 ${pid}`);
-                        console.log(`进程 ${pid} 已被杀死`);
-                    } catch (killError) {
-                        console.error(`杀死进程 ${pid} 时出错:`, killError);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error(`查找进程 ${process} 时出错:`, error);
-        }
-        runShellCommand();
-    }
     });
   });
 });
