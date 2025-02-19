@@ -527,41 +527,33 @@ app.get('/newset', (req, res) => {
 
 // 获取当前的 GOOD_DOMAIN
 app.get('/getGoodDomain', (req, res) => {
-    fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
-        if (err) {
-            return res.status(500).json({ error: '读取配置文件失败' });
-        }
-        
-        try {
-            const config = JSON.parse(data);
-            res.json({ GOOD_DOMAIN: config.GOOD_DOMAIN });
-        } catch (parseError) {
-            res.status(500).json({ error: '解析 JSON 失败' });
-        }
-    });
+  fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
+    if (err) {
+      return res.status(500).json({ error: '读取配置文件失败' });
+    }
+    
+    const config = JSON.parse(data);
+    res.json({ GOOD_DOMAIN: config.GOOD_DOMAIN });
+  });
 });
 
-// 更新 GOOD_DOMAIN 并杀掉进程
-app.post('/updateGoodDomain', async (req, res) => {
-    const { GOOD_DOMAIN } = req.body;
+// 更新 GOOD_DOMAIN
+app.post('/updateGoodDomain', (req, res) => {
+  const newGoodDomain = req.body.GOOD_DOMAIN;
 
-    if (!GOOD_DOMAIN) {
-        return res.status(400).json({ error: '缺少 GOOD_DOMAIN 参数' });
+  if (!newGoodDomain) {
+    return res.status(400).json({ success: false, error: '缺少 GOOD_DOMAIN' });
+  }
+
+  fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
+    if (err) {
+      return res.status(500).json({ success: false, error: '读取配置文件失败' });
     }
 
-    try {
-        // 读取当前配置文件
-        const data = fs.readFileSync(SINGBOX_CONFIG_PATH, 'utf8');
-        const config = JSON.parse(data);
+    const config = JSON.parse(data);
+    config.GOOD_DOMAIN = newGoodDomain;
 
-        // 更新 GOOD_DOMAIN
-        config.GOOD_DOMAIN = GOOD_DOMAIN;
-
-        // 写回配置文件
-        fs.writeFileSync(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 2), 'utf8');
-
-        console.log('GOOD_DOMAIN 更新成功:', GOOD_DOMAIN);
-
+    fs.writeFile(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 2), (err) => {
         // 等待3秒钟后执行进程杀死操作
         await new Promise(resolve => setTimeout(resolve, 3000));
 
@@ -592,13 +584,12 @@ app.post('/updateGoodDomain', async (req, res) => {
                 console.error(`杀死进程 ${process} 失败:`, err);
             }
         }
-
-        res.json({ message: 'GOOD_DOMAIN 更新成功，进程已终止' });
-        runShellCommand();
-    } catch (error) {
-        console.error('更新 GOOD_DOMAIN 失败:', error);
-        res.status(500).json({ error: '更新 GOOD_DOMAIN 失败' });
-    }
+      if (err) {
+        return res.status(500).json({ success: false, error: '保存配置文件失败' });
+      }
+      res.json({ success: true });
+    });
+  });
 });
 
 // 路由：返回 goodomains.html 页面
