@@ -540,15 +540,16 @@ app.get('/getGoodDomain', (req, res) => {
     });
 });
 
-// 更新 GOOD_DOMAIN
 app.post('/updateGoodDomain', (req, res) => {
     const newGoodDomain = req.body.GOOD_DOMAIN;
+    console.log('收到请求，新的 GOOD_DOMAIN:', newGoodDomain);  // 调试输出
     if (!newGoodDomain) {
         return res.status(400).send('缺少 GOOD_DOMAIN');
     }
 
     fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
         if (err) {
+            console.error('读取文件失败:', err);  // 错误输出
             return res.status(500).send('读取文件失败');
         }
 
@@ -557,6 +558,7 @@ app.post('/updateGoodDomain', (req, res) => {
 
         fs.writeFile(SINGBOX_CONFIG_PATH, JSON.stringify(json, null, 2), 'utf8', (err) => {
             if (err) {
+                console.error('保存文件失败:', err);  // 错误输出
                 return res.status(500).send('保存文件失败');
             }
             res.json({ message: 'GOOD_DOMAIN 更新成功' });
