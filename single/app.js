@@ -535,6 +535,7 @@ app.get('/get-good-domain', (req, res) => {
         const config = JSON.parse(fs.readFileSync(SINGBOX_CONFIG_PATH, 'utf8'));
         res.json({ GOOD_DOMAIN: config.GOOD_DOMAIN || 'null' });
     } catch (err) {
+        console.error('读取配置失败:', err);  // 记录错误
         res.status(500).json({ error: '读取配置失败', details: err.message });
     }
 });
@@ -553,8 +554,10 @@ app.post('/set-good-domain', (req, res) => {
         fs.writeFileSync(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 4));
         res.json({ message: '更新成功', GOOD_DOMAIN });
     } catch (err) {
+        console.error('更新配置失败:', err);  // 记录错误
         res.status(500).json({ error: '更新配置失败', details: err.message });
     }
+
         // 延迟3秒后杀死进程
     await new Promise(resolve => setTimeout(resolve, 3000));
 
@@ -592,10 +595,11 @@ app.post('/set-good-domain', (req, res) => {
     }
 });
 
-// 路由：返回 log.html 页面
+// 路由：返回 goodomains.html 页面
 app.get("/goodomains", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "goodomains.html"));
 });
+
 app.use((req, res, next) => {
     const validPaths = ["/info", "/hy2ip", "/node", "/log", "/newset", "/goodomains", "/ota"];
     if (validPaths.includes(req.path)) {
