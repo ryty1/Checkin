@@ -23,31 +23,26 @@
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 300px;
     }
 
     h1 {
       margin-bottom: 20px;
-      text-align: center;
-    }
-
-    label {
-      font-size: 14px;
-      margin-bottom: 8px;
-      display: block;
     }
 
     input {
       width: 100%;
-      padding: 8px;
+      padding: 10px;
       margin-bottom: 20px;
-      border: 1px solid #ccc;
+      border: 1px solid #ddd;
       border-radius: 4px;
     }
 
     button {
       padding: 10px 20px;
       background-color: #007bff;
-      color: white;
+      color: #fff;
       border: none;
       border-radius: 4px;
       cursor: pointer;
@@ -57,21 +52,16 @@
       background-color: #0056b3;
     }
 
-    .message {
+    .result {
       margin-top: 20px;
-      padding: 10px;
-      border-radius: 4px;
-      display: none;
-    }
-
-    .success {
-      background-color: #d4edda;
-      color: #155724;
     }
 
     .error {
-      background-color: #f8d7da;
-      color: #721c24;
+      color: red;
+    }
+
+    .success {
+      color: green;
     }
   </style>
 </head>
@@ -86,52 +76,67 @@
 
     <h2>当前 GOOD_DOMAIN: <span id="currentDomain">加载中...</span></h2>
 
-    <div id="message" class="message"></div>
+    <div class="result" id="result"></div>
   </div>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const domainForm = document.getElementById("domainForm");
-      const currentDomain = document.getElementById("currentDomain");
-      const messageElement = document.getElementById("message");
+      const domainForm = document.getElementById('domainForm');
+      const resultElement = document.getElementById('result');
+      const currentDomainElement = document.getElementById('currentDomain');
 
-      // 获取当前 GOOD_DOMAIN 并显示
+      // 获取当前 GOOD_DOMAIN
       fetch('/getGoodDomain')
         .then(response => response.json())
         .then(data => {
-          currentDomain.textContent = data.GOOD_DOMAIN;
+          if (data.GOOD_DOMAIN) {
+            currentDomainElement.textContent = data.GOOD_DOMAIN;
+          } else {
+            currentDomainElement.textContent = '获取失败';
+          }
         })
         .catch(error => {
-          currentDomain.textContent = "加载失败";
+          currentDomainElement.textContent = '加载失败';
+          console.error('获取当前域名失败:', error);
         });
 
-      // 提交表单更新 GOOD_DOMAIN
-      domainForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const newGoodDomain = document.getElementById("goodDomain").value;
+      // 提交表单
+      domainForm.addEventListener('submit', (event) => {
+        event.preventDefault();
 
+        const goodDomain = document.getElementById('goodDomain').value;
+        if (!goodDomain) {
+          resultElement.textContent = '请输入有效的域名';
+          resultElement.classList.add('error');
+          return;
+        }
+
+        // 发送请求更新 GOOD_DOMAIN
         fetch('/updateGoodDomain', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ GOOD_DOMAIN: newGoodDomain }),
+          body: JSON.stringify({ GOOD_DOMAIN: goodDomain }),
         })
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            messageElement.textContent = `GOOD_DOMAIN 已更新为: ${newGoodDomain}`;
-            messageElement.className = "message success";
+            resultElement.textContent = data.message;
+            resultElement.classList.remove('error');
+            resultElement.classList.add('success');
+            currentDomainElement.textContent = goodDomain;  // 更新当前域名显示
           } else {
-            messageElement.textContent = `更新失败: ${data.error}`;
-            messageElement.className = "message error";
+            resultElement.textContent = data.error || '更新失败';
+            resultElement.classList.remove('success');
+            resultElement.classList.add('error');
           }
-          messageElement.style.display = 'block';
         })
         .catch(error => {
-          messageElement.textContent = "请求失败，请稍后再试";
-          messageElement.className = "message error";
-          messageElement.style.display = 'block';
+          resultElement.textContent = '请求失败，请稍后再试';
+          resultElement.classList.remove('success');
+          resultElement.classList.add('error');
+          console.error('请求失败:', error);
         });
       });
     });
