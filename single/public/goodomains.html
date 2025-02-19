@@ -23,30 +23,36 @@
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 400px;
+      width: 400px;
+      text-align: center;
     }
 
     h1 {
-      text-align: center;
+      font-size: 24px;
       margin-bottom: 20px;
     }
 
-    input[type="text"] {
-      width: 100%;
+    label {
+      font-size: 16px;
+      margin-right: 10px;
+    }
+
+    input {
       padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
+      width: 80%;
+      margin-bottom: 20px;
+      font-size: 16px;
+      border-radius: 4px;
       border: 1px solid #ccc;
     }
 
     button {
-      width: 100%;
-      padding: 10px;
+      padding: 10px 20px;
       background-color: #4CAF50;
       color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 4px;
+      font-size: 16px;
       cursor: pointer;
     }
 
@@ -54,25 +60,45 @@
       background-color: #45a049;
     }
 
-    .message {
+    .result {
       margin-top: 20px;
-      font-size: 16px;
-      text-align: center;
-      padding: 10px;
-      border-radius: 5px;
+      font-size: 18px;
+    }
+
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      border-radius: 8px;
+      color: white;
       display: none;
+      z-index: 1000;
     }
 
-    .success {
-      background-color: #d4edda;
-      color: #155724;
+    .popup.show {
+      display: block;
     }
 
-    .error {
-      background-color: #f8d7da;
-      color: #721c24;
+    .popup .message {
+      font-size: 18px;
+      margin-bottom: 20px;
     }
 
+    .popup .close-btn {
+      padding: 10px 20px;
+      background-color: #f44336;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+    }
+
+    .popup .close-btn:hover {
+      background-color: #e41f1f;
+    }
   </style>
 </head>
 <body>
@@ -87,52 +113,76 @@
 
     <h2>当前 GOOD_DOMAIN: <span id="currentDomain">加载中...</span></h2>
 
-    <div id="message" class="message"></div>
+    <div class="result" id="result"></div>
+  </div>
+
+  <!-- 弹窗 -->
+  <div class="popup" id="popup">
+    <div class="message" id="popupMessage"></div>
+    <button class="close-btn" id="closePopup">关闭</button>
   </div>
 
   <script>
-    // 获取当前 GOOD_DOMAIN 值并显示
+    // 获取当前的 GOOD_DOMAIN 值并显示
     fetch('/getGoodDomain')
       .then(response => response.json())
       .then(data => {
-        document.getElementById('currentDomain').textContent = data.GOOD_DOMAIN;
+        if (data.GOOD_DOMAIN) {
+          document.getElementById('currentDomain').textContent = data.GOOD_DOMAIN;
+        } else {
+          showPopup('当前 GOOD_DOMAIN 获取失败');
+        }
       })
-      .catch(error => {
-        document.getElementById('currentDomain').textContent = '加载失败';
-      });
+      .catch(() => showPopup('请求失败'));
 
-    // 处理表单提交
-    document.getElementById('domainForm').addEventListener('submit', function(event) {
-      event.preventDefault();
+    // 提交表单更新 GOOD_DOMAIN
+    document.getElementById('domainForm').addEventListener('submit', function(e) {
+      e.preventDefault();
       const newGoodDomain = document.getElementById('goodDomain').value;
 
       fetch('/updateGoodDomain', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ GOOD_DOMAIN: newGoodDomain })
       })
-      .then(response => response.json())
-      .then(data => {
-        const messageDiv = document.getElementById('message');
-        if (data.success) {
-          messageDiv.textContent = 'GOOD_DOMAIN 更新成功，并已尝试杀掉相关进程';
-          messageDiv.className = 'message success';
-        } else {
-          messageDiv.textContent = '更新失败: ' + (data.error || '未知错误');
-          messageDiv.className = 'message error';
-        }
-        messageDiv.style.display = 'block';
-      })
-      .catch(error => {
-        const messageDiv = document.getElementById('message');
-        messageDiv.textContent = '请求失败，请稍后再试';
-        messageDiv.className = 'message error';
-        messageDiv.style.display = 'block';
-      });
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('result').textContent = 'GOOD_DOMAIN 更新成功';
+            showPopup('更新成功：' + data.message);
+            // 更新后重新获取当前 GOOD_DOMAIN
+            fetch('/getGoodDomain')
+              .then(response => response.json())
+              .then(data => {
+                if (data.GOOD_DOMAIN) {
+                  document.getElementById('currentDomain').textContent = data.GOOD_DOMAIN;
+                } else {
+                  showPopup('获取最新 GOOD_DOMAIN 失败');
+                }
+              });
+          } else {
+            showPopup('更新失败：' + data.error);
+          }
+        })
+        .catch(() => {
+          showPopup('请求失败，请稍后再试');
+        });
+    });
+
+    // 显示弹窗
+    function showPopup(message) {
+      const popup = document.getElementById('popup');
+      const popupMessage = document.getElementById('popupMessage');
+      popupMessage.textContent = message;
+      popup.classList.add('show');
+    }
+
+    // 关闭弹窗
+    document.getElementById('closePopup').addEventListener('click', function() {
+      document.getElementById('popup').classList.remove('show');
     });
   </script>
-
 </body>
 </html>
