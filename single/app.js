@@ -4,11 +4,6 @@ const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const app = express();
-const bodyParser = require('body-parser');
-
-// 使用 body-parser 来处理 POST 请求的数据
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
@@ -530,93 +525,42 @@ app.get('/newset', (req, res) => {
     res.sendFile(path.join(__dirname, "public", 'newset.html'));
 });
 
-// 获取当前 GOOD_DOMAIN 的值
-app.get('/get-good-domain', (req, res) => {
-    fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
-        if (err) {
-            return res.status(500).send('读取文件失败');
-        }
-        
-        let config;
-        try {
-            config = JSON.parse(data);
-        } catch (e) {
-            return res.status(500).send('解析 JSON 失败');
-        }
-
-        // 返回当前 GOOD_DOMAIN 的值
-        res.json({ GOOD_DOMAIN: config.GOOD_DOMAIN });
-    });
+// 获取当前的 GOOD_DOMAIN
+app.get('/getGoodDomain', (req, res) => {
+  fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
+    if (err) {
+      return res.status(500).json({ error: '读取配置文件失败' });
+    }
+    
+    const config = JSON.parse(data);
+    res.json({ GOOD_DOMAIN: config.GOOD_DOMAIN });
+  });
 });
 
-// 更新 GOOD_DOMAIN 的值
-app.post('/update-good-domain', (req, res) => {
-    const newGoodDomain = req.body.GOOD_DOMAIN;
+// 更新 GOOD_DOMAIN
+app.post('/updateGoodDomain', (req, res) => {
+  const newGoodDomain = req.body.GOOD_DOMAIN;
 
-    if (!newGoodDomain) {
-        return res.status(400).send('缺少 GOOD_DOMAIN 参数');
+  if (!newGoodDomain) {
+    return res.status(400).json({ success: false, error: '缺少 GOOD_DOMAIN' });
+  }
+
+  fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
+    if (err) {
+      return res.status(500).json({ success: false, error: '读取配置文件失败' });
     }
 
-    // 读取并修改 singbox.json 文件
-    fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
-        if (err) {
-            return res.status(500).send('读取文件失败');
-        }
+    const config = JSON.parse(data);
+    config.GOOD_DOMAIN = newGoodDomain;
 
-        let config;
-        try {
-            config = JSON.parse(data);
-        } catch (e) {
-            return res.status(500).send('解析 JSON 失败');
-        }
+    fs.writeFile(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 2), (err) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: '保存配置文件失败' });
+      }
 
-        // 更新 GOOD_DOMAIN 的值
-        config.GOOD_DOMAIN = newGoodDomain;
-
-        // 写回文件
-        fs.writeFile(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 2), 'utf8', (err) => {
-            if (err) {
-                return res.status(500).send('写入文件失败');
-            }
-            // 返回成功信息
-            res.send('GOOD_DOMAIN 更新成功');
-        });
+      res.json({ success: true });
     });
-        // 延迟3秒后杀死进程
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    // 定义要杀死的进程
-    const processes = ['cloudflare', 'serv00sb'];
-
-    // 使用 async/await 处理进程的杀死操作
-    for (const process of processes) {
-        try {
-            // 查找进程 ID
-            const { stdout, stderr } = await execAsync(`pgrep ${process}`);
-            if (stderr) {
-                console.error(`查找进程 ${process} 时出错:`, stderr);
-                return;
-            }
-
-            if (stdout) {
-                const pids = stdout.split('\n').filter(pid => pid.trim() !== ''); // 获取PID
-                console.log(`Killing process: ${process} (PIDs: ${pids.join(', ')})`);
-
-                // 逐个杀死进程
-                for (const pid of pids) {
-                    try {
-                        await execAsync(`kill -9 ${pid}`);
-                        console.log(`进程 ${pid} 已被杀死`);
-                    } catch (killError) {
-                        console.error(`杀死进程 ${pid} 时出错:`, killError);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error(`查找进程 ${process} 时出错:`, error);
-        }
-        runShellCommand();
-    }
+  });
 });
 
 // 路由：返回 goodomains.html 页面
