@@ -3,110 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>优选域名</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f7f6;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    .container {
-      background-color: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 500px;
-      text-align: center;
-    }
-
-    h1 {
-      font-size: 24px;
-      color: #333;
-    }
-
-    form {
-      margin-top: 20px;
-    }
-
-    label {
-      font-size: 16px;
-      color: #333;
-      margin-bottom: 8px;
-      display: block;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-
-    button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 12px 20px;
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #45a049;
-    }
-
-    h2 {
-      font-size: 18px;
-      color: #333;
-      margin-top: 20px;
-    }
-
-    #currentDomain {
-      font-weight: bold;
-      color: #007BFF;
-    }
-
-    .alert {
-      background-color: #f44336;
-      color: white;
-      padding: 15px;
-      margin-top: 10px;
-      border-radius: 4px;
-      display: none;
-    }
-
-    .success {
-      background-color: #4CAF50;
-    }
-
-  </style>
+  <title>修改 GOOD_DOMAIN</title>
 </head>
 <body>
+  <h1>修改 GOOD_DOMAIN</h1>
+  <form id="domainForm">
+    <label for="goodDomain">新 GOOD_DOMAIN:</label>
+    <input type="text" id="goodDomain" name="goodDomain" placeholder="www.visa.com.sg" required>
+    <button type="submit">提交</button>
+  </form>
 
-  <div class="container">
-    <h1>优选域名</h1>
-    <h2>当前 优选域名: <span id="currentDomain">加载中...</span></h2>
-
-    <div class="alert" id="alertMessage"></div>
-
-    <form id="domainForm">
-      <label for="goodDomain">更换 优选域名:</label>
-      <input type="text" id="goodDomain" name="goodDomain" placeholder="www.visa.com.sg" required>
-      <button type="submit">提交</button>
-    </form>
-  </div>
+  <h2>当前 GOOD_DOMAIN: <span id="currentDomain">加载中...</span></h2>
 
   <script>
     // 获取当前 GOOD_DOMAIN 值并显示
@@ -115,10 +22,7 @@
       .then(data => {
         document.getElementById('currentDomain').innerText = data.GOOD_DOMAIN;
       })
-      .catch(error => {
-        document.getElementById('currentDomain').innerText = "获取失败";
-        console.error('获取 优选域名 失败:', error);
-      });
+      .catch(error => console.error('获取 GOOD_DOMAIN 失败:', error));
 
     // 处理表单提交
     document.getElementById('domainForm').addEventListener('submit', function(event) {
@@ -135,29 +39,18 @@
       })
       .then(response => response.json())
       .then(data => {
-        const alertMessage = document.getElementById('alertMessage');
         if (data.success) {
-          alertMessage.textContent = '修改成功';
-          alertMessage.classList.add('success');
-          alertMessage.classList.remove('alert');
+          alert('修改成功');
           document.getElementById('currentDomain').innerText = newDomain;
         } else {
-          alertMessage.textContent = '修改失败，请稍后再试';
-          alertMessage.classList.add('alert');
-          alertMessage.classList.remove('success');
+          alert('修改失败，请稍后再试');
         }
-        alertMessage.style.display = 'block';
       })
       .catch(error => {
-        const alertMessage = document.getElementById('alertMessage');
-        alertMessage.textContent = '请求失败，请稍后再试';
-        alertMessage.classList.add('alert');
-        alertMessage.classList.remove('success');
-        alertMessage.style.display = 'block';
+        alert('请求失败');
         console.error(error);
       });
     });
   </script>
-
 </body>
 </html>
