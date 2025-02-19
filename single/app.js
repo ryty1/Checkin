@@ -9,7 +9,7 @@ const username = process.env.USER.toLowerCase(); // 获取当前用户名并转�
 const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
 const scriptPath = path.join(process.env.HOME, "serv00-play", "singbox", "start.sh");
 const configFilePath = path.join(__dirname, 'config.json');
-const SINGBOX_CONFIG_PATH = path.resolve(process.env.HOME, 'serv00-play/singbox/singbox.json');
+const SINGBOX_CONFIG_PATH = path.join(process.env.HOME, "serv00-play", "singbox", "singbox.json");
 
 // 允许静态文件访问
 app.use(express.static(path.join(__dirname, 'public')));
