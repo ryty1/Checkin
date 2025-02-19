@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,110 +8,210 @@
     /* 基本样式 */
     body {
       font-family: 'Arial', sans-serif;
-      background-color: #f4f4f4;
-      text-align: center;
-      padding: 20px;
-    }
-    h1 {
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
       color: #333;
     }
-    #currentDomain {
-      font-weight: bold;
-      color: #007bff;
+
+    .container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
     }
-    form {
+
+    h1 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      font-size: 14px;
+      color: #555;
       margin-top: 20px;
+      text-align: left;
     }
-    label {
-      font-size: 18px;
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0 20px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+      transition: border-color 0.3s ease;
     }
-    input {
-      padding: 8px;
-      font-size: 16px;
-      margin: 10px;
+
+    input[type="text"]:focus {
+      border-color: #4CAF50;
+      outline: none;
     }
+
     button {
-      padding: 10px 15px;
+      width: 100%;
+      padding: 14px;
       font-size: 16px;
-      background-color: #28a745;
+      color: white;
+      background-color: #4CAF50;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    /* 弹窗样式 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 200px;
+    }
+
+    .modal button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
       color: white;
       border: none;
+      border-radius: 4px;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #218838;
+
+    .modal button:hover {
+      background-color: #45a049;
     }
+
+    #currentDomain {
+      font-weight: bold;
+      color: #007BFF;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 480px) {
+      .container {
+        padding: 15px;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+      button {
+        font-size: 14px;
+      }
+    }
+
   </style>
 </head>
 <body>
-  <h1>修改 GOOD_DOMAIN</h1>
-  
-  <p>当前 GOOD_DOMAIN: <span id="currentDomain">加载中...</span></p>
 
-  <form id="domainForm">
-    <label for="goodDomain">新 GOOD_DOMAIN：</label>
-    <input type="text" id="goodDomain" required>
-    <button type="submit">提交</button>
-  </form>
+  <div class="container">
+    <h1>更新优选域名</h1>
+    <h2>当前优选: <span id="currentDomain">加载中...</span></h2>
+    <form id="domainForm">
+      <input type="text" id="goodDomain" name="goodDomain" placeholder="例如：www.visa.com.sg" required>
+      <button type="submit">提交</button>
+    </form>
+  </div>
+
+  <!-- 弹窗 -->
+  <div id="successModal" class="modal">
+    <div class="modal-content">
+      <h3>修改成功</h3>
+      <button id="closeModalBtn">关闭</button>
+    </div>
+  </div>
+
+  <div id="errorModal" class="modal">
+    <div class="modal-content">
+      <h3>请求失败</h3>
+      <button id="closeErrorModalBtn">关闭</button>
+    </div>
+  </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const currentDomainSpan = document.getElementById("currentDomain");
-      const domainForm = document.getElementById("domainForm");
-      const goodDomainInput = document.getElementById("goodDomain");
+    // 获取当前 GOOD_DOMAIN 值并显示
+    fetch('/getGoodDomain')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('currentDomain').innerText = data.GOOD_DOMAIN;
+      })
+      .catch(error => {
+        console.error('获取 GOOD_DOMAIN 失败:', error);
+        document.getElementById('currentDomain').innerText = '加载失败';
+      });
 
-      // 获取当前 GOOD_DOMAIN
-      fetch("/getGoodDomain")
-        .then(response => response.json())
-        .then(data => {
-          if (data.GOOD_DOMAIN) {
-            currentDomainSpan.textContent = data.GOOD_DOMAIN;
-          } else {
-            currentDomainSpan.textContent = "获取失败";
-          }
-        })
-        .catch(error => {
-          console.error("获取域名失败:", error);
-          currentDomainSpan.textContent = "加载失败";
-        });
+    // 处理表单提交
+    document.getElementById('domainForm').addEventListener('submit', function(event) {
+      event.preventDefault();
 
-      // 处理表单提交
-      domainForm.addEventListener("submit", function (event) {
-        event.preventDefault();
+      const newDomain = document.getElementById('goodDomain').value;
 
-        const newDomain = goodDomainInput.value.trim();
-        if (!newDomain) {
-          alert("请输入新的 GOOD_DOMAIN");
-          return;
+      fetch('/updateGoodDomain', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ GOOD_DOMAIN: newDomain })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 显示成功弹窗
+          const modal = document.getElementById('successModal');
+          modal.style.display = 'flex';
+          document.getElementById('currentDomain').innerText = newDomain;
+        } else {
+          // 显示失败弹窗
+          const modal = document.getElementById('errorModal');
+          modal.style.display = 'flex';
         }
-
-        fetch("/updateGoodDomain", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ GOOD_DOMAIN: newDomain })
-        })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error("服务器返回错误");
-          }
-          return response.json();
-        })
-        .then(data => {
-          if (data.success) {
-            alert("更新成功！");
-            currentDomainSpan.textContent = newDomain;
-          } else {
-            alert("更新失败：" + data.message);
-          }
-        })
-        .catch(error => {
-          console.error("请求失败:", error);
-          alert("请求失败，请稍后再试！");
-        });
+      })
+      .catch(error => {
+        // 请求失败，显示错误弹窗
+        const modal = document.getElementById('errorModal');
+        modal.style.display = 'flex';
+        console.error('请求失败:', error);
       });
     });
+
+    // 关闭成功弹窗
+    document.getElementById('closeModalBtn').addEventListener('click', function() {
+      document.getElementById('successModal').style.display = 'none';
+    });
+
+    // 关闭错误弹窗
+    document.getElementById('closeErrorModalBtn').addEventListener('click', function() {
+      document.getElementById('errorModal').style.display = 'none';
+    });
   </script>
+
 </body>
 </html>
