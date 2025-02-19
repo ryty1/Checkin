@@ -557,23 +557,6 @@ app.post('/updateGoodDomain', (req, res) => {
       if (err) {
         return res.status(500).json({ success: false, error: '保存配置文件失败' });
       }
-     成功更新后，延迟3秒重启进程
-      setTimeout(() => {
-        // 在这里执行你的重启代码
-        const processes = ['cloudflare', 'serv00sb'];
-
-        for (const process of processes) {
-          exec(`pkill ${process}`, (err, stdout, stderr) => {
-            if (err) {
-              console.error(`执行错误：${stderr}`);
-            } else {
-              console.log(`${process} 进程已终止`);
-            }
-          });
-
-          // 你可以在这里重启进程，假设你有相关命令
-          runShellCommand();
-      }, 3000); // 延迟3秒后执行重启
       res.json({ success: true });
     });
   });
