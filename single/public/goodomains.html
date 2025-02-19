@@ -61,7 +61,6 @@
                 const result = await response.json();
                 if (result.message) {
                     alert('更新成功: ' + result.GOOD_DOMAIN);
-                    // 更新页面显示的 GOOD_DOMAIN
                     document.getElementById('goodDomain').value = result.GOOD_DOMAIN;
                     document.getElementById('newGoodDomain').value = ''; // 清空输入框
                 } else {
