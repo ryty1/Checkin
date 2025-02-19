@@ -4,6 +4,11 @@ const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const app = express();
+const bodyParser = require('body-parser');
+
+// 使用 body-parser 来处理 POST 请求的数据
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
@@ -529,39 +534,56 @@ app.get('/newset', (req, res) => {
     res.sendFile(path.join(__dirname, "public", 'newset.html'));
 });
 
-// 获取当前 GOOD_DOMAIN
-app.get('/getGoodDomain', (req, res) => {
+// 获取当前 GOOD_DOMAIN 的值
+app.get('/get-good-domain', (req, res) => {
     fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
         if (err) {
             return res.status(500).send('读取文件失败');
         }
-        const json = JSON.parse(data);
-        res.json({ GOOD_DOMAIN: json.GOOD_DOMAIN });
+        
+        let config;
+        try {
+            config = JSON.parse(data);
+        } catch (e) {
+            return res.status(500).send('解析 JSON 失败');
+        }
+
+        // 返回当前 GOOD_DOMAIN 的值
+        res.json({ GOOD_DOMAIN: config.GOOD_DOMAIN });
     });
 });
 
-app.post('/updateGoodDomain', (req, res) => {
+// 更新 GOOD_DOMAIN 的值
+app.post('/update-good-domain', (req, res) => {
     const newGoodDomain = req.body.GOOD_DOMAIN;
-    console.log('收到请求，新的 GOOD_DOMAIN:', newGoodDomain);  // 调试输出
+
     if (!newGoodDomain) {
-        return res.status(400).send('缺少 GOOD_DOMAIN');
+        return res.status(400).send('缺少 GOOD_DOMAIN 参数');
     }
 
+    // 读取并修改 singbox.json 文件
     fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
         if (err) {
-            console.error('读取文件失败:', err);  // 错误输出
             return res.status(500).send('读取文件失败');
         }
 
-        const json = JSON.parse(data);
-        json.GOOD_DOMAIN = newGoodDomain;
+        let config;
+        try {
+            config = JSON.parse(data);
+        } catch (e) {
+            return res.status(500).send('解析 JSON 失败');
+        }
 
-        fs.writeFile(SINGBOX_CONFIG_PATH, JSON.stringify(json, null, 2), 'utf8', (err) => {
+        // 更新 GOOD_DOMAIN 的值
+        config.GOOD_DOMAIN = newGoodDomain;
+
+        // 写回文件
+        fs.writeFile(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 2), 'utf8', (err) => {
             if (err) {
-                console.error('保存文件失败:', err);  // 错误输出
-                return res.status(500).send('保存文件失败');
+                return res.status(500).send('写入文件失败');
             }
-            res.json({ message: 'GOOD_DOMAIN 更新成功' });
+            // 返回成功信息
+            res.send('GOOD_DOMAIN 更新成功');
         });
     });
         // 延迟3秒后杀死进程
