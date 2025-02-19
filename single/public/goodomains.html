@@ -1,63 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>修改 GOOD_DOMAIN</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>修改 GOOD_DOMAIN</title>
 </head>
 <body>
-    <h1>修改 GOOD_DOMAIN</h1>
-    
-    <div>
-        <label for="good-domain">当前 GOOD_DOMAIN: </label>
-        <span id="current-good-domain">加载中...</span>
-    </div>
-    
-    <div>
-        <label for="new-good-domain">输入新的 GOOD_DOMAIN: </label>
-        <input type="text" id="new-good-domain" placeholder="输入新的域名">
-        <button onclick="updateGoodDomain()">提交</button>
-    </div>
+  <h1>修改 GOOD_DOMAIN</h1>
+  <form id="domainForm">
+    <label for="goodDomain">新 GOOD_DOMAIN:</label>
+    <input type="text" id="goodDomain" name="goodDomain" placeholder="www.visa.com.sg" required>
+    <button type="submit">提交</button>
+  </form>
 
-    <p id="status-message"></p>
+  <h2>当前 GOOD_DOMAIN: <span id="currentDomain">加载中...</span></h2>
 
-    <script>
-        // 页面加载时获取当前 GOOD_DOMAIN 的值
-        window.onload = function() {
-            fetch('/get-good-domain')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('current-good-domain').textContent = data.GOOD_DOMAIN || '未设置';
-                })
-                .catch(err => {
-                    document.getElementById('current-good-domain').textContent = '加载失败';
-                });
+  <script>
+    // 获取当前 GOOD_DOMAIN 值并显示
+    fetch('/getGoodDomain')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('currentDomain').innerText = data.GOOD_DOMAIN;
+      })
+      .catch(error => console.error('获取 GOOD_DOMAIN 失败:', error));
+
+    // 处理表单提交
+    document.getElementById('domainForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const newDomain = document.getElementById('goodDomain').value;
+
+      fetch('/updateGoodDomain', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ GOOD_DOMAIN: newDomain })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('修改成功');
+          document.getElementById('currentDomain').innerText = newDomain;
+        } else {
+          alert('修改失败，请稍后再试');
         }
-
-        // 更新 GOOD_DOMAIN 的值
-        function updateGoodDomain() {
-            const newGoodDomain = document.getElementById('new-good-domain').value;
-            if (!newGoodDomain) {
-                alert('请输入新的 GOOD_DOMAIN');
-                return;
-            }
-
-            fetch('/update-good-domain', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ GOOD_DOMAIN: newGoodDomain })
-            })
-            .then(response => response.text())
-            .then(message => {
-                document.getElementById('status-message').textContent = message;
-                document.getElementById('current-good-domain').textContent = newGoodDomain;
-            })
-            .catch(err => {
-                document.getElementById('status-message').textContent = '提交失败，请稍后再试';
-            });
-        }
-    </script>
+      })
+      .catch(error => {
+        alert('请求失败');
+        console.error(error);
+      });
+    });
+  </script>
 </body>
 </html>
