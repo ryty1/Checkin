@@ -23,31 +23,32 @@
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      text-align: center;
     }
 
     h1 {
-      color: #4CAF50;
+      text-align: center;
+      color: #333;
     }
 
     label {
-      font-size: 16px;
-      margin-right: 10px;
+      display: block;
+      margin-bottom: 10px;
+      color: #555;
     }
 
     input {
-      padding: 8px;
-      font-size: 14px;
+      width: 100%;
+      padding: 10px;
       margin-bottom: 20px;
-      width: 200px;
-      border-radius: 4px;
       border: 1px solid #ddd;
+      border-radius: 4px;
     }
 
     button {
+      width: 100%;
+      padding: 10px;
       background-color: #4CAF50;
       color: white;
-      padding: 10px 20px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
@@ -57,86 +58,79 @@
       background-color: #45a049;
     }
 
-    .result {
+    .message {
       margin-top: 20px;
-    }
-
-    .error {
-      color: red;
+      text-align: center;
     }
 
     .success {
       color: green;
+    }
+
+    .error {
+      color: red;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>修改 GOOD_DOMAIN</h1>
+    <h2>当前 GOOD_DOMAIN: <span id="currentDomain">加载中...</span></h2>
+    <div class="message" id="message"></div>
     <form id="domainForm">
-      <label for="goodDomain">新 GOOD_DOMAIN:</label>
       <input type="text" id="goodDomain" name="goodDomain" placeholder="www.visa.com.sg" required>
       <button type="submit">提交</button>
     </form>
-
-    <h2>当前 GOOD_DOMAIN: <span id="currentDomain">加载中...</span></h2>
-
-    <div class="result" id="resultMessage"></div>
   </div>
 
   <script>
-    // 获取当前 GOOD_DOMAIN 值并显示
-    async function getCurrentGoodDomain() {
-      try {
-        const response = await fetch('/getGoodDomain');
-        const data = await response.json();
-        if (data.GOOD_DOMAIN) {
-          document.getElementById('currentDomain').innerText = data.GOOD_DOMAIN;
+    // 获取当前的 GOOD_DOMAIN 值并显示
+    fetch('/getGoodDomain')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('currentDomain').textContent = data.GOOD_DOMAIN;
+      })
+      .catch(error => {
+        document.getElementById('message').textContent = '获取当前域名失败';
+        document.getElementById('message').classList.add('error');
+      });
+
+    // 处理表单提交
+    document.getElementById('domainForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const goodDomain = document.getElementById('goodDomain').value;
+      const messageElement = document.getElementById('message');
+
+      fetch('/updateGoodDomain', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ GOOD_DOMAIN: goodDomain })
+      })
+      .then(response => response.json())
+      .then(data => {
+        // 如果成功
+        if (data.success) {
+          messageElement.textContent = `GOOD_DOMAIN 更新成功：${data.GOOD_DOMAIN}`;
+          messageElement.classList.remove('error');
+          messageElement.classList.add('success');
+          // 更新当前显示的 GOOD_DOMAIN
+          document.getElementById('currentDomain').textContent = data.GOOD_DOMAIN;
         } else {
-          document.getElementById('currentDomain').innerText = '未找到域名';
+          // 如果失败
+          messageElement.textContent = '更新失败，请稍后再试';
+          messageElement.classList.remove('success');
+          messageElement.classList.add('error');
         }
-      } catch (error) {
-        document.getElementById('currentDomain').innerText = '加载失败';
-      }
-    }
-
-    // 提交表单
-    document.getElementById('domainForm').addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const newGoodDomain = document.getElementById('goodDomain').value;
-
-      // 清除上次的结果信息
-      document.getElementById('resultMessage').innerText = '';
-
-      try {
-        const response = await fetch('/updateGoodDomain', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ GOOD_DOMAIN: newGoodDomain }),
-        });
-        const result = await response.json();
-
-        if (result.success) {
-          document.getElementById('resultMessage').innerHTML = `
-            <span class="success">GOOD_DOMAIN 已更新为: ${result.GOOD_DOMAIN}</span><br>
-            <span class="success">已杀掉进程 ${result.processes.join(', ')}</span>
-          `;
-        } else {
-          document.getElementById('resultMessage').innerHTML = `
-            <span class="error">更新失败: ${result.error}</span>
-          `;
-        }
-      } catch (error) {
-        document.getElementById('resultMessage').innerHTML = `
-          <span class="error">请求失败，请稍后再试。</span>
-        `;
-      }
+      })
+      .catch(error => {
+        messageElement.textContent = '请求失败，请稍后再试';
+        messageElement.classList.remove('success');
+        messageElement.classList.add('error');
+      });
     });
-
-    // 页面加载时，获取当前的 GOOD_DOMAIN
-    getCurrentGoodDomain();
   </script>
 </body>
 </html>
