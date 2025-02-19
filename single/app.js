@@ -557,38 +557,7 @@ app.post('/updateGoodDomain', (req, res) => {
       if (err) {
         return res.status(500).json({ success: false, error: '保存配置文件失败' });
       }
-// 获取当前的 GOOD_DOMAIN
-app.get('/getGoodDomain', (req, res) => {
-  fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
-    if (err) {
-      return res.status(500).json({ error: '读取配置文件失败' });
-    }
-    
-    const config = JSON.parse(data);
-    res.json({ GOOD_DOMAIN: config.GOOD_DOMAIN });
-  });
-});
 
-// 更新 GOOD_DOMAIN
-app.post('/updateGoodDomain', (req, res) => {
-  const newGoodDomain = req.body.GOOD_DOMAIN;
-
-  if (!newGoodDomain) {
-    return res.status(400).json({ success: false, error: '缺少 GOOD_DOMAIN' });
-  }
-
-  fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
-    if (err) {
-      return res.status(500).json({ success: false, error: '读取配置文件失败' });
-    }
-
-    const config = JSON.parse(data);
-    config.GOOD_DOMAIN = newGoodDomain;
-
-    fs.writeFile(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 2), (err) => {
-      if (err) {
-        return res.status(500).json({ success: false, error: '保存配置文件失败' });
-      }
       res.json({ success: true });
     });
   });
