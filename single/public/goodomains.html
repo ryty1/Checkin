@@ -3,17 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>修改 GOOD_DOMAIN</title>
+  <title>优选域名</title>
+  <style>
+    /* 基本样式 */
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      font-size: 18px;
+      color: #555;
+      margin-top: 20px;
+    }
+
+    label {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0 20px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+      transition: border-color 0.3s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: #4CAF50;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      color: white;
+      background-color: #4CAF50;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .alert {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 5px;
+      display: none;
+      text-align: center;
+    }
+
+    .alert.success {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .alert.error {
+      background-color: #f44336;
+      color: white;
+    }
+
+    #currentDomain {
+      font-weight: bold;
+      color: #007BFF;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 480px) {
+      .container {
+        padding: 15px;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+      button {
+        font-size: 14px;
+      }
+    }
+
+  </style>
 </head>
 <body>
-  <h1>修改 GOOD_DOMAIN</h1>
-  <form id="domainForm">
-    <label for="goodDomain">新 GOOD_DOMAIN:</label>
-    <input type="text" id="goodDomain" name="goodDomain" placeholder="www.visa.com.sg" required>
-    <button type="submit">提交</button>
-  </form>
 
-  <h2>当前 GOOD_DOMAIN: <span id="currentDomain">加载中...</span></h2>
+  <div class="container">
+    <h1>优选域名</h1>
+    <h2>当前 优选域名: <span id="currentDomain">加载中...</span></h2>
+
+    <!-- 显示成功/失败消息 -->
+    <div id="alertMessage" class="alert"></div>
+
+    <form id="domainForm">
+      <label for="goodDomain">更新 优选域名:</label>
+      <input type="text" id="goodDomain" name="goodDomain" placeholder="例如：www.visa.com.sg" required>
+      <button type="submit">提交</button>
+    </form>
+  </div>
 
   <script>
     // 获取当前 GOOD_DOMAIN 值并显示
@@ -22,13 +142,17 @@
       .then(data => {
         document.getElementById('currentDomain').innerText = data.GOOD_DOMAIN;
       })
-      .catch(error => console.error('获取 GOOD_DOMAIN 失败:', error));
+      .catch(error => {
+        console.error('获取 优选域名 失败:', error);
+        document.getElementById('currentDomain').innerText = '加载失败';
+      });
 
     // 处理表单提交
     document.getElementById('domainForm').addEventListener('submit', function(event) {
       event.preventDefault();
 
       const newDomain = document.getElementById('goodDomain').value;
+      const alertMessage = document.getElementById('alertMessage');
 
       fetch('/updateGoodDomain', {
         method: 'POST',
@@ -40,17 +164,23 @@
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          alert('修改成功');
+          alertMessage.textContent = '修改成功';
+          alertMessage.className = 'alert success';
           document.getElementById('currentDomain').innerText = newDomain;
         } else {
-          alert('修改失败，请稍后再试');
+          alertMessage.textContent = '修改失败，请稍后再试';
+          alertMessage.className = 'alert error';
         }
+        alertMessage.style.display = 'block';
       })
       .catch(error => {
-        alert('请求失败');
+        alertMessage.textContent = '请求失败';
+        alertMessage.className = 'alert error';
+        alertMessage.style.display = 'block';
         console.error(error);
       });
     });
   </script>
+
 </body>
 </html>
