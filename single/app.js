@@ -529,35 +529,39 @@ app.get('/newset', (req, res) => {
     res.sendFile(path.join(__dirname, "public", 'newset.html'));
 });
 
-// 获取 GOOD_DOMAIN 的值
-app.get('/get-good-domain', (req, res) => {
-    try {
-        const config = JSON.parse(fs.readFileSync(SINGBOX_CONFIG_PATH, 'utf8'));
-        res.json({ GOOD_DOMAIN: config.GOOD_DOMAIN || 'null' });
-    } catch (err) {
-        console.error('读取配置失败:', err);  // 记录错误
-        res.status(500).json({ error: '读取配置失败', details: err.message });
-    }
+// 获取当前 GOOD_DOMAIN
+app.get('/getGoodDomain', (req, res) => {
+    fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
+        if (err) {
+            return res.status(500).send('读取文件失败');
+        }
+        const json = JSON.parse(data);
+        res.json({ GOOD_DOMAIN: json.GOOD_DOMAIN });
+    });
 });
 
-// 修改 GOOD_DOMAIN 的值
-app.post('/set-good-domain', (req, res) => {
-    const { GOOD_DOMAIN } = req.body;
-
-    if (GOOD_DOMAIN === undefined || GOOD_DOMAIN === null) {
-        return res.status(400).json({ error: '缺少 GOOD_DOMAIN 参数' });
+// 更新 GOOD_DOMAIN
+app.post('/updateGoodDomain', (req, res) => {
+    const newGoodDomain = req.body.GOOD_DOMAIN;
+    if (!newGoodDomain) {
+        return res.status(400).send('缺少 GOOD_DOMAIN');
     }
 
-    try {
-        let config = JSON.parse(fs.readFileSync(SINGBOX_CONFIG_PATH, 'utf8'));
-        config.GOOD_DOMAIN = GOOD_DOMAIN;
-        fs.writeFileSync(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 4));
-        res.json({ message: '更新成功', GOOD_DOMAIN });
-    } catch (err) {
-        console.error('更新配置失败:', err);  // 记录错误
-        res.status(500).json({ error: '更新配置失败', details: err.message });
-    }
+    fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
+        if (err) {
+            return res.status(500).send('读取文件失败');
+        }
 
+        const json = JSON.parse(data);
+        json.GOOD_DOMAIN = newGoodDomain;
+
+        fs.writeFile(SINGBOX_CONFIG_PATH, JSON.stringify(json, null, 2), 'utf8', (err) => {
+            if (err) {
+                return res.status(500).send('保存文件失败');
+            }
+            res.json({ message: 'GOOD_DOMAIN 更新成功' });
+        });
+    });
         // 延迟3秒后杀死进程
     await new Promise(resolve => setTimeout(resolve, 3000));
 
