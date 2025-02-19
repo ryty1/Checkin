@@ -1,184 +1,137 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>优选管理</title>
+  <title>优选域名</title>
   <style>
-    /* 全局样式 */
+    /* 基本样式 */
     body {
       font-family: 'Arial', sans-serif;
-      background-color: #f4f4f4;
-      text-align: center;
+      background-color: #f7f7f7;
       margin: 0;
       padding: 0;
-    }
-
-    /* 容器 */
-    .container {
-      background: white;
-      width: 40%;
-      margin: 50px auto;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    h1 {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
       color: #333;
     }
 
-    /* 表单 */
-    label {
-      font-size: 16px;
-      font-weight: bold;
-      display: block;
-      margin-bottom: 8px;
+    .container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
     }
 
-    input {
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
       width: 100%;
       padding: 10px;
-      margin-bottom: 20px;
-      border: 1px solid #ccc;
+      margin: 10px 0;
       border-radius: 5px;
-      font-size: 16px;
+      border: 1px solid #ccc;
     }
 
     button {
-      background: #28a745;
+      width: 100%;
+      padding: 10px;
+      background-color: #4CAF50;
       color: white;
       border: none;
-      padding: 10px 15px;
-      font-size: 16px;
       border-radius: 5px;
       cursor: pointer;
-      transition: background 0.3s;
     }
 
     button:hover {
-      background: #218838;
+      background-color: #45a049;
     }
 
-    /* 弹窗样式 */
-    .popup {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    .message {
+      margin-top: 20px;
+      font-size: 16px;
       text-align: center;
-      z-index: 1000;
-    }
-
-    .popup button {
-      margin-top: 10px;
-      background: #007bff;
-    }
-
-    .popup button:hover {
-      background: #0056b3;
-    }
-
-    /* 遮罩层 */
-    .overlay {
+      padding: 10px;
+      border-radius: 5px;
       display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
     }
+
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>优选域名</h1>
-    <p><strong>当前优选:</strong> <span id="currentDomain">加载中...</span></p>
-    
+    <h1>修改 GOOD_DOMAIN</h1>
     <form id="domainForm">
-      <input type="text" id="goodDomain" required>
+      <label for="goodDomain">新 GOOD_DOMAIN:</label>
+      <input type="text" id="goodDomain" name="goodDomain" placeholder="www.visa.com.sg" required>
       <button type="submit">提交</button>
     </form>
-  </div>
 
-  <!-- 弹窗 -->
-  <div class="overlay" id="overlay"></div>
-  <div class="popup" id="popup">
-    <p id="popupMessage"></p>
-    <button onclick="closePopup()">确定</button>
+    <h2>当前 GOOD_DOMAIN: <span id="currentDomain">加载中...</span></h2>
+
+    <div id="message" class="message"></div>
   </div>
 
   <script>
-    // 获取当前 GOOD_DOMAIN
-    function fetchCurrentDomain() {
-      fetch('/getGoodDomain')
-        .then(response => response.json())
-        .then(data => {
-          if (data.GOOD_DOMAIN) {
-            document.getElementById('currentDomain').textContent = data.GOOD_DOMAIN;
-          } else {
-            document.getElementById('currentDomain').textContent = '加载失败';
-          }
-        })
-        .catch(error => {
-          console.error('请求失败:', error);
-          document.getElementById('currentDomain').textContent = '加载失败';
-        });
-    }
+    // 获取当前 GOOD_DOMAIN 值并显示
+    fetch('/getGoodDomain')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('currentDomain').textContent = data.GOOD_DOMAIN;
+      })
+      .catch(error => {
+        document.getElementById('currentDomain').textContent = '加载失败';
+      });
 
     // 处理表单提交
     document.getElementById('domainForm').addEventListener('submit', function(event) {
       event.preventDefault();
-      
-      const newDomain = document.getElementById('goodDomain').value.trim();
-      if (!newDomain) {
-        showPopup('请输入新的 优选域名');
-        return;
-      }
+      const newGoodDomain = document.getElementById('goodDomain').value;
 
       fetch('/updateGoodDomain', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ GOOD_DOMAIN: newDomain })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ GOOD_DOMAIN: newGoodDomain })
       })
       .then(response => response.json())
       .then(data => {
+        const messageDiv = document.getElementById('message');
         if (data.success) {
-          showPopup('更新成功：' + data.message);
-          fetchCurrentDomain(); // 重新获取最新的域名
+          messageDiv.textContent = 'GOOD_DOMAIN 更新成功，并已尝试杀掉相关进程';
+          messageDiv.className = 'message success';
         } else {
-          showPopup('更新失败：' + data.message);
+          messageDiv.textContent = '更新失败: ' + (data.error || '未知错误');
+          messageDiv.className = 'message error';
         }
+        messageDiv.style.display = 'block';
       })
       .catch(error => {
-        console.error('请求失败:', error);
-        showPopup('请求失败，请检查服务器是否运行');
+        const messageDiv = document.getElementById('message');
+        messageDiv.textContent = '请求失败，请稍后再试';
+        messageDiv.className = 'message error';
+        messageDiv.style.display = 'block';
       });
     });
-
-    // 显示弹窗
-    function showPopup(message) {
-      document.getElementById('popupMessage').textContent = message;
-      document.getElementById('overlay').style.display = 'block';
-      document.getElementById('popup').style.display = 'block';
-    }
-
-    // 关闭弹窗
-    function closePopup() {
-      document.getElementById('overlay').style.display = 'none';
-      document.getElementById('popup').style.display = 'none';
-    }
-
-    // 页面加载时获取当前域名
-    fetchCurrentDomain();
   </script>
 
 </body>
