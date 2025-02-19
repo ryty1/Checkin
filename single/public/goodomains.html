@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理 GOOD_DOMAIN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        label, input, button {
+            margin: 10px 0;
+        }
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>管理 GOOD_DOMAIN</h1>
+    <p>当前 GOOD_DOMAIN 值：</p>
+    <input type="text" id="goodDomain" readonly>
+    <br>
+    <label for="newGoodDomain">修改 GOOD_DOMAIN:</label>
+    <input type="text" id="newGoodDomain">
+    <button onclick="updateGoodDomain()">保存修改</button>
+
+    <script>
+        // 获取当前 GOOD_DOMAIN 值
+        async function fetchGoodDomain() {
+            try {
+                const response = await fetch('/get-good-domain');
+                const data = await response.json();
+                if (data.GOOD_DOMAIN === 'null') {
+                    document.getElementById('goodDomain').value = '未设置';
+                } else {
+                    document.getElementById('goodDomain').value = data.GOOD_DOMAIN;
+                }
+            } catch (error) {
+                console.error('获取 GOOD_DOMAIN 失败:', error);
+            }
+        }
+
+        // 更新 GOOD_DOMAIN
+        async function updateGoodDomain() {
+            const newGoodDomain = document.getElementById('newGoodDomain').value;
+            if (!newGoodDomain) {
+                alert('请输入新的 GOOD_DOMAIN');
+                return;
+            }
+
+            try {
+                const response = await fetch('/set-good-domain', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ GOOD_DOMAIN: newGoodDomain })
+                });
+
+                const result = await response.json();
+                if (result.message) {
+                    alert('更新成功: ' + result.GOOD_DOMAIN);
+                    // 更新页面显示的 GOOD_DOMAIN
+                    document.getElementById('goodDomain').value = result.GOOD_DOMAIN;
+                    document.getElementById('newGoodDomain').value = ''; // 清空输入框
+                } else {
+                    alert('更新失败: ' + result.error);
+                }
+            } catch (error) {
+                console.error('更新 GOOD_DOMAIN 失败:', error);
+            }
+        }
+
+        // 页面加载时获取当前 GOOD_DOMAIN
+        window.onload = fetchGoodDomain;
+    </script>
+</body>
+</html>
