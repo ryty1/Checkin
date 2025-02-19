@@ -531,35 +531,70 @@ app.get('/getGoodDomain', (req, res) => {
     if (err) {
       return res.status(500).json({ error: '读取配置文件失败' });
     }
-    
-    const config = JSON.parse(data);
-    res.json({ GOOD_DOMAIN: config.GOOD_DOMAIN });
+
+    try {
+      const config = JSON.parse(data);
+      res.json({ GOOD_DOMAIN: config.GOOD_DOMAIN });
+    } catch (parseError) {
+      return res.status(500).json({ error: '解析 JSON 失败' });
+    }
   });
 });
 
-// 更新 GOOD_DOMAIN
-app.post('/updateGoodDomain', (req, res) => {
-  const newGoodDomain = req.body.GOOD_DOMAIN;
-
-  if (!newGoodDomain) {
-    return res.status(400).json({ success: false, error: '缺少 GOOD_DOMAIN' });
+// 更新 GOOD_DOMAIN 并杀掉进程
+app.post('/updateGoodDomain', async (req, res) => {
+  const { GOOD_DOMAIN } = req.body;
+  
+  if (!GOOD_DOMAIN) {
+    return res.status(400).json({ error: '缺少 GOOD_DOMAIN 参数' });
   }
 
-  fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
-    if (err) {
-      return res.status(500).json({ success: false, error: '读取配置文件失败' });
+  try {
+    // 读取 JSON 配置文件
+    const data = fs.readFileSync(SINGBOX_CONFIG_PATH, 'utf8');
+    const config = JSON.parse(data);
+
+    // 更新 GOOD_DOMAIN
+    config.GOOD_DOMAIN = GOOD_DOMAIN;
+
+    // 写入新的 JSON 文件
+    fs.writeFileSync(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 2), 'utf8');
+
+    console.log(`GOOD_DOMAIN 已更新为: ${GOOD_DOMAIN}`);
+
+    // 查找并杀掉 serv00sb 和 cloudflare 进程
+    const processes = ['serv00sb', 'cloudflare'];
+
+    for (const process of processes) {
+      try {
+        // 查找进程 ID (PID)
+        exec(`pgrep -f ${process}`, (err, stdout) => {
+          if (!err && stdout) {
+            const pids = stdout.trim().split('\n');
+            pids.forEach(pid => {
+              exec(`kill -9 ${pid}`, (killErr) => {
+                if (!killErr) {
+                  console.log(`已杀掉进程 ${process} (PID: ${pid})`);
+                } else {
+                  console.error(`无法杀掉进程 ${process}:`, killErr.message);
+                }
+              });
+            });
+          } else {
+            console.log(`未找到进程 ${process}`);
+          }
+        });
+      } catch (error) {
+        console.error(`查找或杀死进程 ${process} 失败:`, error.message);
+      }
     }
 
-    const config = JSON.parse(data);
-    config.GOOD_DOMAIN = newGoodDomain;
+    res.json({ message: 'GOOD_DOMAIN 更新成功，并已尝试杀掉相关进程' });
 
-    fs.writeFile(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 2), (err) => {
-      if (err) {
-        return res.status(500).json({ success: false, error: '保存配置文件失败' });
-      }
-      res.json({ success: true });
-    });
-  });
+  } catch (error) {
+    console.error('更新 GOOD_DOMAIN 失败:', error.message);
+    res.status(500).json({ error: '更新 GOOD_DOMAIN 失败' });
+  }
 });
 
 // 路由：返回 goodomains.html 页面
