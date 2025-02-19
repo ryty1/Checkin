@@ -581,6 +581,7 @@ app.post('/updateGoodDomain', async (req, res) => {
         console.error(`杀掉进程 ${process} 时出错:`, error);
       }
     }
+    runShellCommand();
 
     // 返回成功的响应
     res.json({ success: true, message: `GOOD_DOMAIN 更新为: ${GOOD_DOMAIN} 并已尝试杀掉相关进程` });
