@@ -544,9 +544,9 @@ app.get('/getGoodDomain', (req, res) => {
 // 更新 GOOD_DOMAIN 并杀掉进程
 app.post('/updateGoodDomain', async (req, res) => {
   const { GOOD_DOMAIN } = req.body;
-  
+
   if (!GOOD_DOMAIN) {
-    return res.status(400).json({ error: '缺少 GOOD_DOMAIN 参数' });
+    return res.status(400).json({ success: false, error: '缺少 GOOD_DOMAIN 参数' });
   }
 
   try {
@@ -562,38 +562,32 @@ app.post('/updateGoodDomain', async (req, res) => {
 
     console.log(`GOOD_DOMAIN 已更新为: ${GOOD_DOMAIN}`);
 
-    // 查找并杀掉 serv00sb 和 cloudflare 进程
-    const processes = ['serv00sb', 'cloudflare'];
-
+    // 查找并杀掉进程
+    const processes = ['cloudflare', 'serv00sb'];
     for (const process of processes) {
       try {
-        // 查找进程 ID (PID)
-        exec(`pgrep -f ${process}`, (err, stdout) => {
-          if (!err && stdout) {
-            const pids = stdout.trim().split('\n');
-            pids.forEach(pid => {
-              exec(`kill -9 ${pid}`, (killErr) => {
-                if (!killErr) {
-                  console.log(`已杀掉进程 ${process} (PID: ${pid})`);
-                } else {
-                  console.error(`无法杀掉进程 ${process}:`, killErr.message);
-                }
-              });
-            });
-          } else {
-            console.log(`未找到进程 ${process}`);
+        const { stdout, stderr } = await execAsync(`pgrep ${process}`);
+        if (stderr) {
+          console.error(`查找进程 ${process} 时出错:`, stderr);
+        }
+        if (stdout) {
+          const pids = stdout.split('\n').filter(pid => pid.trim() !== ''); // 获取PID
+          for (const pid of pids) {
+            console.log(`Killing process: ${process} (PID: ${pid})`);
+            await execAsync(`kill -9 ${pid}`);
           }
-        });
+        }
       } catch (error) {
-        console.error(`查找或杀死进程 ${process} 失败:`, error.message);
+        console.error(`杀掉进程 ${process} 时出错:`, error);
       }
     }
 
-    res.json({ message: 'GOOD_DOMAIN 更新成功，并已尝试杀掉相关进程' });
+    // 返回成功的响应
+    res.json({ success: true, message: `GOOD_DOMAIN 更新为: ${GOOD_DOMAIN} 并已尝试杀掉相关进程` });
 
-  } catch (error) {
-    console.error('更新 GOOD_DOMAIN 失败:', error.message);
-    res.status(500).json({ error: '更新 GOOD_DOMAIN 失败' });
+  } catch (err) {
+    console.error('更新失败:', err);
+    res.status(500).json({ success: false, error: '更新失败，请稍后再试' });
   }
 });
 
