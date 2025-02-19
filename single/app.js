@@ -554,36 +554,6 @@ app.post('/updateGoodDomain', (req, res) => {
     config.GOOD_DOMAIN = newGoodDomain;
 
     fs.writeFile(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 2), (err) => {
-        // 等待3秒钟后执行进程杀死操作
-        await new Promise(resolve => setTimeout(resolve, 3000));
-
-        // 需要杀掉的进程名称
-        const processes = ['serv00sb', 'cloudflare'];
-
-        for (const process of processes) {
-            try {
-                // 查找进程 ID
-                exec(`pgrep -f ${process}`, (err, stdout) => {
-                    if (err || !stdout.trim()) {
-                        console.log(`未找到进程: ${process}`);
-                        return;
-                    }
-
-                    const pids = stdout.trim().split('\n');
-                    pids.forEach(pid => {
-                        exec(`kill -9 ${pid}`, (killErr) => {
-                            if (killErr) {
-                                console.error(`无法杀死进程 ${process} (PID: ${pid})`, killErr);
-                            } else {
-                                console.log(`成功杀死进程 ${process} (PID: ${pid})`);
-                            }
-                        });
-                    });
-                });
-            } catch (err) {
-                console.error(`杀死进程 ${process} 失败:`, err);
-            }
-        }
       if (err) {
         return res.status(500).json({ success: false, error: '保存配置文件失败' });
       }
