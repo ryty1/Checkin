@@ -1,125 +1,63 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>修改 GOOD_DOMAIN</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        h1 {
-            font-size: 24px;
-            color: #333;
-        }
-
-        label {
-            font-size: 16px;
-        }
-
-        input {
-            padding: 5px;
-            font-size: 16px;
-            margin: 5px 0;
-        }
-
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-
-        button:hover {
-            background-color: #45a049;
-        }
-
-        .result {
-            margin-top: 20px;
-            font-size: 16px;
-        }
-
-        .error {
-            color: red;
-        }
-    </style>
 </head>
 <body>
-
     <h1>修改 GOOD_DOMAIN</h1>
+    
     <div>
-        <label for="goodDomain">当前 GOOD_DOMAIN:</label>
-        <span id="currentGoodDomain">加载中...</span>
+        <label for="good-domain">当前 GOOD_DOMAIN: </label>
+        <span id="current-good-domain">加载中...</span>
+    </div>
+    
+    <div>
+        <label for="new-good-domain">输入新的 GOOD_DOMAIN: </label>
+        <input type="text" id="new-good-domain" placeholder="输入新的域名">
+        <button onclick="updateGoodDomain()">提交</button>
     </div>
 
-    <div>
-        <label for="newGoodDomain">输入新的 GOOD_DOMAIN:</label>
-        <input type="text" id="newGoodDomain" placeholder="例如：www.visa.com.sg">
-    </div>
-
-    <button id="submitBtn">提交</button>
-
-    <div id="responseMessage" class="result"></div>
+    <p id="status-message"></p>
 
     <script>
-        // 页面加载时获取当前 GOOD_DOMAIN
-        fetch('/getGoodDomain')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('currentGoodDomain').textContent = data.GOOD_DOMAIN;
-            })
-            .catch(error => {
-                console.error('获取 GOOD_DOMAIN 失败:', error);
-                document.getElementById('currentGoodDomain').textContent = '加载失败';
-            });
-
-        // 提交新的 GOOD_DOMAIN
-        document.getElementById('submitBtn').addEventListener('click', () => {
-            const newGoodDomain = document.getElementById('newGoodDomain').value;
-            const responseMessage = document.getElementById('responseMessage');
-
-            if (newGoodDomain) {
-                // 清空之前的响应消息
-                responseMessage.textContent = '';
-
-                // 发送 POST 请求更新 GOOD_DOMAIN
-                fetch('/updateGoodDomain', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ GOOD_DOMAIN: newGoodDomain })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('请求失败');
-                    }
-                    return response.json();
-                })
+        // 页面加载时获取当前 GOOD_DOMAIN 的值
+        window.onload = function() {
+            fetch('/get-good-domain')
+                .then(response => response.json())
                 .then(data => {
-                    responseMessage.textContent = '修改成功!';
-                    responseMessage.classList.remove('error');
-                    responseMessage.classList.add('result');
-                    document.getElementById('currentGoodDomain').textContent = newGoodDomain;
+                    document.getElementById('current-good-domain').textContent = data.GOOD_DOMAIN || '未设置';
                 })
-                .catch(error => {
-                    console.error('请求错误:', error);
-                    responseMessage.textContent = '提交失败，请稍后再试';
-                    responseMessage.classList.remove('result');
-                    responseMessage.classList.add('error');
+                .catch(err => {
+                    document.getElementById('current-good-domain').textContent = '加载失败';
                 });
-            } else {
-                responseMessage.textContent = '请输入一个有效的 GOOD_DOMAIN';
-                responseMessage.classList.remove('result');
-                responseMessage.classList.add('error');
-            }
-        });
-    </script>
+        }
 
+        // 更新 GOOD_DOMAIN 的值
+        function updateGoodDomain() {
+            const newGoodDomain = document.getElementById('new-good-domain').value;
+            if (!newGoodDomain) {
+                alert('请输入新的 GOOD_DOMAIN');
+                return;
+            }
+
+            fetch('/update-good-domain', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ GOOD_DOMAIN: newGoodDomain })
+            })
+            .then(response => response.text())
+            .then(message => {
+                document.getElementById('status-message').textContent = message;
+                document.getElementById('current-good-domain').textContent = newGoodDomain;
+            })
+            .catch(err => {
+                document.getElementById('status-message').textContent = '提交失败，请稍后再试';
+            });
+        }
+    </script>
 </body>
 </html>
