@@ -512,26 +512,10 @@ app.post('/updateGoodDomain', async (req, res) => {
 
     console.log(`GOOD_DOMAIN 已更新为: ${GOOD_DOMAIN}`);
 
-    // 查找并杀掉进程
-    const processes = ['cloudflare', 'serv00sb'];
-    for (const process of processes) {
-      try {
-        const { stdout, stderr } = await execAsync(`pgrep ${process}`);
-        if (stderr) {
-          console.error(`查找进程 ${process} 时出错:`, stderr);
-        }
-        if (stdout) {
-          const pids = stdout.split('\n').filter(pid => pid.trim() !== ''); // 获取PID
-          for (const pid of pids) {
-            console.log(`Killing process: ${process} (PID: ${pid})`);
-            await execAsync(`kill -9 ${pid}`);
-          }
-        }
-      } catch (error) {
-        console.error(`杀掉进程 ${process} 时出错:`, error);
-      }
-    }
-    runShellCommand();
+    stopShellCommand();
+    setTimeout(() => {
+        runShellCommand();
+    }, 3000); 
 
     // 返回成功的响应
     res.json({ success: true, message: `GOOD_DOMAIN 更新为: ${GOOD_DOMAIN} 并已尝试杀掉相关进程` });
