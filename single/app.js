@@ -447,6 +447,9 @@ async function updateConfigFile(config) {
         return;
     }
     stopShellCommand();
+    setTimeout(() => {
+        runShellCommand();
+    }, 3000); 
 }
 
 
