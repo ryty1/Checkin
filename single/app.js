@@ -44,6 +44,11 @@ function runShellCommand() {
     executeCommand(command, "start.sh", true);
 }
 
+function stopShellCommand() {
+    const command = `cd ${process.env.HOME}/serv00-play/singbox/ && bash killsing-box.sh`;
+    executeCommand(command, "killsing-box.sh", true);
+}
+
 function executeHy2ipScript(logMessages, callback) {
 
     const command = `cd ${process.env.HOME}/domains/${username}.serv00.net/public_nodejs/ && bash hy2ip.sh`;
@@ -441,49 +446,9 @@ async function updateConfigFile(config) {
         console.error('写入脚本文件时出错:', error);
         return;
     }
-
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    const processes = ['cloudflare', 'serv00sb'];
-    for (const process of processes) {
-        try {
-            const { stdout, stderr } = await execAsync(`pgrep ${process}`);
-            if (stderr) {
-                console.error(`查找进程 ${process} 时出错:`, stderr);
-                return;
-            }
-
-            if (stdout) {
-                const pids = stdout.split('\n').map(pid => pid.trim()).filter(pid => pid);
-                console.log(`Killing process: ${process} (PIDs: ${pids.join(' ')})`);
-                for (const pid of pids) {
-                    try {
-                        await execAsync(`kill -9 ${pid}`);
-                        console.log(`进程 ${pid} 已被杀死`);
-                    } catch (killError) {
-                        console.error(`杀死进程 ${pid} 时出错:`, killError);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error(`查找进程 ${process} 时出错:`, error);
-        }
-        runShellCommand();
-    }
+    stopShellCommand();
 }
 
-// 将 exec 转换为返回 Promise 的异步函数
-function execAsync(command) {
-    return new Promise((resolve, reject) => {
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                reject(error);
-            } else {
-                resolve({ stdout, stderr });
-            }
-        });
-    });
-}
 
 // 路由：获取配置
 app.get('/api/get-config', (req, res) => {
