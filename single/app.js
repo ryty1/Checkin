@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require("express");
 const { exec } = require("child_process");
+const util = require('util');
 const fs = require("fs");
 const path = require("path");
 const app = express();
@@ -322,7 +323,6 @@ app.get("/node", (req, res) => {
     });
 });
 
-// 检查并读取配置文件
 function getConfigFile() {
     console.log('检查配置文件是否存在:', configFilePath);
     
@@ -335,12 +335,11 @@ function getConfigFile() {
             const defaultConfig = {
                 vmessname: "Argo-vmess",
                 hy2name: "Hy2",
-                HIDE_USERNAME: false // 添加默认的 HIDE_USERNAME 配置
+                HIDE_USERNAME: false 
             };
-            fs.writeFileSync(configFilePath, JSON.stringify(defaultConfig, null, 2));
+            fs.writeFileSync(configFilePath, JSON.stringify(defaultConfig));
             console.log('配置文件已创建:', configFilePath);
             
-            // 同时写入到 start.sh 脚本
             writeDefaultConfigToScript(defaultConfig);
             return defaultConfig;
         }
@@ -350,7 +349,6 @@ function getConfigFile() {
     }
 }
 
-// 写入默认配置到 start.sh 脚本
 function writeDefaultConfigToScript(config) {
     console.log('写入默认配置到脚本:', scriptPath);
     let scriptContent;
@@ -362,14 +360,13 @@ function writeDefaultConfigToScript(config) {
         return;
     }
 
-    // 找到 export_list() 函数的位置
-    const exportListFuncPattern = /export_list\(\)\s*{([^}]*)}/;
+    // 正则匹配 export_list() 并替换内容
+    const exportListFuncPattern = /export_list\(\)\s*{\n([\s\S]*?)}/m;
     const match = scriptContent.match(exportListFuncPattern);
 
     if (match) {
         let exportListContent = match[1];
 
-        // 在 export_list() 函数内部定义 custom_vmess 和 custom_hy2 变量
         if (!exportListContent.includes('custom_vmess')) {
             exportListContent = `  custom_vmess="${config.vmessname}"\n` + exportListContent;
         }
@@ -377,26 +374,24 @@ function writeDefaultConfigToScript(config) {
             exportListContent = `  custom_hy2="${config.hy2name}"\n` + exportListContent;
         }
 
-        // 替换 export_list() 函数内容
         scriptContent = scriptContent.replace(exportListFuncPattern, `export_list() {\n${exportListContent}}`);
     } else {
         console.log("没有找到 export_list() 函数，无法插入变量定义。");
     }
 
-    // 替换 vmessname 和 hy2name 使用变量的格式
-    scriptContent = scriptContent.replace(/vmessname=".*?"/, `vmessname="\$custom_vmess-\$host-\$user"`);
-    scriptContent = scriptContent.replace(/hy2name=".*?"/, `hy2name="\$custom_hy2-\$host-\$user"`);
+    // 使用 replaceAll 确保所有匹配项都被替换
+    scriptContent = scriptContent.replaceAll(/vmessname=".*?"/g, `vmessname="\$custom_vmess-\$host-\$user"`);
+    scriptContent = scriptContent.replaceAll(/hy2name=".*?"/g, `hy2name="\$custom_hy2-\$host-\$user"`);
 
-    // 根据 HIDE_USERNAME 配置，修改 user 变量定义
     if (config.HIDE_USERNAME) {
-        // 启用隐藏用户名
-        scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami | tail -c 2 | head -c 1)"`);
+        scriptContent = scriptContent.replaceAll(/user=".*?"/g, `user="\$(whoami | tail -c 2 | head -c 1)"`);
     } else {
-        // 禁用隐藏用户名
-        scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami)"`);
+        scriptContent = scriptContent.replaceAll(/user=".*?"/g, `user="\$(whoami)"`);
     }
 
-    // 将更新后的内容写回脚本
+    // 去除多余空行，确保文件格式整洁
+    scriptContent = scriptContent.replace(/\n{2,}/g, '\n').trim();
+
     try {
         fs.writeFileSync(scriptPath, scriptContent);
         console.log('脚本已更新:', scriptPath);
@@ -405,14 +400,10 @@ function writeDefaultConfigToScript(config) {
     }
 }
 
-
-// 更新配置文件和脚本内容
 async function updateConfigFile(config) {
     console.log('更新配置文件:', configFilePath);
-
     try {
-        // 更新配置文件
-        fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2));
+        fs.writeFileSync(configFilePath, JSON.stringify(config));
         console.log('配置文件更新成功');
     } catch (error) {
         console.error('更新配置文件时出错:', error);
@@ -423,29 +414,27 @@ async function updateConfigFile(config) {
     let scriptContent;
 
     try {
-        // 更新脚本中的变量
         scriptContent = fs.readFileSync(scriptPath, 'utf8');
     } catch (error) {
         console.error('读取脚本文件时出错:', error);
         return;
     }
 
-    scriptContent = scriptContent.replace(/custom_vmess=".*?"/, `custom_vmess="${config.vmessname}"`);
-    scriptContent = scriptContent.replace(/custom_hy2=".*?"/, `custom_hy2="${config.hy2name}"`);
+    scriptContent = scriptContent.replaceAll(/custom_vmess=".*?"/g, `custom_vmess="${config.vmessname}"`);
+    scriptContent = scriptContent.replaceAll(/custom_hy2=".*?"/g, `custom_hy2="${config.hy2name}"`);
+    scriptContent = scriptContent.replaceAll(/vmessname=".*?"/g, `vmessname="\$custom_vmess-\$host-\$user"`);
+    scriptContent = scriptContent.replaceAll(/hy2name=".*?"/g, `hy2name="\$custom_hy2-\$host-\$user"`);
 
-    // 同步更新 vmessname 和 hy2name 的定义
-    scriptContent = scriptContent.replace(/vmessname=".*?"/, `vmessname="\$custom_vmess-\$host-\$user"`);
-    scriptContent = scriptContent.replace(/hy2name=".*?"/, `hy2name="\$custom_hy2-\$host-\$user"`);
-
-    // 同步更新 HIDE_USERNAME
     if (config.HIDE_USERNAME) {
-        scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami | tail -c 2 | head -c 1)"`);
+        scriptContent = scriptContent.replaceAll(/user=".*?"/g, `user="\$(whoami | tail -c 2 | head -c 1)"`);
     } else {
-        scriptContent = scriptContent.replace(/user=".*?"/, `user="\$(whoami)"`);
+        scriptContent = scriptContent.replaceAll(/user=".*?"/g, `user="\$(whoami)"`);
     }
 
+    // 去除多余空行，确保格式统一
+    scriptContent = scriptContent.replace(/\n{2,}/g, '\n').trim();
+
     try {
-        // 写回修改后的脚本
         fs.writeFileSync(scriptPath, scriptContent);
         console.log('脚本更新成功:', scriptPath);
     } catch (error) {
@@ -453,16 +442,11 @@ async function updateConfigFile(config) {
         return;
     }
 
-    // 延迟3秒后杀死进程
     await new Promise(resolve => setTimeout(resolve, 3000));
 
-    // 定义要杀死的进程
     const processes = ['cloudflare', 'serv00sb'];
-
-    // 使用 async/await 处理进程的杀死操作
     for (const process of processes) {
         try {
-            // 查找进程 ID
             const { stdout, stderr } = await execAsync(`pgrep ${process}`);
             if (stderr) {
                 console.error(`查找进程 ${process} 时出错:`, stderr);
@@ -470,10 +454,8 @@ async function updateConfigFile(config) {
             }
 
             if (stdout) {
-                const pids = stdout.split('\n').filter(pid => pid.trim() !== ''); // 获取PID
-                console.log(`Killing process: ${process} (PIDs: ${pids.join(', ')})`);
-
-                // 逐个杀死进程
+                const pids = stdout.split('\n').map(pid => pid.trim()).filter(pid => pid);
+                console.log(`Killing process: ${process} (PIDs: ${pids.join(' ')})`);
                 for (const pid of pids) {
                     try {
                         await execAsync(`kill -9 ${pid}`);
@@ -486,7 +468,6 @@ async function updateConfigFile(config) {
         } catch (error) {
             console.error(`查找进程 ${process} 时出错:`, error);
         }
-        runShellCommand();
     }
 }
 
