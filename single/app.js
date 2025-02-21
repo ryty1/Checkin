@@ -24,10 +24,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 const Server = app.listen(3000, () => {
-    const timestamp = new Date().toLocaleString();
-    const startMsg = `${timestamp} 服务器已启动，监听端口 3000`;
-    logMessage(startMsg);
-    console.log(startMsg);
+    console.log("服务器已启动，监听端口 3001...");
 });
 // **WebSocket 监听前端请求**
 const wss = new WebSocket.Server({ Server });
