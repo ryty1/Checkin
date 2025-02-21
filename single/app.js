@@ -19,6 +19,9 @@ const repoName = "My-test";
 const localTagFile = path.join(__dirname, 'latest_tag.txt');  // 记录本地标签
 const localFolder = __dirname;  // 你的项目目录
 
+const server = app.listen(3000, () => {
+    console.log('Server is running on port 3000');
+});
 const wss = new WebSocket.Server({ server });
 // 允许静态文件访问
 app.use(express.static(path.join(__dirname, 'public')));
@@ -80,7 +83,6 @@ app.get("/info", (req, res) => {
 
 // 中间件：解析请求体
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
 
 app.get("/hy2ip", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "hy2ip.html"));
@@ -630,10 +632,4 @@ app.use((req, res, next) => {
         return next();
     }
     res.status(404).send("页面未找到");
-});
-app.listen(3000, () => {
-    const timestamp = new Date().toLocaleString();
-    const startMsg = `${timestamp} 服务器已启动，监听端口 3000`;
-    logMessage(startMsg);
-    console.log(startMsg);
 });
