@@ -24,8 +24,13 @@
     <script>
         const socket = new WebSocket('ws://localhost:3000');
 
+        socket.onopen = function() {
+            console.log("✅ WebSocket 已连接");
+        };
+
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data);
+            console.log(data);  // 打印收到的数据
 
             // 更新标签信息
             if (data.latestTag) document.getElementById('latest-tag').textContent = data.latestTag;
