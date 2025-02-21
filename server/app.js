@@ -94,6 +94,21 @@ app.post("/setPassword", (req, res) => {
     res.redirect("/login");
 });
 
+async function sendErrorToTG(errorMessage) {
+    try {
+        const settings = getNotificationSettings();
+        if (!settings.telegramToken || !settings.telegramChatId) {
+            console.log("❌ Telegram 设置不完整，无法发送通知");
+            return;
+        }
+
+        const bot = new TelegramBot(settings.telegramToken, { polling: false });
+        await bot.sendMessage(settings.telegramChatId, `❌ 访问失败通知: ${errorMessage}`, { parse_mode: "MarkdownV2" });
+    } catch (err) {
+        console.error("❌ 发送 Telegram 通知失败:", err);
+    }
+}
+
 app.get("/login", async (req, res) => {
     try {
         const accounts = await getAccounts(true);
@@ -101,13 +116,18 @@ app.get("/login", async (req, res) => {
 
         // 依次访问每个账号的 .serv00.net/info
         const requests = users.map(user =>
-            axios.get(`https://${user}.serv00.net/info`).catch(err => console.log(`访问 ${user}.serv00.net/info 失败:`, err.message))
+            axios.get(`https://${user}.serv00.net/info`)
+                .catch(err => {
+                    console.log(`访问 ${user}.serv00.net/info 失败:`, err.message);
+                    sendErrorToTG(`访问 ${user}.serv00.net/info 失败: ${err.message}`);  // 发送错误通知
+                })
         );
 
         await Promise.all(requests);
         console.log("所有账号的 /info 已访问完成");
     } catch (error) {
         console.error("访问 /info 失败:", error);
+        sendErrorToTG(`访问 /info 页面失败: ${error.message}`);  // 发送全局错误通知
     }
 
     res.sendFile(path.join(__dirname, "protected", "login.html"));
