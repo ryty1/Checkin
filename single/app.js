@@ -4,6 +4,8 @@ const { exec } = require("child_process");
 const util = require('util');
 const fs = require("fs");
 const path = require("path");
+const axios = require('axios');
+const WebSocket = require('ws');
 const app = express();
 
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
@@ -11,6 +13,11 @@ const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.ne
 const scriptPath = path.join(process.env.HOME, "serv00-play", "singbox", "start.sh");
 const configFilePath = path.join(__dirname, 'config.json');
 const SINGBOX_CONFIG_PATH = path.join(process.env.HOME, "serv00-play", "singbox", "singbox.json");
+
+const repoOwner = "ryty1";
+const repoName = "My-test";
+const localTagFile = path.join(__dirname, 'latest_tag.txt');  // 记录本地标签
+const localFolder = __dirname;  // 你的项目目录
 
 // 允许静态文件访问
 app.use(express.static(path.join(__dirname, 'public')));
