@@ -3,16 +3,8 @@ const express = require("express");
 const { exec } = require("child_process");
 const util = require('util');
 const fs = require("fs");
-const axios = require('axios');
-const WebSocket = require('ws');
 const path = require("path");
 const app = express();
-
-// 配置 GitHub 仓库和本地文件
-const repoOwner = 'ryty1';  // GitHub 仓库所有者
-const repoName = 'My-test';  // 仓库名称
-const localTagFile = './localTag.txt';  // 本地标签文件路径
-const localFolder = './local_files';  // 本地文件存储路径
 
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
 const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
@@ -23,11 +15,6 @@ const SINGBOX_CONFIG_PATH = path.join(process.env.HOME, "serv00-play", "singbox"
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-const Server = app.listen(3000, () => {
-    console.log("服务器已启动，监听端口 3001...");
-});
-// **WebSocket 监听前端请求**
-const wss = new WebSocket.Server({ Server });
 let logs = [];
 let latestStartLog = "";
 function logMessage(message) {
@@ -160,186 +147,43 @@ app.get("/log", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "log.html"));
 });
 
-// **获取 GitHub 最新标签**
-const getLatestTag = async () => {
-    try {
-        const url = `https://api.github.com/repos/${repoOwner}/${repoName}/tags`;
-        const response = await axios.get(url);
-        if (response.data.length === 0) {
-            throw new Error('没有找到标签');
+app.get('/ota/update', (req, res) => {
+    const downloadScriptCommand = 'curl -Ls https://raw.githubusercontent.com/ryty1/serv00-save-me/refs/heads/main/single/ota.sh -o /tmp/ota.sh';
+
+    exec(downloadScriptCommand, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`❌ 下载脚本错误: ${error.message}`);
+            return res.status(500).json({ success: false, message: error.message });
         }
-        const latestTag = response.data[0].name; // 获取最新标签
-        console.log("🔍 最新版本标签:", latestTag);
-        return latestTag;
-    } catch (error) {
-        console.error("❌ 获取 GitHub 标签失败:", error.response ? error.response.data : error.message);
-        return null;
-    }
-};
+        if (stderr) {
+            console.error(`❌ 下载脚本错误输出: ${stderr}`);
+            return res.status(500).json({ success: false, message: stderr });
+        }
 
-// **获取本地存储的标签**
-const getLocalTag = () => {
-    if (fs.existsSync(localTagFile)) {
-        return fs.readFileSync(localTagFile, 'utf8').trim();
-    }
-    return null;
-};
+        const executeScriptCommand = 'bash /tmp/ota.sh';
 
-// **保存本地最新的标签**
-const saveLocalTag = (tag) => fs.writeFileSync(localTagFile, tag, 'utf8');
+        exec(executeScriptCommand, (error, stdout, stderr) => {
+            exec('rm -f /tmp/ota.sh', (err) => {
+                if (err) {
+                    console.error(`❌ 删除临时文件失败: ${err.message}`);
+                } else {
+                    console.log('✅ 临时文件已删除');
+                }
+            });
 
-// **获取指定标签下的文件列表**
-const getFileList = async (tag) => {
-    try {
-        const url = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${tag}?recursive=1`;
-        const response = await axios.get(url);
-        return response.data.tree.filter(file => file.type === "blob" && file.path.startsWith("single/"));
-    } catch (error) {
-        console.error("❌ 获取文件列表失败:", error);
-        return [];
-    }
-};
-
-// **下载文件内容**
-const getFileContent = async (tag, filePath) => {
-    try {
-        const url = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${tag}/${filePath}`;
-        const response = await axios.get(url);
-        return response.data;
-    } catch (error) {
-        console.error(`❌ 下载失败: ${filePath}`, error);
-        return null;
-    }
-};
-
-// **保存文件**
-const saveFile = (filePath, content) => {
-    const localPath = path.join(localFolder, filePath.replace(/^single\//, "")); // 移除 single/ 目录
-    fs.mkdirSync(path.dirname(localPath), { recursive: true }); // 创建文件夹
-    fs.writeFileSync(localPath, content, 'utf8');
-};
-
-// **安装依赖**
-const installDependencies = () => {
-    return new Promise((resolve, reject) => {
-        const installCommand = 'npm install dotenv basic-auth express';  // 修改为你的依赖列表
-        exec(installCommand, (error, stdout, stderr) => {
-            if (error || stderr) {
-                reject(`❌ 安装依赖失败: ${error ? error.message : stderr}`);
-            } else {
-                console.log(`✅ 安装依赖完成: ${stdout}`);
-                resolve();
+            if (error) {
+                console.error(`❌ 执行脚本错误: ${error.message}`);
+                return res.status(500).json({ success: false, message: error.message });
             }
+            if (stderr) {
+                console.error(`❌ 脚本错误输出: ${stderr}`);
+                return res.status(500).json({ success: false, message: stderr });
+            }
+            
+            res.json({ success: true, output: stdout });
         });
     });
-};
-
-
-wss.on('connection', async (ws) => {
-    console.log('✅ Client connected');
-
-    const latestTag = await getLatestTag();
-    const localTag = getLocalTag();
-
-    // 连接时，发送 GitHub 最新版本 和 本地版本
-    console.log('发送到前端的版本:', { latestTag, localTag });
-    ws.send(JSON.stringify({ latestTag, localTag }));
-
-    ws.on('message', async (message) => {
-        const { tag } = JSON.parse(message);
-        console.log("🔍 收到的标签:", tag);
-
-        if (!tag) {
-            ws.send(JSON.stringify({ progress: 100, message: "❌ 错误: 没有提供标签。" }));
-            return;
-        }
-
-        if (tag === localTag) {
-            ws.send(JSON.stringify({ progress: 100, message: "✅ 已是最新版本，无需更新。" }));
-            return;
-        }
-
-        ws.send(JSON.stringify({ progress: 5, message: "🔍 获取文件列表..." }));
-
-        try {
-            // 安装依赖
-            await installDependencies();
-            ws.send(JSON.stringify({ progress: 10, message: "✅ 依赖已安装" }));
-
-            const fileList = await getFileList(tag);
-            if (!fileList.length) {
-                ws.send(JSON.stringify({ progress: 100, message: "❌ 没有找到可更新的文件。" }));
-                return;
-            }
-
-            let progress = 10;
-            const step = Math.floor(90 / fileList.length);
-
-            for (const file of fileList) {
-                progress += step;
-                ws.send(JSON.stringify({ progress, message: `📥 下载 ${file.path}...` }));
-
-                const content = await getFileContent(tag, file.path);
-                if (content) {
-                    saveFile(file.path, content);
-                    ws.send(JSON.stringify({ progress, message: `✅ 更新 ${file.path}` }));
-                }
-            }
-
-            saveLocalTag(tag);
-            ws.send(JSON.stringify({ progress: 100, message: "🎉 更新完成。" }));
-        } catch (error) {
-            ws.send(JSON.stringify({ progress: 100, message: "❌ 更新失败。" }));
-            console.error(error);
-        }
-    });
 });
-
-// API 接口 - 获取版本标签
-app.get('/api/tags', async (req, res) => {
-    try {
-        const latestTag = await getLatestTag();
-        const localTag = getLocalTag();
-        res.json({ latestTag, localTag });
-    } catch (error) {
-        res.status(500).json({ error: "获取版本标签失败" });
-    }
-});
-
-// API 接口 - 执行更新
-app.post('/api/update', async (req, res) => {
-    try {
-        const latestTag = await getLatestTag();
-        const localTag = getLocalTag();
-
-        if (latestTag === localTag) {
-            return res.json({ message: "✅ 已是最新版本，无需更新。" });
-        }
-
-        // 启动 WebSocket 来执行更新过程
-        const ws = new WebSocket('ws://localhost:3000');
-        ws.onopen = () => {
-            ws.send(JSON.stringify({ tag: latestTag }));
-        };
-
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.progress === 100) {
-                return res.json({ message: data.message });
-            }
-        };
-
-        ws.onerror = (error) => {
-            res.status(500).json({ message: "❌ WebSocket 错误" });
-            console.error("WebSocket 错误:", error);
-        };
-
-    } catch (error) {
-        res.status(500).json({ message: "❌ 更新失败" });
-        console.error(error);
-    }
-});
-
 
 app.get('/ota', (req, res) => {
     res.sendFile(path.join(__dirname, "public", "ota.html"));
@@ -670,4 +514,10 @@ app.use((req, res, next) => {
         return next();
     }
     res.status(404).send("页面未找到");
+});
+app.listen(3000, () => {
+    const timestamp = new Date().toLocaleString();
+    const startMsg = `${timestamp} 服务器已启动，监听端口 3000`;
+    logMessage(startMsg);
+    console.log(startMsg);
 });
