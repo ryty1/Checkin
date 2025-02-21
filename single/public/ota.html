@@ -1,127 +1,53 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OTA 更新</title>
+    <title>GitHub 仓库更新</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            width: 90%;
-            max-width: 800px;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-            font-size: 18px;
-        }
-        button {
-            display: block;
-            margin: 20px auto;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 15px;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #result {
-            margin-top: 20px;
-            font-size: 12px;
-            word-wrap: break-word;
-        }
-        .result-item {
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .success {
-            background-color: #e7f9e7;
-            color: #4CAF50;
-        }
-        .failure {
-            background-color: #ffe6e6;
-            color: #f44336;
-        }
-        .info {
-            background-color: #e0f7fa;
-            color: #0288d1;
-        }
-        /* 响应式布局 */
-        @media (max-width: 768px) {
-            .container {
-                width: 95%;
-                padding: 15px;
-            }
-            h1 {
-                font-size: 22px;
-            }
-            button {
-                font-size: 16px;
-            }
-            #result {
-                font-size: 13px;
-            }
-        }
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 18px;
-            }
-            button {
-                font-size: 14px;
-            }
-            #result {
-                font-size: 12px;
-            }
-        }
+        #progress-container { width: 100%; background: #ddd; margin-top: 10px; }
+        #progress-bar { height: 10px; width: 0%; background: green; }
+        #update-button:disabled { background-color: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>OTA 更新</h1>
-        <button onclick="checkForUpdates()">检查更新</button>
-        <div id="result"></div>
+    <h2>GitHub 仓库更新</h2>
+    <p>最新 GitHub 版本: <b id="latest-tag">加载中...</b></p>
+    <p>本地当前版本: <b id="local-tag">加载中...</b></p>
+    <button id="update-button" onclick="startUpdate()" disabled>更新到最新版本</button>
+
+    <div id="progress-container">
+        <div id="progress-bar"></div>
     </div>
+    <p id="message"></p>
 
     <script>
-        async function checkForUpdates() {
-            try {
-                const response = await fetch('/ota/update');
-                const data = await response.json();
+        const socket = new WebSocket('ws://localhost:3000');
 
-                if (data.success) {
-                    const resultHtml = `
-                        <h3>更新结果</h3>
-                        <pre>${data.output}</pre>
-                    `;
-                    document.getElementById('result').innerHTML = resultHtml;
-                } else {
-                    document.getElementById('result').innerHTML = '<p class="failure">更新时发生错误</p>';
-                }
-            } catch (error) {
-                document.getElementById('result').innerHTML = '<p class="failure">请求失败</p>';
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            // 更新标签信息
+            if (data.latestTag) document.getElementById('latest-tag').textContent = data.latestTag;
+            if (data.localTag) document.getElementById('local-tag').textContent = data.localTag;
+
+            // 更新进度条
+            if (data.progress !== undefined) {
+                document.getElementById('progress-bar').style.width = data.progress + '%';
+                document.getElementById('message').textContent = data.message;
             }
+
+            // 启用按钮
+            if (data.progress === 10) {
+                document.getElementById('update-button').disabled = false;
+            }
+        };
+
+        function startUpdate() {
+            const tag = document.getElementById('latest-tag').textContent;
+            socket.send(JSON.stringify({ tag }));
+            // 在按钮点击后禁用按钮，避免重复点击
+            document.getElementById('update-button').disabled = true;
         }
     </script>
 </body>
