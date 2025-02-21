@@ -168,7 +168,9 @@ const getLatestTag = async () => {
     try {
         const url = `https://api.github.com/repos/${repoOwner}/${repoName}/tags`;
         const response = await axios.get(url);
-        return response.data.length > 0 ? response.data[0].name : null;
+        const latestTag = response.data.length > 0 ? response.data[0].name : null;
+        console.log("🔍 最新版本标签:", latestTag);
+        return latestTag;
     } catch (error) {
         console.error("❌ 获取 GitHub 标签失败:", error);
         return null;
@@ -239,6 +241,8 @@ wss.on('connection', async (ws) => {
 
     ws.on('message', async (message) => {
         const { tag } = JSON.parse(message);
+        console.log("🔍 收到的标签:", tag);
+
         if (!tag) {
             ws.send(JSON.stringify({ progress: 100, message: "❌ 错误: 没有提供标签。" }));
             return;
@@ -276,7 +280,6 @@ wss.on('connection', async (ws) => {
                 }
             }
 
-            // 记录最新的本地标签
             saveLocalTag(tag);
             ws.send(JSON.stringify({ progress: 100, message: "🎉 更新完成。" }));
         } catch (error) {
