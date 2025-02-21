@@ -4,8 +4,6 @@ const { exec } = require("child_process");
 const util = require('util');
 const fs = require("fs");
 const path = require("path");
-const axios = require('axios');
-const WebSocket = require('ws');
 const app = express();
 
 const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
@@ -14,19 +12,9 @@ const scriptPath = path.join(process.env.HOME, "serv00-play", "singbox", "start.
 const configFilePath = path.join(__dirname, 'config.json');
 const SINGBOX_CONFIG_PATH = path.join(process.env.HOME, "serv00-play", "singbox", "singbox.json");
 
-const repoOwner = "ryty1";
-const repoName = "My-test";
-const localTagFile = path.join(__dirname, 'latest_tag.txt');  // 记录本地标签
-const localFolder = __dirname;  // 你的项目目录
-
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
-});
-const wss = new WebSocket.Server({ port: 3000 });
-// 允许静态文件访问
 app.use(express.static(path.join(__dirname, 'public')));
-
 app.use(express.json());
+
 let logs = [];
 let latestStartLog = "";
 function logMessage(message) {
@@ -64,7 +52,6 @@ function executeHy2ipScript(logMessages, callback) {
 
     const command = `cd ${process.env.HOME}/domains/${username}.serv00.net/public_nodejs/ && bash hy2ip.sh`;
 
-    // 执行脚本并捕获输出
     exec(command, (error, stdout, stderr) => {
         callback(error, stdout, stderr);
     });
@@ -81,7 +68,6 @@ app.get("/info", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "info.html"));
 });
 
-// 中间件：解析请求体
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/hy2ip", (req, res) => {
@@ -132,7 +118,6 @@ app.post("/hy2ip/execute", (req, res) => {
     }
 });
 
-// 日志和进程详情接口
 app.get("/api/log", (req, res) => {
     const command = "ps aux"; 
 
@@ -158,137 +143,47 @@ app.get("/api/log", (req, res) => {
     });
 });
 
-// 提供静态页面
 app.get("/log", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "log.html"));
 });
 
-// **获取 GitHub 最新标签**
-const getLatestTag = async () => {
-    try {
-        const url = `https://api.github.com/repos/${repoOwner}/${repoName}/tags`;
-        const response = await axios.get(url);
-        const latestTag = response.data.length > 0 ? response.data[0].name : null;
-        console.log("🔍 最新版本标签:", latestTag);
-        return latestTag;
-    } catch (error) {
-        console.error("❌ 获取 GitHub 标签失败:", error);
-        return null;
-    }
-};
+app.get('/ota/update', (req, res) => {
+    const downloadScriptCommand = 'curl -Ls https://raw.githubusercontent.com/ryty1/serv00-save-me/refs/heads/main/single/ota.sh -o /tmp/ota.sh';
 
-// **获取本地存储的标签**
-const getLocalTag = () => fs.existsSync(localTagFile) ? fs.readFileSync(localTagFile, 'utf8').trim() : null;
+    exec(downloadScriptCommand, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`❌ 下载脚本错误: ${error.message}`);
+            return res.status(500).json({ success: false, message: error.message });
+        }
+        if (stderr) {
+            console.error(`❌ 下载脚本错误输出: ${stderr}`);
+            return res.status(500).json({ success: false, message: stderr });
+        }
 
-// **保存本地最新的标签**
-const saveLocalTag = (tag) => fs.writeFileSync(localTagFile, tag, 'utf8');
+        const executeScriptCommand = 'bash /tmp/ota.sh';
 
-// **获取指定标签下的文件列表**
-const getFileList = async (tag) => {
-    try {
-        const url = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${tag}?recursive=1`;
-        const response = await axios.get(url);
-        return response.data.tree.filter(file => file.type === "blob" && file.path.startsWith("single/"));
-    } catch (error) {
-        console.error("❌ 获取文件列表失败:", error);
-        return [];
-    }
-};
+        exec(executeScriptCommand, (error, stdout, stderr) => {
+            exec('rm -f /tmp/ota.sh', (err) => {
+                if (err) {
+                    console.error(`❌ 删除临时文件失败: ${err.message}`);
+                } else {
+                    console.log('✅ 临时文件已删除');
+                }
+            });
 
-// **下载文件内容**
-const getFileContent = async (tag, filePath) => {
-    try {
-        const url = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${tag}/${filePath}`;
-        const response = await axios.get(url);
-        return response.data;
-    } catch (error) {
-        console.error(`❌ 下载失败: ${filePath}`, error);
-        return null;
-    }
-};
-
-// **保存文件**
-const saveFile = (filePath, content) => {
-    const localPath = path.join(localFolder, filePath.replace(/^single\//, ""));  // 移除 single/ 目录
-    fs.mkdirSync(path.dirname(localPath), { recursive: true });  // 创建文件夹
-    fs.writeFileSync(localPath, content, 'utf8');
-};
-
-// **安装依赖**
-const installDependencies = () => {
-    return new Promise((resolve, reject) => {
-        const installCommand = 'npm install dotenv basic-auth express';  // 修改为你的依赖列表
-        exec(installCommand, (error, stdout, stderr) => {
-            if (error || stderr) {
-                reject(`❌ 安装依赖失败: ${error ? error.message : stderr}`);
-            } else {
-                console.log(`✅ 安装依赖完成: ${stdout}`);
-                resolve();
+            if (error) {
+                console.error(`❌ 执行脚本错误: ${error.message}`);
+                return res.status(500).json({ success: false, message: error.message });
             }
+            if (stderr) {
+                console.error(`❌ 脚本错误输出: ${stderr}`);
+                return res.status(500).json({ success: false, message: stderr });
+            }
+            
+            res.json({ success: true, output: stdout });
         });
     });
-};
-
-// **WebSocket 监听前端请求**
-wss.on('connection', async (ws) => {
-    console.log('✅ Client connected');
-
-    const latestTag = await getLatestTag();
-    const localTag = getLocalTag();
-
-    // 连接时，发送 GitHub 最新版本 和 本地版本
-    ws.send(JSON.stringify({ latestTag, localTag }));
-
-    ws.on('message', async (message) => {
-        const { tag } = JSON.parse(message);
-        console.log("🔍 收到的标签:", tag);
-
-        if (!tag) {
-            ws.send(JSON.stringify({ progress: 100, message: "❌ 错误: 没有提供标签。" }));
-            return;
-        }
-
-        if (tag === localTag) {
-            ws.send(JSON.stringify({ progress: 100, message: "✅ 已是最新版本，无需更新。" }));
-            return;
-        }
-
-        ws.send(JSON.stringify({ progress: 5, message: "🔍 获取文件列表..." }));
-
-        try {
-            // 安装依赖
-            await installDependencies();
-            ws.send(JSON.stringify({ progress: 10, message: "✅ 依赖已安装" }));
-
-            const fileList = await getFileList(tag);
-            if (!fileList.length) {
-                ws.send(JSON.stringify({ progress: 100, message: "❌ 没有找到可更新的文件。" }));
-                return;
-            }
-
-            let progress = 10;
-            const step = Math.floor(90 / fileList.length);
-
-            for (const file of fileList) {
-                progress += step;
-                ws.send(JSON.stringify({ progress, message: `📥 下载 ${file.path}...` }));
-
-                const content = await getFileContent(tag, file.path);
-                if (content) {
-                    saveFile(file.path, content);
-                    ws.send(JSON.stringify({ progress, message: `✅ 更新 ${file.path}` }));
-                }
-            }
-
-            saveLocalTag(tag);
-            ws.send(JSON.stringify({ progress: 100, message: "🎉 更新完成。" }));
-        } catch (error) {
-            ws.send(JSON.stringify({ progress: 100, message: "❌ 更新失败。" }));
-            console.error(error);
-        }
-    });
 });
-
 
 app.get('/ota', (req, res) => {
     res.sendFile(path.join(__dirname, "public", "ota.html"));
@@ -464,7 +359,6 @@ function writeDefaultConfigToScript(config) {
         return;
     }
 
-    // 正则匹配 export_list() 并替换内容
     const exportListFuncPattern = /export_list\(\)\s*{\n([\s\S]*?)}/m;
     const match = scriptContent.match(exportListFuncPattern);
 
@@ -483,7 +377,6 @@ function writeDefaultConfigToScript(config) {
         console.log("没有找到 export_list() 函数，无法插入变量定义。");
     }
 
-    // 使用 replaceAll 确保所有匹配项都被替换
     scriptContent = scriptContent.replaceAll(/vmessname=".*?"/g, `vmessname="\$custom_vmess-\$host-\$user"`);
     scriptContent = scriptContent.replaceAll(/hy2name=".*?"/g, `hy2name="\$custom_hy2-\$host-\$user"`);
 
@@ -493,7 +386,6 @@ function writeDefaultConfigToScript(config) {
         scriptContent = scriptContent.replaceAll(/user=".*?"/g, `user="\$(whoami)"`);
     }
 
-    // 去除多余空行，确保文件格式整洁
     scriptContent = scriptContent.replace(/\n{2,}/g, '\n').trim();
 
     try {
@@ -535,7 +427,6 @@ async function updateConfigFile(config) {
         scriptContent = scriptContent.replaceAll(/user=".*?"/g, `user="\$(whoami)"`);
     }
 
-    // 去除多余空行，确保格式统一
     scriptContent = scriptContent.replace(/\n{2,}/g, '\n').trim();
 
     try {
@@ -551,30 +442,24 @@ async function updateConfigFile(config) {
     }, 3000); 
 }
 
-
-// 路由：获取配置
 app.get('/api/get-config', (req, res) => {
     const config = getConfigFile();
     res.json(config);
 });
 
-// 更新配置
 app.post('/api/update-config', (req, res) => {
     const { vmessname, hy2name, HIDE_USERNAME } = req.body;
     const newConfig = { vmessname, hy2name, HIDE_USERNAME };
 
-    // 更新配置文件
     updateConfigFile(newConfig);
 
     res.json({ success: true });
 });
 
-// 路由：渲染前端页面
 app.get('/newset', (req, res) => {
     res.sendFile(path.join(__dirname, "public", 'newset.html'));
 });
 
-// 获取当前的 GOOD_DOMAIN
 app.get('/getGoodDomain', (req, res) => {
   fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
     if (err) {
@@ -590,7 +475,6 @@ app.get('/getGoodDomain', (req, res) => {
   });
 });
 
-// 更新 GOOD_DOMAIN 并杀掉进程
 app.post('/updateGoodDomain', async (req, res) => {
   const { GOOD_DOMAIN } = req.body;
 
@@ -599,25 +483,20 @@ app.post('/updateGoodDomain', async (req, res) => {
   }
 
   try {
-    // 读取 JSON 配置文件
     const data = fs.readFileSync(SINGBOX_CONFIG_PATH, 'utf8');
     const config = JSON.parse(data);
 
-    // 更新 GOOD_DOMAIN
     config.GOOD_DOMAIN = GOOD_DOMAIN;
 
-    // 写入新的 JSON 文件
     fs.writeFileSync(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 2), 'utf8');
-
-    console.log(`GOOD_DOMAIN 已更新为: ${GOOD_DOMAIN}`);
+    console.log(`优选域名 已更新为: ${GOOD_DOMAIN}`);
 
     stopShellCommand();
     setTimeout(() => {
         runShellCommand();
     }, 3000); 
 
-    // 返回成功的响应
-    res.json({ success: true, message: `GOOD_DOMAIN 更新为: ${GOOD_DOMAIN} 并已尝试杀掉相关进程` });
+    res.json({ success: true, message: `优选域名 更新为: ${GOOD_DOMAIN} 并已重启singbox` });
 
   } catch (err) {
     console.error('更新失败:', err);
@@ -625,7 +504,6 @@ app.post('/updateGoodDomain', async (req, res) => {
   }
 });
 
-// 路由：返回 goodomains.html 页面
 app.get("/goodomains", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "goodomains.html"));
 });
@@ -636,4 +514,10 @@ app.use((req, res, next) => {
         return next();
     }
     res.status(404).send("页面未找到");
+});
+app.listen(3000, () => {
+    const timestamp = new Date().toLocaleString();
+    const startMsg = `${timestamp} 服务器已启动，监听端口 3000`;
+    logMessage(startMsg);
+    console.log(startMsg);
 });
