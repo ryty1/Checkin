@@ -81,6 +81,19 @@ function isAuthenticated(req, res, next) {
     res.redirect("/login");  
 }
 
+app.get("/setPassword", (req, res) => {
+    res.sendFile(path.join(__dirname, "protected", "set_password.html"));
+});
+
+app.post("/setPassword", (req, res) => {
+    const { password } = req.body;
+    if (!password) {
+        return res.status(400).send("密码不能为空");
+    }
+    fs.writeFileSync(PASSWORD_FILE, JSON.stringify({ password }), "utf-8");
+    res.redirect("/login");
+});
+
 app.get("/login", async (req, res) => {
     try {
         const accounts = await getAccounts(true);
@@ -97,19 +110,6 @@ app.get("/login", async (req, res) => {
         console.error("访问 /info 失败:", error);
     }
 
-    res.sendFile(path.join(__dirname, "protected", "login.html"));
-});
-
-app.post("/setPassword", (req, res) => {
-    const { password } = req.body;
-    if (!password) {
-        return res.status(400).send("密码不能为空");
-    }
-    fs.writeFileSync(PASSWORD_FILE, JSON.stringify({ password }), "utf-8");
-    res.redirect("/login");
-});
-
-app.get("/login", (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "login.html"));
 });
 
