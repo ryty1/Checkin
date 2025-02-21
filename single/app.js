@@ -19,10 +19,10 @@ const repoName = "My-test";
 const localTagFile = path.join(__dirname, 'latest_tag.txt');  // 记录本地标签
 const localFolder = __dirname;  // 你的项目目录
 
-const server = app.listen(3000, () => {
+app.listen(3000, () => {
     console.log('Server is running on port 3000');
 });
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ port: 3000 });
 // 允许静态文件访问
 app.use(express.static(path.join(__dirname, 'public')));
 
