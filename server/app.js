@@ -81,8 +81,23 @@ function isAuthenticated(req, res, next) {
     res.redirect("/login");  
 }
 
-app.get("/setPassword", (req, res) => {
-    res.sendFile(path.join(__dirname, "protected", "set_password.html"));
+app.get("/login", async (req, res) => {
+    try {
+        const accounts = await getAccounts(true);
+        const users = Object.keys(accounts);
+
+        // 依次访问每个账号的 .serv00.net/info
+        const requests = users.map(user =>
+            axios.get(`https://${user}.serv00.net/info`).catch(err => console.log(`访问 ${user}.serv00.net/info 失败:`, err.message))
+        );
+
+        await Promise.all(requests);
+        console.log("所有账号的 /info 已访问完成");
+    } catch (error) {
+        console.error("访问 /info 失败:", error);
+    }
+
+    res.sendFile(path.join(__dirname, "protected", "login.html"));
 });
 
 app.post("/setPassword", (req, res) => {
