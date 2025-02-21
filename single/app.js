@@ -10,7 +10,7 @@ const app = express();
 
 // 配置 GitHub 仓库和本地文件
 const repoOwner = 'ryty1';  // GitHub 仓库所有者
-const repoName = 'serv00-save-me';  // 仓库名称
+const repoName = 'My-test';  // 仓库名称
 const localTagFile = './localTag.txt';  // 本地标签文件路径
 const localFolder = './local_files';  // 本地文件存储路径
 
