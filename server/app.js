@@ -114,20 +114,19 @@ app.get("/login", async (req, res) => {
         const accounts = await getAccounts(true);
         const users = Object.keys(accounts);
 
-        // 依次访问每个账号的 .serv00.net/info
         const requests = users.map(user =>
             axios.get(`https://${user}.serv00.net/info`)
                 .catch(err => {
-                    console.log(`访问 ${user}.serv00.net/info 失败:`, err.message);
-                    sendErrorToTG(`访问 ${user}.serv00.net/info 失败: ${err.message}`);  // 发送错误通知
+                    console.log(`${user}保活失败:`, err.message);
+                    sendErrorToTG(`${user}保活失败: ${err.message}`); 
                 })
         );
 
         await Promise.all(requests);
-        console.log("所有账号的 /info 已访问完成");
+        console.log("所有账号的 进程保活 已访问完成");
     } catch (error) {
         console.error("访问 /info 失败:", error);
-        sendErrorToTG(`访问 /info 页面失败: ${error.message}`);  // 发送全局错误通知
+        sendErrorToTG(`保活失败: ${error.message}`);  
     }
 
     res.sendFile(path.join(__dirname, "protected", "login.html"));
