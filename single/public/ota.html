@@ -1,128 +1,140 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OTA 更新</title>
+    <title>GitHub 文件更新</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
             margin: 0;
             padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            background-color: #f4f4f4;
         }
+
         .container {
-            width: 90%;
-            max-width: 800px;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
             text-align: center;
-            color: #333;
-            font-size: 18px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
         }
+
+        #progressContainer {
+            margin-top: 20px;
+        }
+
+        #progressBar {
+            background-color: #ddd;
+            height: 20px;
+            border-radius: 10px;
+            width: 100%;
+        }
+
+        #progressBarFill {
+            height: 100%;
+            background-color: #4caf50;
+            width: 0%;
+            border-radius: 10px;
+        }
+
         button {
-            display: block;
-            margin: 20px auto;
             padding: 10px 20px;
-            background-color: #4CAF50;
+            background-color: #4caf50;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 15px;
-            transition: background-color 0.3s;
+            font-size: 16px;
         }
+
         button:hover {
             background-color: #45a049;
         }
-        #result {
+
+        #updateStatus {
             margin-top: 20px;
-            font-size: 12px;
-            word-wrap: break-word;
-        }
-        .result-item {
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .success {
-            background-color: #e7f9e7;
-            color: #4CAF50;
-        }
-        .failure {
-            background-color: #ffe6e6;
-            color: #f44336;
-        }
-        .info {
-            background-color: #e0f7fa;
-            color: #0288d1;
-        }
-        /* 响应式布局 */
-        @media (max-width: 768px) {
-            .container {
-                width: 95%;
-                padding: 15px;
-            }
-            h1 {
-                font-size: 22px;
-            }
-            button {
-                font-size: 16px;
-            }
-            #result {
-                font-size: 13px;
-            }
-        }
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 18px;
-            }
-            button {
-                font-size: 14px;
-            }
-            #result {
-                font-size: 12px;
-            }
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>OTA 更新</h1>
-        <button onclick="checkForUpdates()">检查更新</button>
-        <div id="result"></div>
+        <h1>GitHub 文件更新</h1>
+        <p id="versionInfo">获取版本信息中...</p>
+        <button id="checkUpdateBtn">检查更新</button>
+        <div id="progressContainer" style="display:none;">
+            <p id="progressText">进度: 0%</p>
+            <div id="progressBar">
+                <div id="progressBarFill"></div>
+            </div>
+        </div>
+        <div id="updateStatus"></div>
     </div>
 
     <script>
-        async function checkForUpdates() {
-            try {
-                const response = await fetch('/ota/update');
-                const data = await response.json();
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkUpdateBtn = document.getElementById('checkUpdateBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBarFill = document.getElementById('progressBarFill');
+            const progressText = document.getElementById('progressText');
+            const updateStatus = document.getElementById('updateStatus');
+            const versionInfo = document.getElementById('versionInfo');
 
-                if (data.success) {
-                    const resultHtml = `
-                        <h3>更新结果</h3>
-                        <pre>${data.output}</pre>
-                    `;
-                    document.getElementById('result').innerHTML = resultHtml;
-                } else {
-                    document.getElementById('result').innerHTML = '<p class="failure">更新时发生错误</p>';
+            // 获取版本信息并显示
+            async function getVersionInfo() {
+                try {
+                    const response = await fetch('/api/tags');
+                    const data = await response.json();
+                    const { latestTag, localTag } = data;
+                    versionInfo.textContent = `最新版本: ${latestTag || '无法获取'} | 本地版本: ${localTag || '无'}`;
+                } catch (error) {
+                    versionInfo.textContent = '获取版本信息失败';
                 }
-            } catch (error) {
-                document.getElementById('result').innerHTML = '<p class="failure">请求失败</p>';
             }
-        }
+
+            // 检查更新并执行
+            checkUpdateBtn.addEventListener('click', async () => {
+                progressContainer.style.display = 'block';
+                updateStatus.textContent = '正在检查更新...';
+
+                try {
+                    const response = await fetch('/api/update', {
+                        method: 'POST',
+                    });
+                    const data = await response.json();
+                    updateStatus.textContent = data.message;
+
+                    if (data.message === '✅ 已是最新版本，无需更新。') {
+                        progressContainer.style.display = 'none'; // 隐藏进度条
+                        return;
+                    }
+
+                    const ws = new WebSocket('ws://localhost:3000');
+                    ws.onopen = () => {
+                        ws.send(JSON.stringify({ tag: data.latestTag }));
+                    };
+
+                    ws.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+                        progressText.textContent = data.message;
+                        if (data.progress !== undefined) {
+                            progressBarFill.style.width = `${data.progress}%`;
+                        }
+                    };
+
+                } catch (error) {
+                    updateStatus.textContent = '❌ 更新失败，请重试';
+                }
+            });
+
+            getVersionInfo();
+        });
     </script>
 </body>
 </html>
