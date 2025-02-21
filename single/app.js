@@ -637,3 +637,9 @@ app.use((req, res, next) => {
     }
     res.status(404).send("页面未找到");
 });
+app.listen(3000, () => {
+    const timestamp = new Date().toLocaleString();
+    const startMsg = `${timestamp} 服务器已启动，监听端口 3000`;
+    logMessage(startMsg);
+    console.log(startMsg);
+});
