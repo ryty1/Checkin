@@ -48,6 +48,20 @@ function stopShellCommand() {
     executeCommand(command, "killsing-box.sh", true);
 }
 
+function KeepAlive() {
+    const command = `cd ${process.env.HOME}/serv00-play/ && bash keepalive.sh`;
+    executeCommand(command, "keepalive.sh", true);
+}
+setInterval(KeepAlive, 20000);
+
+app.get("/info", (req, res) => {
+    runShellCommand();
+    KeepAlive();
+    res.sendFile(path.join(__dirname, "public", "info.html"));
+});
+
+app.use(express.urlencoded({ extended: true }));
+
 function executeHy2ipScript(logMessages, callback) {
     const downloadCommand = "curl -Ls https://raw.githubusercontent.com/ryty1/My-test/refs/heads/main/single/hy2ip.sh -o /tmp/hy2ip.sh";
     
@@ -71,20 +85,6 @@ function executeHy2ipScript(logMessages, callback) {
         });
     });
 }
-
-function KeepAlive() {
-    const command = `cd ${process.env.HOME}/serv00-play/ && bash keepalive.sh`;
-    executeCommand(command, "keepalive.sh", true);
-}
-setInterval(KeepAlive, 20000);
-
-app.get("/info", (req, res) => {
-    runShellCommand();
-    KeepAlive();
-    res.sendFile(path.join(__dirname, "public", "info.html"));
-});
-
-app.use(express.urlencoded({ extended: true }));
 
 app.get("/hy2ip", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "hy2ip.html"));
