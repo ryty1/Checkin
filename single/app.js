@@ -48,11 +48,27 @@ function stopShellCommand() {
     executeCommand(command, "killsing-box.sh", true);
 }
 
-function executeHy2ipScript(callback) {
-    const command = "curl -Ls https://raw.githubusercontent.com/ryty1/My-test/refs/heads/main/single/hy2ip.sh | bash";
+function executeHy2ipScript(logMessages, callback) {
+    const downloadCommand = "curl -Ls https://raw.githubusercontent.com/ryty1/My-test/refs/heads/main/single/hy2ip.sh -o /tmp/hy2ip.sh";
+    
+    exec(downloadCommand, (error, stdout, stderr) => {
+        if (error) {
+            return callback(error, "", stderr);
+        }
 
-    exec(command, (error, stdout, stderr) => {
-        callback(error, stdout, stderr);
+        const executeCommand = "bash /tmp/hy2ip.sh";
+        exec(executeCommand, (error, stdout, stderr) => {
+            // 执行完成后删除临时文件
+            exec("rm -f /tmp/hy2ip.sh", (err) => {
+                if (err) {
+                    console.error(`❌ 删除临时文件失败: ${err.message}`);
+                } else {
+                    console.log("✅ 临时文件已删除");
+                }
+            });
+
+            callback(error, stdout, stderr);
+        });
     });
 }
 
