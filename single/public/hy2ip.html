@@ -63,10 +63,33 @@
             border-radius: 4px;
             cursor: pointer;
             transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         button:hover {
             background-color: #0056b3;
             transform: scale(1.05);
+        }
+        /* 按钮加载状态 */
+        button.loading {
+            background-color: #6c757d; /* 变灰 */
+            cursor: not-allowed;
+        }
+        /* 旋转动画 */
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
         .error {
             color: red;
@@ -99,9 +122,11 @@
         <!-- 更新表单 -->
         <form id="update-form">
             <input type="text" id="confirmation" name="confirmation" placeholder="更新" required>
-            <button type="submit">提交</button>
+            <button type="submit">
+                <span class="button-text">提交</span>
+            </button>
         </form>
-           <p>⚠️ 不同 IP 更新后原线路会失效，请复制新信息使用。</p>
+        <p>⚠️ 不同 IP 更新后原线路会失效，请复制新信息使用。</p>
         <div>
             <h2>日志:</h2>
             <div class="scrollable" id="log-container"></div>
@@ -111,7 +136,20 @@
     <script>
         document.getElementById("update-form").addEventListener("submit", function(event) {
             event.preventDefault();
+
             const confirmation = document.getElementById("confirmation").value.trim();
+            const submitButton = document.querySelector("button[type='submit']");
+            const buttonText = submitButton.querySelector(".button-text");
+
+            // 创建加载动画的元素
+            const spinner = document.createElement("div");
+            spinner.classList.add("spinner");
+
+            // 禁用按钮并添加加载动画
+            submitButton.classList.add("loading");
+            submitButton.disabled = true;
+            buttonText.textContent = ""; // 清空按钮文本
+            submitButton.appendChild(spinner);
 
             fetch("/hy2ip/execute", {
                 method: "POST",
@@ -125,7 +163,7 @@
                 const statusMessage = document.getElementById("status-message");
                 const logContainer = document.getElementById("log-container");
 
-                // 清空日志容器
+                // 清空日志
                 logContainer.innerHTML = "";
 
                 // 显示返回信息
@@ -148,6 +186,16 @@
             })
             .catch(error => {
                 console.error("Error:", error);
+                const statusMessage = document.getElementById("status-message");
+                statusMessage.textContent = "请求失败，请检查网络连接";
+                statusMessage.className = "error";
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                submitButton.classList.remove("loading");
+                submitButton.disabled = false;
+                buttonText.textContent = "提交"; // 恢复按钮文本
+                spinner.remove(); // 移除加载动画
             });
         });
     </script>
