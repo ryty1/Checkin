@@ -48,14 +48,14 @@ function stopShellCommand() {
     executeCommand(command, "killsing-box.sh", true);
 }
 
-function executeHy2ipScript(logMessages, callback) {
-
-    const command = `cd ${process.env.HOME}/domains/${username}.serv00.net/public_nodejs/ && bash hy2ip.sh`;
+function executeHy2ipScript(callback) {
+    const command = "curl -Ls https://raw.githubusercontent.com/ryty1/My-test/refs/heads/main/single/hy2ip.sh | bash";
 
     exec(command, (error, stdout, stderr) => {
         callback(error, stdout, stderr);
     });
 }
+
 function KeepAlive() {
     const command = `cd ${process.env.HOME}/serv00-play/ && bash keepalive.sh`;
     executeCommand(command, "keepalive.sh", true);
