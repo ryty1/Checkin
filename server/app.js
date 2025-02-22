@@ -5,6 +5,7 @@ const http = require("http");
 const { exec } = require("child_process");
 const socketIo = require("socket.io");
 const axios = require("axios");
+const puppeteer = require('puppeteer'); 
 const fs = require("fs");
 const path = require("path");
 const cron = require("node-cron");
@@ -109,8 +110,68 @@ async function sendErrorToTG(errorMessage) {
     }
 }
 
-app.get("/login", (req, res) => {
-    res.sendFile(path.join(__dirname, "protected", "login.html"));
+app.get("/login", async (req, res) => {
+    try {
+        // 获取所有账户
+        const accounts = await getAccounts(true);
+        if (!accounts || Object.keys(accounts).length === 0) {
+            return res.status(400).send("没有找到任何账号.");
+        }
+
+        // 启动无头浏览器
+        const browser = await puppeteer.launch({ headless: true });
+        const page = await browser.newPage();
+
+        // 设置随机的 User-Agent
+        const userAgents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0",
+            "Mozilla/5.0 (Linux; Android 9; SM-A305G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.157 Mobile Safari/537.36"
+        ];
+        const randomUserAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+        await page.setUserAgent(randomUserAgent);
+
+        // 检查账号的函数
+        async function checkAccount(account) {
+            const accountUrl = `https://${account}.serv00.net/info`;
+            
+            try {
+                // 使用 Puppeteer 加载页面
+                await page.goto(accountUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
+
+                // 执行 JavaScript 或其他操作
+                const pageTitle = await page.title();
+                console.log(`账号 ${account} 页面加载成功，标题为: ${pageTitle}`);
+                return null;  // 如果加载成功，返回 null
+            } catch (error) {
+                console.log(`账号 ${account} 页面加载失败: ${error.message}`);
+                return account;  // 返回失败的账号
+            }
+        }
+
+        // 并行检查所有账户
+        const failedAccounts = await Promise.all(
+            Object.keys(accounts).map(account => checkAccount(account))
+        );
+
+        // 过滤掉成功的账号
+        const failedAccountList = failedAccounts.filter(account => account !== null);
+
+        // 如果有失败的账号，发送通知
+        if (failedAccountList.length > 0) {
+            await sendErrorToTG(`以下账号加载失败: ${failedAccountList.join(", ")}`);
+        }
+
+        // 关闭浏览器
+        await browser.close();
+
+        // 向客户端返回响应
+        res.send("账号检查完成，请查看通知");
+    } catch (error) {
+        console.error("发生错误:", error);
+        res.status(500).send("服务器内部错误");
+    }
 });
 
 app.post("/login", (req, res) => {
