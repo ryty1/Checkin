@@ -62,7 +62,7 @@ elif [[ "$choice" -eq 2 ]]; then
     
     TARGET_FOLDER="server"
     DELETE_FOLDER="single"
-    DEPENDENCIES="body-parser express-session session-file-store dotenv express socket.io node-cron node-telegram-bot-api axios"
+    DEPENDENCIES="body-parser puppeteer express-session session-file-store dotenv express socket.io node-cron node-telegram-bot-api axios"
     echo "开始进行 账号服务配置"
 else
     echo "无效选择，退出脚本"
