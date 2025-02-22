@@ -49,7 +49,7 @@ read -p "请输入选择(1 或 2): " choice
 if [[ "$choice" -eq 1 ]]; then
     TARGET_FOLDER="single"
     DELETE_FOLDER="server"
-    DEPENDENCIES="dotenv basic-auth express axios ws"
+    DEPENDENCIES="dotenv basic-auth express"
     echo "开始进行 本机保活配置"
 elif [[ "$choice" -eq 2 ]]; then
     TZ_MODIFIED=0
@@ -120,6 +120,7 @@ fi
 if [[ "$choice" -eq 1 ]]; then
     rm -f "$A2/ota.sh"
     rm -f "$A2/install.sh"
+    rm -f "$A2/hy2ip.sh"
     chmod 755 "$A2/app.js" > /dev/null 2>&1
     chmod 755 "$A2/hy2ip.sh" > /dev/null 2>&1
 
