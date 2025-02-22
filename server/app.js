@@ -109,50 +109,7 @@ async function sendErrorToTG(errorMessage) {
     }
 }
 
-const axios = require('axios');
-
-app.get("/login", async (req, res) => {
-    try {
-        const accounts = await getAccounts(true);
-        const users = Object.keys(accounts);
-
-        const requests = users.map(async (user) => {
-            try {
-                console.log(`正在访问 ${user}.serv00.net/log`);
-
-                // 发送 HTTP 请求并等待响应
-                const response = await axios.get(`https://${user}.serv00.net/log`, { timeout: 5000 });
-
-                // 在请求后等待5秒
-                await new Promise(resolve => setTimeout(resolve, 5000));
-
-                // 记录状态码
-                if (response.status === 200) {
-                    console.log(`${user} 访问成功，状态码: ${response.status}`);
-                } else {
-                    console.log(`${user} 访问失败，状态码: ${response.status}`);
-                    sendErrorToTG(`${user} 访问失败，状态码: ${response.status}`);
-                }
-            } catch (err) {
-                // 捕获错误并记录状态码
-                if (err.response) {
-                    console.log(`${user} 访问失败，状态码: ${err.response.status}`);
-                    sendErrorToTG(`${user} 访问失败，状态码: ${err.response.status}`);
-                } else {
-                    console.log(`${user} 访问失败:`, err.message);
-                    sendErrorToTG(`${user} 访问失败: ${err.message}`);
-                }
-            }
-        });
-
-        await Promise.all(requests);  // 等待所有请求完成
-        console.log("所有账号访问已访问完成");
-
-    } catch (error) {
-        console.error("访问失败:", error);
-        sendErrorToTG(`访问失败: ${error.message}`);
-    }
-
+app.get("/login", (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "login.html"));
 });
 
