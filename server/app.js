@@ -118,9 +118,11 @@ app.get("/login", async (req, res) => {
             return res.status(400).send("没有找到任何账号.");
         }
 
+        // 设置并发限制为5
+        const concurrencyLimit = 5;
+
         // 启动无头浏览器
         const browser = await puppeteer.launch({ headless: true });
-        const page = await browser.newPage();
 
         // 设置随机的 User-Agent
         const userAgents = [
@@ -129,13 +131,14 @@ app.get("/login", async (req, res) => {
             "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0",
             "Mozilla/5.0 (Linux; Android 9; SM-A305G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.157 Mobile Safari/537.36"
         ];
-        const randomUserAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
-        await page.setUserAgent(randomUserAgent);
 
         // 检查账号的函数
         async function checkAccount(account) {
+            const page = await browser.newPage();  // 为每个请求创建一个新页面
             const accountUrl = `https://${account}.serv00.net/info`;
-            
+            const randomUserAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+            await page.setUserAgent(randomUserAgent);
+
             try {
                 // 使用 Puppeteer 加载页面
                 await page.goto(accountUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
@@ -143,20 +146,39 @@ app.get("/login", async (req, res) => {
                 // 执行 JavaScript 或其他操作
                 const pageTitle = await page.title();
                 console.log(`账号 ${account} 页面加载成功，标题为: ${pageTitle}`);
+                await page.close();  // 关闭当前页面
                 return null;  // 如果加载成功，返回 null
             } catch (error) {
                 console.log(`账号 ${account} 页面加载失败: ${error.message}`);
+                await page.close();  // 即使失败也要关闭页面
                 return account;  // 返回失败的账号
             }
         }
 
-        // 并行检查所有账户
-        const failedAccounts = await Promise.all(
-            Object.keys(accounts).map(account => checkAccount(account))
-        );
+        // 控制并发数量的函数
+        async function processAccountsInBatches(accounts) {
+            const failedAccounts = [];
+            const batches = [];
+            for (let i = 0; i < accounts.length; i += concurrencyLimit) {
+                const batch = accounts.slice(i, i + concurrencyLimit);
+                batches.push(batch);
+            }
 
-        // 过滤掉成功的账号
-        const failedAccountList = failedAccounts.filter(account => account !== null);
+            // 处理每个批次的账户
+            for (let batch of batches) {
+                const batchResults = await Promise.all(batch.map(account => checkAccount(account)));
+                batchResults.forEach(result => {
+                    if (result !== null) {
+                        failedAccounts.push(result);
+                    }
+                });
+            }
+
+            return failedAccounts;
+        }
+
+        // 执行并发处理并获取失败的账户
+        const failedAccountList = await processAccountsInBatches(Object.keys(accounts));
 
         // 如果有失败的账号，发送通知
         if (failedAccountList.length > 0) {
