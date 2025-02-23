@@ -11,6 +11,7 @@ const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.ne
 const scriptPath = path.join(process.env.HOME, "serv00-play", "singbox", "start.sh");
 const configFilePath = path.join(__dirname, 'config.json');
 const SINGBOX_CONFIG_PATH = path.join(process.env.HOME, "serv00-play", "singbox", "singbox.json");
+const CONFIG_PATH = path.join(process.env.HOME, "serv00-play", "singbox", "config.json");
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
