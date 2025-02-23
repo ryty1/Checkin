@@ -477,7 +477,7 @@ app.get('/newset', (req, res) => {
 });
 
 // 获取当前配置
-app.get('/getArgoConfig', (req, res) => {
+app.get('/getConfig', (req, res) => {
   fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
     if (err) {
       return res.status(500).json({ error: '读取配置文件失败' });
@@ -497,7 +497,7 @@ app.get('/getArgoConfig', (req, res) => {
 });
 
 // 更新配置
-app.post('/updateArgoConfig', async (req, res) => {
+app.post('/updateConfig', async (req, res) => {
   const { GOOD_DOMAIN, ARGO_AUTH, ARGO_DOMAIN } = req.body;
 
   if (!GOOD_DOMAIN && !ARGO_AUTH && !ARGO_DOMAIN) {
@@ -532,8 +532,8 @@ app.post('/updateArgoConfig', async (req, res) => {
 });
 
 // 提供页面
-app.get("/goodomains", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "goodomains.html"));
+app.get("/config", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "config.html"));
 });
 
 app.use((req, res, next) => {
