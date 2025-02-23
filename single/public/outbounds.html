@@ -38,22 +38,27 @@
         /* 状态信息样式 */
         .status {
             font-size: 18px;
-            text-align: center;
+            text-align: left;
             margin-bottom: 30px;
             font-weight: 600;
         }
 
         /* 当前出站模式状态绿色 */
-        .status.green {
+        .status span.green {
             color: green;
         }
 
         /* 下拉框和按钮 */
         .mode-select {
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
             margin-bottom: 30px;
+        }
+
+        label {
+            font-size: 18px;
+            margin-right: 10px;
         }
 
         select, button {
@@ -69,7 +74,7 @@
         }
 
         select {
-            width: 220px; /* 扩展下拉框宽度 */
+            width: 230px; /* 增加下拉框宽度 */
         }
 
         select:hover, button:hover {
@@ -151,11 +156,13 @@
         <h1>出站管理</h1>
 
         <!-- 当前出站状态 -->
-        <div class="status" id="status">当前出站状态: 加载中...</div>
+        <div class="status" id="status">
+            当前出站状态: <span id="status-mode">加载中...</span>
+        </div>
 
         <!-- 模式选择 -->
         <div class="mode-select">
-            <label for="mode-select" style="font-size: 18px; margin-right: 10px;">选择出站模式: </label>
+            <label for="mode-select">选择出站模式: </label>
             <select id="mode-select" onchange="showModeSettings(this.value)">
                 <option value="none">请选择模式</option>
                 <option value="wireguard">WireGuard</option>
@@ -201,15 +208,26 @@
             try {
                 let res = await fetch("/getOutboundStatus");
                 let data = await res.json();
-                let statusElement = document.getElementById("status");
-                statusElement.textContent = `当前出站状态: ${data.status}`;
+                let statusElement = document.getElementById("status-mode");
+                statusElement.textContent = data.status;
+
                 if (data.status === "已配置 WireGuard" || data.status === "已配置 Socks") {
                     statusElement.classList.add("green");
                 } else {
                     statusElement.classList.remove("green");
                 }
+
+                // 自动选择当前模式
+                let modeSelect = document.getElementById("mode-select");
+                if (data.status === "已配置 WireGuard") {
+                    modeSelect.value = "wireguard";
+                } else if (data.status === "已配置 Socks") {
+                    modeSelect.value = "socks";
+                } else {
+                    modeSelect.value = "none";
+                }
             } catch (err) {
-                document.getElementById("status").textContent = "无法获取状态";
+                document.getElementById("status-mode").textContent = "无法获取状态";
             }
         }
 
