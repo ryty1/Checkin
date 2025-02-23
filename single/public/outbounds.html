@@ -5,89 +5,147 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>出站管理</title>
     <style>
+        /* 全局样式 */
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f9;
+            color: #333;
         }
         h1 {
-            font-size: 24px;
-            margin-bottom: 20px;
+            font-size: 32px;
+            color: #444;
+            text-align: center;
+            margin-top: 30px;
         }
+
+        /* 主容器样式 */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 40px;
+        }
+
+        /* 状态信息样式 */
         .status {
             font-size: 18px;
-            margin-bottom: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
         }
-        button {
+
+        /* 下拉框和按钮 */
+        .mode-select {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        select, button {
+            font-size: 16px;
             padding: 10px 15px;
             margin: 10px;
-            font-size: 16px;
-            cursor: pointer;
-            border: none;
+            border-radius: 5px;
+            border: 1px solid #ddd;
             background-color: #007bff;
             color: white;
-            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
-        button:hover {
+        select:hover, button:hover {
             background-color: #0056b3;
         }
+
+        /* 输入框样式 */
         input {
-            padding: 8px;
-            margin: 5px;
-            width: 200px;
-            border: 1px solid #ccc;
+            font-size: 16px;
+            padding: 10px;
+            margin: 8px 0;
+            width: 100%;
             border-radius: 5px;
+            border: 1px solid #ddd;
         }
         input:focus {
-            outline: none;
             border-color: #007bff;
+            outline: none;
         }
-        .socks-settings, .wireguard-settings {
-            display: none;
-            margin-top: 20px;
-        }
-        .mode-select {
-            margin-top: 20px;
-            font-size: 16px;
-        }
+
+        /* 错误提示 */
         .error {
             color: red;
             font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* 配置区域样式 */
+        .settings-section {
+            display: none;
+            margin-top: 30px;
+            text-align: center;
+        }
+        .settings-section h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* 按钮风格 */
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .button-container button {
+            margin: 0 10px;
         }
     </style>
 </head>
 <body>
 
-    <h1>出站管理</h1>
+    <div class="container">
+        <h1>出站管理</h1>
 
-    <div class="status">当前出站状态: <span id="status">加载中...</span></div>
+        <!-- 当前出站状态 -->
+        <div class="status">当前出站状态: <span id="status">加载中...</span></div>
 
-    <!-- 模式选择下拉框 -->
-    <div class="mode-select">
-        <label for="mode-select">选择出站模式: </label>
-        <select id="mode-select" onchange="showModeSettings(this.value)">
-            <option value="none">请选择模式</option>
-            <option value="wireguard">WireGuard</option>
-            <option value="socks">Socks</option>
-            <option value="disable">关闭出站</option>
-        </select>
-    </div>
+        <!-- 模式选择 -->
+        <div class="mode-select">
+            <label for="mode-select" style="font-size: 18px; margin-right: 10px;">选择出站模式: </label>
+            <select id="mode-select" onchange="showModeSettings(this.value)">
+                <option value="none">请选择模式</option>
+                <option value="wireguard">WireGuard</option>
+                <option value="socks">Socks</option>
+                <option value="disable">关闭出站</option>
+            </select>
+        </div>
 
-    <!-- WireGuard 配置设置 -->
-    <div class="wireguard-settings" id="wireguard-settings">
-        <h3>WireGuard 配置</h3>
-        <button onclick="setWireGuard()">确认设置 WireGuard</button>
-    </div>
+        <!-- WireGuard 设置 -->
+        <div class="settings-section" id="wireguard-settings">
+            <h3>WireGuard 配置</h3>
+            <button onclick="setWireGuard()">确认设置 WireGuard</button>
+        </div>
 
-    <!-- Socks 配置设置 -->
-    <div class="socks-settings" id="socks-settings">
-        <h3>Socks 配置</h3>
-        <input type="text" id="server" placeholder="服务器地址 (IPv4 格式)">
-        <input type="number" id="server_port" placeholder="端口 (范围: 1-65535)" min="1" max="65535">
-        <input type="text" id="username" placeholder="用户名">
-        <input type="password" id="password" placeholder="密码">
-        <button onclick="setSocks()">确认设置 Socks</button>
-        <div class="error" id="socks-error"></div>
+        <!-- Socks 设置 -->
+        <div class="settings-section" id="socks-settings">
+            <h3>Socks 配置</h3>
+            <input type="text" id="server" placeholder="服务器地址 (IPv4 格式)">
+            <input type="number" id="server_port" placeholder="端口 (范围: 1-65535)" min="1" max="65535">
+            <input type="text" id="username" placeholder="用户名">
+            <input type="password" id="password" placeholder="密码">
+            <button onclick="setSocks()">确认设置 Socks</button>
+            <div class="error" id="socks-error"></div>
+        </div>
+
+        <!-- 关闭出站按钮 -->
+        <div class="button-container">
+            <button onclick="disableOutbound()">关闭出站</button>
+        </div>
     </div>
 
     <script>
