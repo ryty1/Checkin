@@ -37,7 +37,7 @@
 
         /* 状态信息样式 */
         .status {
-            font-size: 14px;
+            font-size: 16px;
             text-align: left;
             margin-bottom: 30px;
             font-weight: 600;
@@ -62,7 +62,7 @@
         }
 
         label {
-            font-size: 18px;
+            font-size: 14px;
             margin-right: 10px;
         }
 
@@ -79,7 +79,7 @@
         }
 
         select {
-            width: 230px; /* 增加下拉框宽度 */
+            width: 320px; /* 增加下拉框宽度 */
         }
 
         select:hover, button:hover {
@@ -88,7 +88,7 @@
 
         /* 输入框样式 */
         input {
-            font-size: 16px;
+            font-size: 14px;
             padding: 10px;
             margin: 8px 0;
             width: calc(100% - 20px); /* 使输入框不再过长 */
@@ -167,12 +167,12 @@
 
         <!-- 当前出站状态 -->
         <div class="status" id="status">
-            当前出站状态: <span id="status-mode">加载中...</span>
+            当前状态: <span id="status-mode">加载中...</span>
         </div>
 
         <!-- 模式选择 -->
         <div class="mode-select">
-            <label for="mode-select">选择出站模式: </label>
+            <label for="mode-select">选择模式: </label>
             <select id="mode-select" onchange="showModeSettings(this.value)">
                 <option value="none">请选择模式</option>
                 <option value="wireguard">WireGuard</option>
