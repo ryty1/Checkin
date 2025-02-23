@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>优选域名</title>
+  <title>修改配置</title>
   <style>
-    /* 基本样式 */
     body {
       font-family: 'Arial', sans-serif;
       background-color: #f7f7f7;
@@ -31,16 +30,18 @@
       font-size: 24px;
       margin-bottom: 20px;
     }
+
     h2 {
       font-size: 12px;
       margin-bottom: 20px;
       text-align: left;
     }
+
     #currentDomain {
       font-weight: bold;
       color: #007BFF;
     }
-     /* 基本样式 */
+
     input[type="text"] {
       font-size: 16px;
       padding: 10px;
@@ -48,14 +49,7 @@
       box-sizing: border-box;
       border: 1px solid #ccc;
       border-radius: 4px;
-      transition: none; /* 禁止输入框的过渡效果 */
       margin-bottom: 20px;
-    }
-
-    input[type="text"]:focus {
-      outline: none; /* 移除聚焦时的默认边框 */
-      border-color: #4A90E2; /* 聚焦时边框的颜色 */
-      box-shadow: none; /* 禁用聚焦时的阴影效果 */
     }
 
     button {
@@ -82,44 +76,56 @@
 </head>
 <body>
   <div class="container">
-    <h1>更换优选域名</h1>
+    <h1>修改配置</h1>
     <h2>当前优选: <span id="currentDomain">加载中...</span></h2>
     <form id="domainForm">
-      <input type="text" id="goodDomain" name="goodDomain" placeholder="www.visa.com.hk" required>
+      <input type="text" id="goodDomain" name="goodDomain" placeholder="www.visa.com.hk" />
+      <input type="text" id="argoAuth" name="argoAuth" placeholder="ARGO_AUTH" />
+      <input type="text" id="argoDomain" name="argoDomain" placeholder="ARGO_DOMAIN" />
       <button type="submit">提交</button>
     </form>
   </div>
 
   <script>
-    // 获取当前 GOOD_DOMAIN
     async function fetchCurrentDomain() {
       try {
-        const response = await fetch('/getGoodDomain');
+        const response = await fetch('/getArgoConfig');
         const data = await response.json();
         if (data.GOOD_DOMAIN) {
           document.getElementById('currentDomain').textContent = data.GOOD_DOMAIN;
         }
       } catch (error) {
-        console.error('获取当前域名失败:', error);
+        console.error('获取当前配置失败:', error);
       }
     }
 
-    // 提交表单修改 GOOD_DOMAIN
     document.getElementById('domainForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+
       const newGoodDomain = document.getElementById('goodDomain').value;
+      const newArgoAuth = document.getElementById('argoAuth').value;
+      const newArgoDomain = document.getElementById('argoDomain').value;
+
+      if (!newGoodDomain && !newArgoAuth && !newArgoDomain) {
+        return alert('请至少填写一个字段');
+      }
+
+      const requestData = {};
+      if (newGoodDomain) requestData.GOOD_DOMAIN = newGoodDomain;
+      if (newArgoAuth) requestData.ARGO_AUTH = newArgoAuth;
+      if (newArgoDomain) requestData.ARGO_DOMAIN = newArgoDomain;
 
       try {
-        const response = await fetch('/updateGoodDomain', {
+        const response = await fetch('/updateArgoConfig', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ GOOD_DOMAIN: newGoodDomain }),
+          body: JSON.stringify(requestData),
         });
         const result = await response.json();
         if (result.success) {
-          alert(`更新成功,singbox 己重启！`);
+          alert('配置更新成功！');
           fetchCurrentDomain(); // 刷新当前域名
         } else {
           alert(`更新失败：${result.error}`);
@@ -130,7 +136,7 @@
       }
     });
 
-    // 初次加载时获取当前 GOOD_DOMAIN
+    // 初次加载时获取当前配置
     fetchCurrentDomain();
   </script>
 </body>
