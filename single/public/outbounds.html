@@ -12,6 +12,7 @@
         }
         h1 {
             font-size: 24px;
+            margin-bottom: 20px;
         }
         .status {
             font-size: 18px;
@@ -22,15 +23,35 @@
             margin: 10px;
             font-size: 16px;
             cursor: pointer;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
         }
         input {
             padding: 8px;
             margin: 5px;
             width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
-        .socks-settings {
+        input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        .socks-settings, .wireguard-settings {
             display: none;
-            margin-top: 15px;
+            margin-top: 20px;
+        }
+        .mode-buttons {
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -40,17 +61,27 @@
 
     <div class="status">当前出站状态: <span id="status">加载中...</span></div>
 
-    <button onclick="setWireGuard()">切换到 WireGuard</button>
-    <button onclick="showSocksSettings()">切换到 Socks</button>
-    <button onclick="disableOutbound()">关闭出站</button>
+    <div class="mode-buttons">
+        <button onclick="showModeSettings('wireguard')">切换到 WireGuard</button>
+        <button onclick="showModeSettings('socks')">切换到 Socks</button>
+        <button onclick="disableOutbound()">关闭出站</button>
+    </div>
 
+    <!-- WireGuard 配置设置 -->
+    <div class="wireguard-settings" id="wireguard-settings">
+        <h3>WireGuard 配置</h3>
+        <button onclick="setWireGuard()">确认设置 WireGuard</button>
+    </div>
+
+    <!-- Socks 配置设置 -->
     <div class="socks-settings" id="socks-settings">
         <h3>Socks 配置</h3>
-        <input type="text" id="server" placeholder="服务器地址">
-        <input type="number" id="server_port" placeholder="端口">
+        <input type="text" id="server" placeholder="服务器地址 (IPv4 格式)">
+        <input type="number" id="server_port" placeholder="端口 (范围: 1-65535)" min="1" max="65535">
         <input type="text" id="username" placeholder="用户名">
         <input type="password" id="password" placeholder="密码">
         <button onclick="setSocks()">确认设置 Socks</button>
+        <div class="error" id="socks-error"></div>
     </div>
 
     <script>
@@ -65,16 +96,23 @@
             }
         }
 
-        // 切换到 WireGuard
+        // 切换模式并显示相应配置
+        function showModeSettings(mode) {
+            document.getElementById("wireguard-settings").style.display = 'none';
+            document.getElementById("socks-settings").style.display = 'none';
+            
+            if (mode === 'wireguard') {
+                document.getElementById("wireguard-settings").style.display = 'block';
+            } else if (mode === 'socks') {
+                document.getElementById("socks-settings").style.display = 'block';
+            }
+        }
+
+        // 设置 WireGuard 出站
         async function setWireGuard() {
             await fetch("/setWireGuard", { method: "POST" });
             alert("WireGuard 出站已设置");
             getOutboundStatus();
-        }
-
-        // 显示 Socks 配置输入框
-        function showSocksSettings() {
-            document.getElementById("socks-settings").style.display = "block";
         }
 
         // 设置 Socks 出站
@@ -83,8 +121,23 @@
             let server_port = document.getElementById("server_port").value;
             let username = document.getElementById("username").value;
             let password = document.getElementById("password").value;
+            let errorDiv = document.getElementById("socks-error");
+            errorDiv.textContent = "";  // 清空错误信息
 
-            if (!server || !server_port || !username || !password) {
+            // 正则验证 IP 格式 (IPv4)
+            let ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            if (!server || !server.match(ipRegex)) {
+                errorDiv.textContent = "服务器地址必须是有效的 IPv4 地址。";
+                return;
+            }
+
+            // 验证端口范围
+            if (server_port < 1 || server_port > 65535) {
+                errorDiv.textContent = "端口必须在 1 到 65535 之间。";
+                return;
+            }
+
+            if (!username || !password) {
                 alert("请填写完整的 Socks 配置");
                 return;
             }
