@@ -48,6 +48,11 @@
             color: green;
         }
 
+        /* 当前未出站状态红色 */
+        .status span.red {
+            color: red;
+        }
+
         /* 下拉框和按钮 */
         .mode-select {
             display: flex;
@@ -130,7 +135,7 @@
         /* 用 div 美化输入框 */
         .input-container {
             margin-bottom: 15px;
-            width: 100%;
+            width: 70%;
         }
 
         .input-container input {
@@ -209,12 +214,13 @@
                 let res = await fetch("/getOutboundStatus");
                 let data = await res.json();
                 let statusElement = document.getElementById("status-mode");
-                // 只显示模式，不显示“已配置”三个字
-                statusElement.textContent = data.status.replace("已配置", "");
 
+                // 根据当前状态添加颜色样式
                 if (data.status.includes("WireGuard") || data.status.includes("Socks")) {
                     statusElement.classList.add("green");
+                    statusElement.classList.remove("red");
                 } else {
+                    statusElement.classList.add("red");
                     statusElement.classList.remove("green");
                 }
 
