@@ -12,6 +12,10 @@
             padding: 0;
             background-color: #f4f6f9;
             color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
 
         h1 {
@@ -24,12 +28,11 @@
         /* 主容器样式 */
         .container {
             max-width: 600px;
-            margin: 0 auto;
+            width: 100%;
             padding: 20px;
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            margin-top: 40px;
         }
 
         /* 状态信息样式 */
@@ -63,6 +66,10 @@
             color: white;
             cursor: pointer;
             transition: background-color 0.3s ease;
+        }
+
+        select {
+            width: 220px; /* 扩展下拉框宽度 */
         }
 
         select:hover, button:hover {
@@ -114,6 +121,28 @@
         .button-container button {
             margin: 0 10px;
         }
+
+        /* 用 div 美化输入框 */
+        .input-container {
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .input-container input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* 调整响应式 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            select {
+                width: 180px; /* 调整下拉框宽度 */
+            }
+        }
     </style>
 </head>
 <body>
@@ -122,12 +151,13 @@
         <h1>出站管理</h1>
 
         <!-- 当前出站状态 -->
-        <div class="status" id="status">当前状态: 加载中...</div>
+        <div class="status" id="status">当前出站状态: 加载中...</div>
 
         <!-- 模式选择 -->
         <div class="mode-select">
-            <label for="mode-select" style="font-size: 18px; margin-right: 10px;">模式: </label>
+            <label for="mode-select" style="font-size: 18px; margin-right: 10px;">选择出站模式: </label>
             <select id="mode-select" onchange="showModeSettings(this.value)">
+                <option value="none">请选择模式</option>
                 <option value="wireguard">WireGuard</option>
                 <option value="socks">Socks</option>
                 <option value="disable">关闭出站</option>
@@ -136,25 +166,32 @@
 
         <!-- WireGuard 设置 -->
         <div class="settings-section" id="wireguard-settings">
-            <h3>WireGuard 出站配置</h3>
-            <h3>默认通用配置</h3>
-            <button onclick="setWireGuard()">确认设置</button>
+            <h3>WireGuard 配置</h3>
+            <button onclick="setWireGuard()">确认设置 WireGuard</button>
         </div>
 
         <!-- Socks 设置 -->
         <div class="settings-section" id="socks-settings">
-            <h3>Socks 出站配置</h3>
-            <input type="text" id="server" placeholder="服务器地址 (IPv4 格式)">
-            <input type="number" id="server_port" placeholder="端口 (范围: 1-65535)" min="1" max="65535">
-            <input type="text" id="username" placeholder="用户名">
-            <input type="password" id="password" placeholder="密码">
-            <button onclick="setSocks()">确认设置</button>
+            <h3>Socks 配置</h3>
+            <div class="input-container">
+                <input type="text" id="server" placeholder="服务器地址 (IPv4 格式)">
+            </div>
+            <div class="input-container">
+                <input type="number" id="server_port" placeholder="端口 (范围: 1-65535)" min="1" max="65535">
+            </div>
+            <div class="input-container">
+                <input type="text" id="username" placeholder="用户名">
+            </div>
+            <div class="input-container">
+                <input type="password" id="password" placeholder="密码">
+            </div>
+            <button onclick="setSocks()">确认设置 Socks</button>
             <div class="error" id="socks-error"></div>
         </div>
 
         <!-- 关闭出站按钮 -->
         <div class="button-container" id="disable-outbound-container" style="display:none;">
-            <button onclick="disableOutbound()">确认关闭</button>
+            <button onclick="disableOutbound()">确认关闭出站</button>
         </div>
     </div>
 
@@ -166,7 +203,7 @@
                 let data = await res.json();
                 let statusElement = document.getElementById("status");
                 statusElement.textContent = `当前出站状态: ${data.status}`;
-                if (data.status === "WireGuard出站" || data.status === "Socks5出站") {
+                if (data.status === "已配置 WireGuard" || data.status === "已配置 Socks") {
                     statusElement.classList.add("green");
                 } else {
                     statusElement.classList.remove("green");
@@ -211,27 +248,24 @@
 
             // 正则验证 IP 格式 (IPv4)
             let ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-            if (!server || !server.match(ipRegex)) {
-                errorDiv.textContent = "服务器地址必须是有效的 IPv4 地址。";
+
+            if (!ipRegex.test(server)) {
+                errorDiv.textContent = "请输入有效的 IPv4 地址！";
                 return;
             }
 
-            // 验证端口范围
+            // 检查端口范围
             if (server_port < 1 || server_port > 65535) {
-                errorDiv.textContent = "端口必须在 1 到 65535 之间。";
-                return;
-            }
-
-            if (!username || !password) {
-                alert("请填写完整的 Socks 配置");
+                errorDiv.textContent = "端口范围应为 1 到 65535！";
                 return;
             }
 
             await fetch("/setSocks", {
                 method: "POST",
-                body: JSON.stringify({ server, server_port, username, password }),
-                headers: { "Content-Type": "application/json" }
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ server, server_port, username, password })
             });
+
             alert("Socks 出站已设置");
             getOutboundStatus();
         }
@@ -243,7 +277,7 @@
             getOutboundStatus();
         }
 
-        // 初始化获取状态
+        // 页面加载时获取出站状态
         getOutboundStatus();
     </script>
 
