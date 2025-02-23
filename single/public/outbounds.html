@@ -37,7 +37,7 @@
 
         /* 状态信息样式 */
         .status {
-            font-size: 18px;
+            font-size: 14px;
             text-align: left;
             margin-bottom: 30px;
             font-weight: 600;
@@ -134,9 +134,13 @@
 
         /* 用 div 美化输入框 */
         .input-container {
-            margin-bottom: 15px;
-            width: 70%;
-            align-items: center;
+           margin-bottom: 15px;
+           width: 70%;
+           display: flex;  /* 使用 flexbox */
+           justify-content: center;  /* 水平居中 */
+           align-items: center;  /* 垂直居中，如果需要的话 */
+           margin-left: auto;  /* 左右自动 margin 实现居中 */
+           margin-right: auto; /* 左右自动 margin 实现居中 */
         }
 
         .input-container input {
