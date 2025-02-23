@@ -96,7 +96,8 @@
 
         /* 设置区域样式 */
         .socks-settings,
-        .disable-settings {
+        .disable-settings,
+        .wireguard-settings {
             display: none;
             margin-top: 20px;
         }
@@ -125,6 +126,10 @@
         .confirm-btn button {
             background-color: #FF5722;
         }
+
+        .mode-select select option {
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -146,7 +151,13 @@
             </select>
         </div>
 
-        <!-- WireGuard 和 Socks 配置 -->
+        <!-- WireGuard 配置 -->
+        <div class="wireguard-settings" id="wireguard-settings">
+            <h3>WireGuard 配置</h3>
+            <button onclick="setWireGuard()">确认设置 WireGuard</button>
+        </div>
+
+        <!-- Socks 配置 -->
         <div class="socks-settings" id="socks-settings">
             <h3>Socks 配置</h3>
             <div class="input-group">
@@ -173,6 +184,18 @@
                 let res = await fetch("/getOutboundStatus");
                 let data = await res.json();
                 document.getElementById("status").textContent = data.status;
+
+                // 设置模式选择框的默认值
+                if (data.mode === "wireguard") {
+                    document.getElementById('mode').value = 'wireguard';
+                    changeMode();
+                } else if (data.mode === "socks") {
+                    document.getElementById('mode').value = 'socks';
+                    changeMode();
+                } else if (data.mode === "disable") {
+                    document.getElementById('mode').value = 'disable';
+                    changeMode();
+                }
             } catch (err) {
                 document.getElementById("status").textContent = "无法获取状态";
             }
@@ -185,9 +208,17 @@
             getOutboundStatus();
         }
 
-        // 显示 Socks 配置输入框
+        // 显示 WireGuard 配置
+        function showWireGuardSettings() {
+            document.getElementById("wireguard-settings").style.display = "block";
+            document.getElementById("socks-settings").style.display = "none";
+            document.getElementById("disable-settings").style.display = "none";
+        }
+
+        // 显示 Socks 配置
         function showSocksSettings() {
             document.getElementById("socks-settings").style.display = "block";
+            document.getElementById("wireguard-settings").style.display = "none";
             document.getElementById("disable-settings").style.display = "none";
         }
 
@@ -216,6 +247,7 @@
         // 显示关闭模式设置
         function showDisableSettings() {
             document.getElementById("disable-settings").style.display = "block";
+            document.getElementById("wireguard-settings").style.display = "none";
             document.getElementById("socks-settings").style.display = "none";
         }
 
@@ -233,14 +265,15 @@
                 showSocksSettings();
             } else if (mode === 'disable') {
                 showDisableSettings();
-            } else {
-                document.getElementById("socks-settings").style.display = "none";
-                document.getElementById("disable-settings").style.display = "none";
+            } else if (mode === 'wireguard') {
+                showWireGuardSettings();
             }
         }
 
-        // 页面加载时获取出站状态
-        getOutboundStatus();
+        // 页面加载时获取出站状态并动态设置默认值
+        window.onload = function() {
+            getOutboundStatus();
+        };
     </script>
 
 </body>
