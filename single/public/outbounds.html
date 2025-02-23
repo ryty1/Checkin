@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>出站管理</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        h1 {
+            font-size: 24px;
+        }
+        .status {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            width: 200px;
+        }
+        .socks-settings {
+            display: none;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>出站管理</h1>
+
+    <div class="status">当前出站状态: <span id="status">加载中...</span></div>
+
+    <button onclick="setWireGuard()">切换到 WireGuard</button>
+    <button onclick="showSocksSettings()">切换到 Socks</button>
+    <button onclick="disableOutbound()">关闭出站</button>
+
+    <div class="socks-settings" id="socks-settings">
+        <h3>Socks 配置</h3>
+        <input type="text" id="server" placeholder="服务器地址">
+        <input type="number" id="server_port" placeholder="端口">
+        <input type="text" id="username" placeholder="用户名">
+        <input type="password" id="password" placeholder="密码">
+        <button onclick="setSocks()">确认设置 Socks</button>
+    </div>
+
+    <script>
+        // 获取当前出站状态
+        async function getOutboundStatus() {
+            try {
+                let res = await fetch("/getOutboundStatus");
+                let data = await res.json();
+                document.getElementById("status").textContent = data.status;
+            } catch (err) {
+                document.getElementById("status").textContent = "无法获取状态";
+            }
+        }
+
+        // 切换到 WireGuard
+        async function setWireGuard() {
+            await fetch("/setWireGuard", { method: "POST" });
+            alert("WireGuard 出站已设置");
+            getOutboundStatus();
+        }
+
+        // 显示 Socks 配置输入框
+        function showSocksSettings() {
+            document.getElementById("socks-settings").style.display = "block";
+        }
+
+        // 设置 Socks 出站
+        async function setSocks() {
+            let server = document.getElementById("server").value;
+            let server_port = document.getElementById("server_port").value;
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("password").value;
+
+            if (!server || !server_port || !username || !password) {
+                alert("请填写完整的 Socks 配置");
+                return;
+            }
+
+            await fetch("/setSocks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ server, server_port, username, password })
+            });
+
+            alert("Socks 出站已设置");
+            getOutboundStatus();
+        }
+
+        // 关闭所有出站
+        async function disableOutbound() {
+            await fetch("/disableOutbound", { method: "POST" });
+            alert("出站已关闭");
+            getOutboundStatus();
+        }
+
+        // 页面加载时获取出站状态
+        getOutboundStatus();
+    </script>
+
+</body>
+</html>
