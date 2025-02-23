@@ -164,7 +164,6 @@
         <div class="mode-select">
             <label for="mode-select">选择出站模式: </label>
             <select id="mode-select" onchange="showModeSettings(this.value)">
-                <option value="none">请选择模式</option>
                 <option value="wireguard">WireGuard</option>
                 <option value="socks">Socks</option>
                 <option value="disable">关闭出站</option>
@@ -209,9 +208,10 @@
                 let res = await fetch("/getOutboundStatus");
                 let data = await res.json();
                 let statusElement = document.getElementById("status-mode");
-                statusElement.textContent = data.status;
+                // 只显示模式，不显示“已配置”三个字
+                statusElement.textContent = data.status.replace("已配置", "");
 
-                if (data.status === "已配置 WireGuard" || data.status === "已配置 Socks") {
+                if (data.status.includes("WireGuard") || data.status.includes("Socks")) {
                     statusElement.classList.add("green");
                 } else {
                     statusElement.classList.remove("green");
@@ -219,9 +219,9 @@
 
                 // 自动选择当前模式
                 let modeSelect = document.getElementById("mode-select");
-                if (data.status === "已配置 WireGuard") {
+                if (data.status.includes("WireGuard")) {
                     modeSelect.value = "wireguard";
-                } else if (data.status === "已配置 Socks") {
+                } else if (data.status.includes("Socks")) {
                     modeSelect.value = "socks";
                 } else {
                     modeSelect.value = "none";
