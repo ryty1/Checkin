@@ -6,7 +6,7 @@
   <title>修改配置</title>
   <style>
     body {
-      font-family: 'Arial', sans-serif;
+      font-family: Arial, sans-serif;
       background-color: #f7f7f7;
       margin: 0;
       padding: 0;
@@ -28,29 +28,13 @@
 
     h1 {
       font-size: 22px;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
 
-    .config-item {
-      text-align: left;
-      margin-bottom: 15px;
-    }
-
-    .config-label {
-      font-size: 14px;
-      font-weight: bold;
-      color: #333;
-      margin-bottom: 5px;
-    }
-
-    .config-value {
-      background: #f0f0f0;
-      padding: 5px;
-      border-radius: 4px;
-      font-size: 13px;
+    h2 {
+      font-size: 16px;
       color: #007BFF;
       word-break: break-word;
-      max-width: 100%;
     }
 
     input[type="text"] {
@@ -82,27 +66,22 @@
 </head>
 <body>
   <div class="container">
-    <h1>修改配置</h1>
+    <h1>配置修改</h1>
+    <h2>当前优选: <span id="currentGoodDomain">加载中...</span></h2>
+    <form id="domainForm">
+      <input type="text" id="goodDomain" name="goodDomain" placeholder="输入新的 GOOD_DOMAIN" />
+      <button type="submit">提交</button>
+    </form>
 
-    <form id="configForm">
-      <div class="config-item">
-        <label class="config-label">当前优选：</label>
-        <div id="currentGoodDomain" class="config-value">加载中...</div>
-        <input type="text" id="goodDomain" name="goodDomain" placeholder="输入新的 优选" />
-      </div>
+    <h2>当前ARGO_TOKEN: <span id="currentArgoAuth">加载中...</span></h2>
+    <form id="argoAuthForm">
+      <input type="text" id="argoAuth" name="argoAuth" placeholder="输入新的 ARGO_TOKEN" />
+      <button type="submit">提交</button>
+    </form>
 
-      <div class="config-item">
-        <label class="config-label">当前ARGO_TOKEN：</label>
-        <div id="currentArgoAuth" class="config-value">加载中...</div>
-        <input type="text" id="argoAuth" name="argoAuth" placeholder="输入新的 ARGO_TOKEN" />
-      </div>
-
-      <div class="config-item">
-        <label class="config-label">当前ARGO域名：</label>
-        <div id="currentArgoDomain" class="config-value">加载中...</div>
-        <input type="text" id="argoDomain" name="argoDomain" placeholder="输入新的 ARGO域名" />
-      </div>
-
+    <h2>当前ARGO域名: <span id="currentArgoDomain">加载中...</span></h2>
+    <form id="argoDomainForm">
+      <input type="text" id="argoDomain" name="argoDomain" placeholder="输入新的 ARGO域名" />
       <button type="submit">提交</button>
     </form>
   </div>
@@ -121,21 +100,12 @@
       }
     }
 
-    document.getElementById('configForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    async function updateConfig(event, key, inputId) {
+      event.preventDefault();
+      const newValue = document.getElementById(inputId).value.trim();
+      if (!newValue) return alert('请至少填一项');
 
-      const newGoodDomain = document.getElementById('goodDomain').value.trim();
-      const newArgoAuth = document.getElementById('argoAuth').value.trim();
-      const newArgoDomain = document.getElementById('argoDomain').value.trim();
-
-      if (!newGoodDomain && !newArgoAuth && !newArgoDomain) {
-        return alert('请至少填写一项');
-      }
-
-      const requestData = {};
-      if (newGoodDomain) requestData.GOOD_DOMAIN = newGoodDomain;
-      if (newArgoAuth) requestData.ARGO_AUTH = newArgoAuth;
-      if (newArgoDomain) requestData.ARGO_DOMAIN = newArgoDomain;
+      const requestData = { [key]: newValue };
 
       try {
         const response = await fetch('/updateArgoConfig', {
@@ -146,7 +116,7 @@
 
         const result = await response.json();
         if (result.success) {
-          alert('配置更新成功！');
+          alert(`${key} 更新成功！`);
           fetchCurrentConfig();
         } else {
           alert(`更新失败：${result.error}`);
@@ -155,7 +125,11 @@
         alert('请求失败，请稍后再试');
         console.error('请求失败:', error);
       }
-    });
+    }
+
+    document.getElementById('domainForm').addEventListener('submit', (e) => updateConfig(e, 'GOOD_DOMAIN', 'goodDomain'));
+    document.getElementById('argoAuthForm').addEventListener('submit', (e) => updateConfig(e, 'ARGO_AUTH', 'argoAuth'));
+    document.getElementById('argoDomainForm').addEventListener('submit', (e) => updateConfig(e, 'ARGO_DOMAIN', 'argoDomain'));
 
     fetchCurrentConfig();
   </script>
