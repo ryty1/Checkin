@@ -46,8 +46,9 @@
             display: none;
             margin-top: 20px;
         }
-        .mode-buttons {
+        .mode-select {
             margin-top: 20px;
+            font-size: 16px;
         }
         .error {
             color: red;
@@ -61,10 +62,15 @@
 
     <div class="status">当前出站状态: <span id="status">加载中...</span></div>
 
-    <div class="mode-buttons">
-        <button onclick="showModeSettings('wireguard')">切换到 WireGuard</button>
-        <button onclick="showModeSettings('socks')">切换到 Socks</button>
-        <button onclick="disableOutbound()">关闭出站</button>
+    <!-- 模式选择下拉框 -->
+    <div class="mode-select">
+        <label for="mode-select">选择出站模式: </label>
+        <select id="mode-select" onchange="showModeSettings(this.value)">
+            <option value="none">请选择模式</option>
+            <option value="wireguard">WireGuard</option>
+            <option value="socks">Socks</option>
+            <option value="disable">关闭出站</option>
+        </select>
     </div>
 
     <!-- WireGuard 配置设置 -->
@@ -98,13 +104,17 @@
 
         // 切换模式并显示相应配置
         function showModeSettings(mode) {
+            // 隐藏所有设置
             document.getElementById("wireguard-settings").style.display = 'none';
             document.getElementById("socks-settings").style.display = 'none';
-            
+
+            // 根据选择的模式显示相应的设置
             if (mode === 'wireguard') {
                 document.getElementById("wireguard-settings").style.display = 'block';
             } else if (mode === 'socks') {
                 document.getElementById("socks-settings").style.display = 'block';
+            } else if (mode === 'disable') {
+                disableOutbound();
             }
         }
 
