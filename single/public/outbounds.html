@@ -226,6 +226,8 @@
                 } else {
                     modeSelect.value = "none";
                 }
+
+                showModeSettings(modeSelect.value);
             } catch (err) {
                 document.getElementById("status-mode").textContent = "无法获取状态";
             }
