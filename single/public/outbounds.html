@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>出站管理</title>
     <style>
-        /* 全局样式 */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -25,7 +24,6 @@
             margin-top: 30px;
         }
 
-        /* 主容器样式 */
         .container {
             max-width: 600px;
             width: 100%;
@@ -35,7 +33,6 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
-        /* 状态信息样式 */
         .status {
             font-size: 16px;
             text-align: left;
@@ -43,17 +40,14 @@
             font-weight: 600;
         }
 
-        /* 当前出站模式状态绿色 */
         .status span.green {
             color: green;
         }
 
-        /* 当前未出站状态红色 */
         .status span.red {
             color: red;
         }
 
-        /* 下拉框和按钮 */
         .mode-select {
             display: flex;
             justify-content: flex-start;
@@ -79,19 +73,18 @@
         }
 
         select {
-            width: 320px; /* 增加下拉框宽度 */
+            width: 200px; 
         }
 
         select:hover, button:hover {
             background-color: #0056b3;
         }
 
-        /* 输入框样式 */
         input {
             font-size: 14px;
             padding: 10px;
             margin: 8px 0;
-            width: calc(100% - 20px); /* 使输入框不再过长 */
+            width: calc(100% - 20px); 
             border-radius: 5px;
             border: 1px solid #ddd;
         }
@@ -101,14 +94,12 @@
             outline: none;
         }
 
-        /* 错误提示 */
         .error {
             color: red;
             font-size: 14px;
             margin-top: 5px;
         }
 
-        /* 配置区域样式 */
         .settings-section {
             display: none;
             margin-top: 30px;
@@ -120,7 +111,6 @@
             margin-bottom: 20px;
         }
 
-        /* 按钮风格 */
         .button-container {
             display: flex;
             justify-content: center;
@@ -132,15 +122,14 @@
             margin: 0 10px;
         }
 
-        /* 用 div 美化输入框 */
         .input-container {
            margin-bottom: 15px;
            width: 70%;
-           display: flex;  /* 使用 flexbox */
-           justify-content: center;  /* 水平居中 */
-           align-items: center;  /* 垂直居中，如果需要的话 */
-           margin-left: auto;  /* 左右自动 margin 实现居中 */
-           margin-right: auto; /* 左右自动 margin 实现居中 */
+           display: flex;  
+           justify-content: center;  
+           align-items: center;  
+           margin-left: auto;  
+           margin-right: auto; 
         }
 
         .input-container input {
@@ -148,14 +137,13 @@
             box-sizing: border-box;
         }
 
-        /* 调整响应式 */
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
             }
 
             select {
-                width: 180px; /* 调整下拉框宽度 */
+                width: 260px;
             }
         }
     </style>
@@ -165,12 +153,10 @@
     <div class="container">
         <h1>出站管理</h1>
 
-        <!-- 当前出站状态 -->
         <div class="status" id="status">
             当前状态: <span id="status-mode">加载中...</span>
         </div>
 
-        <!-- 模式选择 -->
         <div class="mode-select">
             <label for="mode-select">选择模式: </label>
             <select id="mode-select" onchange="showModeSettings(this.value)">
@@ -207,24 +193,20 @@
             <div class="error" id="socks-error"></div>
         </div>
 
-        <!-- 关闭出站按钮 -->
         <div class="settings-section" id="disable-outbound-container">
-            <button onclick="disableOutbound()">确认关闭</button>
+            <button id="disable-button" onclick="disableOutbound()">确认关闭</button>
         </div>
     </div>
 
     <script>
-        // 获取当前出站状态
         async function getOutboundStatus() {
             try {
                 let res = await fetch("/getOutboundStatus");
                 let data = await res.json();
                 let statusElement = document.getElementById("status-mode");
                 
-                // 只显示模式，不显示“已配置”三个字
                 statusElement.textContent = data.status.replace("已配置", "");
 
-                // 根据当前状态添加颜色样式
                 if (data.status.includes("WireGuard") || data.status.includes("Socks")) {
                     statusElement.classList.add("green");
                     statusElement.classList.remove("red");
@@ -233,7 +215,6 @@
                     statusElement.classList.remove("green");
                 }
 
-                // 自动选择当前模式
                 let modeSelect = document.getElementById("mode-select");
                 if (data.status.includes("WireGuard")) {
                     modeSelect.value = "wireguard";
@@ -244,19 +225,28 @@
                 }
 
                 showModeSettings(modeSelect.value);
+
+                // Check if outbound is disabled
+                let disableButton = document.getElementById("disable-button");
+                if (data.status === "未出站") {
+                    disableButton.disabled = true; // Disable the button if already in "未出站" state
+                    disableButton.style.backgroundColor = '#ddd'; // Change button color to indicate it's disabled
+                    disableButton.style.cursor = 'not-allowed'; // Show cursor as not allowed
+                } else {
+                    disableButton.disabled = false; // Enable the button if not in "未出站" state
+                    disableButton.style.backgroundColor = '#007bff'; // Restore button color
+                    disableButton.style.cursor = 'pointer'; // Show cursor as pointer
+                }
             } catch (err) {
                 document.getElementById("status-mode").textContent = "无法获取状态";
             }
         }
 
-        // 切换模式并显示相应配置
         function showModeSettings(mode) {
-            // 隐藏所有设置
             document.getElementById("wireguard-settings").style.display = 'none';
             document.getElementById("socks-settings").style.display = 'none';
             document.getElementById("disable-outbound-container").style.display = 'none';
 
-            // 根据选择的模式显示相应的设置
             if (mode === 'wireguard') {
                 document.getElementById("wireguard-settings").style.display = 'block';
             } else if (mode === 'socks') {
@@ -266,23 +256,20 @@
             }
         }
 
-        // 设置 WireGuard 出站
         async function setWireGuard() {
             await fetch("/setWireGuard", { method: "POST" });
             alert("WireGuard 出站已设置");
             getOutboundStatus();
         }
 
-        // 设置 Socks 出站
         async function setSocks() {
             let server = document.getElementById("server").value;
             let server_port = document.getElementById("server_port").value;
             let username = document.getElementById("username").value;
             let password = document.getElementById("password").value;
             let errorDiv = document.getElementById("socks-error");
-            errorDiv.textContent = "";  // 清空错误信息
+            errorDiv.textContent = "";  
 
-            // 正则验证 IP 格式 (IPv4)
             let ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
             if (!ipRegex.test(server)) {
@@ -290,7 +277,6 @@
                 return;
             }
 
-            // 检查端口范围
             if (server_port < 1 || server_port > 65535) {
                 errorDiv.textContent = "端口范围应为 1 到 65535！";
                 return;
@@ -306,14 +292,12 @@
             getOutboundStatus();
         }
 
-        // 关闭出站
         async function disableOutbound() {
             await fetch("/disableOutbound", { method: "POST" });
             alert("出站已关闭");
             getOutboundStatus();
         }
 
-        // 页面加载时获取出站状态
         getOutboundStatus();
     </script>
 
