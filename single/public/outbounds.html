@@ -13,6 +13,7 @@
             background-color: #f4f6f9;
             color: #333;
         }
+
         h1 {
             font-size: 32px;
             color: #444;
@@ -39,6 +40,11 @@
             font-weight: 600;
         }
 
+        /* 当前出站模式状态绿色 */
+        .status.green {
+            color: green;
+        }
+
         /* 下拉框和按钮 */
         .mode-select {
             display: flex;
@@ -46,6 +52,7 @@
             align-items: center;
             margin-bottom: 30px;
         }
+
         select, button {
             font-size: 16px;
             padding: 10px 15px;
@@ -57,6 +64,7 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
+
         select:hover, button:hover {
             background-color: #0056b3;
         }
@@ -66,10 +74,11 @@
             font-size: 16px;
             padding: 10px;
             margin: 8px 0;
-            width: 100%;
+            width: calc(100% - 20px); /* 使输入框不再过长 */
             border-radius: 5px;
             border: 1px solid #ddd;
         }
+
         input:focus {
             border-color: #007bff;
             outline: none;
@@ -88,6 +97,7 @@
             margin-top: 30px;
             text-align: center;
         }
+
         .settings-section h3 {
             font-size: 20px;
             margin-bottom: 20px;
@@ -112,13 +122,12 @@
         <h1>出站管理</h1>
 
         <!-- 当前出站状态 -->
-        <div class="status">当前出站状态: <span id="status">加载中...</span></div>
+        <div class="status" id="status">当前状态: 加载中...</div>
 
         <!-- 模式选择 -->
         <div class="mode-select">
-            <label for="mode-select" style="font-size: 18px; margin-right: 10px;">选择出站模式: </label>
+            <label for="mode-select" style="font-size: 18px; margin-right: 10px;">模式: </label>
             <select id="mode-select" onchange="showModeSettings(this.value)">
-                <option value="none">请选择模式</option>
                 <option value="wireguard">WireGuard</option>
                 <option value="socks">Socks</option>
                 <option value="disable">关闭出站</option>
@@ -127,24 +136,25 @@
 
         <!-- WireGuard 设置 -->
         <div class="settings-section" id="wireguard-settings">
-            <h3>WireGuard 配置</h3>
-            <button onclick="setWireGuard()">确认设置 WireGuard</button>
+            <h3>WireGuard 出站配置</h3>
+            <h3>默认通用配置</h3>
+            <button onclick="setWireGuard()">确认设置</button>
         </div>
 
         <!-- Socks 设置 -->
         <div class="settings-section" id="socks-settings">
-            <h3>Socks 配置</h3>
+            <h3>Socks 出站配置</h3>
             <input type="text" id="server" placeholder="服务器地址 (IPv4 格式)">
             <input type="number" id="server_port" placeholder="端口 (范围: 1-65535)" min="1" max="65535">
             <input type="text" id="username" placeholder="用户名">
             <input type="password" id="password" placeholder="密码">
-            <button onclick="setSocks()">确认设置 Socks</button>
+            <button onclick="setSocks()">确认设置</button>
             <div class="error" id="socks-error"></div>
         </div>
 
         <!-- 关闭出站按钮 -->
-        <div class="button-container">
-            <button onclick="disableOutbound()">关闭出站</button>
+        <div class="button-container" id="disable-outbound-container" style="display:none;">
+            <button onclick="disableOutbound()">确认关闭</button>
         </div>
     </div>
 
@@ -154,7 +164,13 @@
             try {
                 let res = await fetch("/getOutboundStatus");
                 let data = await res.json();
-                document.getElementById("status").textContent = data.status;
+                let statusElement = document.getElementById("status");
+                statusElement.textContent = `当前出站状态: ${data.status}`;
+                if (data.status === "WireGuard出站" || data.status === "Socks5出站") {
+                    statusElement.classList.add("green");
+                } else {
+                    statusElement.classList.remove("green");
+                }
             } catch (err) {
                 document.getElementById("status").textContent = "无法获取状态";
             }
@@ -165,6 +181,7 @@
             // 隐藏所有设置
             document.getElementById("wireguard-settings").style.display = 'none';
             document.getElementById("socks-settings").style.display = 'none';
+            document.getElementById("disable-outbound-container").style.display = 'none';
 
             // 根据选择的模式显示相应的设置
             if (mode === 'wireguard') {
@@ -172,7 +189,7 @@
             } else if (mode === 'socks') {
                 document.getElementById("socks-settings").style.display = 'block';
             } else if (mode === 'disable') {
-                disableOutbound();
+                document.getElementById("disable-outbound-container").style.display = 'block';
             }
         }
 
@@ -212,22 +229,21 @@
 
             await fetch("/setSocks", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ server, server_port, username, password })
+                body: JSON.stringify({ server, server_port, username, password }),
+                headers: { "Content-Type": "application/json" }
             });
-
             alert("Socks 出站已设置");
             getOutboundStatus();
         }
 
-        // 关闭所有出站
+        // 关闭出站
         async function disableOutbound() {
             await fetch("/disableOutbound", { method: "POST" });
             alert("出站已关闭");
             getOutboundStatus();
         }
 
-        // 页面加载时获取出站状态
+        // 初始化获取状态
         getOutboundStatus();
     </script>
 
