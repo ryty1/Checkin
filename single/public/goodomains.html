@@ -22,24 +22,35 @@
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      width: 350px;
+      width: 400px;
       text-align: center;
     }
 
     h1 {
-      font-size: 24px;
-      margin-bottom: 20px;
+      font-size: 22px;
+      margin-bottom: 15px;
     }
 
-    .config-display {
+    .config-item {
       text-align: left;
       margin-bottom: 15px;
-      font-size: 14px;
     }
 
-    .config-display span {
+    .config-label {
+      font-size: 14px;
       font-weight: bold;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .config-value {
+      background: #f0f0f0;
+      padding: 5px;
+      border-radius: 4px;
+      font-size: 13px;
       color: #007BFF;
+      word-break: break-word;
+      max-width: 100%;
     }
 
     input[type="text"] {
@@ -49,7 +60,7 @@
       box-sizing: border-box;
       border: 1px solid #ccc;
       border-radius: 4px;
-      margin-bottom: 10px;
+      margin-top: 5px;
     }
 
     button {
@@ -61,6 +72,7 @@
       font-size: 16px;
       border-radius: 4px;
       cursor: pointer;
+      margin-top: 10px;
     }
 
     button:hover {
@@ -72,44 +84,43 @@
   <div class="container">
     <h1>修改配置</h1>
 
-    <!-- 现有配置显示 -->
-    <div class="config-display">
-      <p>当前优选域名: <span id="currentGoodDomain">加载中...</span></p>
-      <p>当前 ARGO_AUTH: <span id="currentArgoAuth">加载中...</span></p>
-      <p>当前 ARGO_DOMAIN: <span id="currentArgoDomain">加载中...</span></p>
-    </div>
-
-    <!-- 配置修改表单 -->
     <form id="configForm">
-      <input type="text" id="goodDomain" name="goodDomain" placeholder="输入新的 GOOD_DOMAIN" />
-      <input type="text" id="argoAuth" name="argoAuth" placeholder="输入新的 ARGO_AUTH" />
-      <input type="text" id="argoDomain" name="argoDomain" placeholder="输入新的 ARGO_DOMAIN" />
+      <div class="config-item">
+        <label class="config-label">当前优选：</label>
+        <div id="currentGoodDomain" class="config-value">加载中...</div>
+        <input type="text" id="goodDomain" name="goodDomain" placeholder="输入新的 优选" />
+      </div>
+
+      <div class="config-item">
+        <label class="config-label">当前ARGO_TOKEN：</label>
+        <div id="currentArgoAuth" class="config-value">加载中...</div>
+        <input type="text" id="argoAuth" name="argoAuth" placeholder="输入新的 ARGO_TOKEN" />
+      </div>
+
+      <div class="config-item">
+        <label class="config-label">当前ARGO域名：</label>
+        <div id="currentArgoDomain" class="config-value">加载中...</div>
+        <input type="text" id="argoDomain" name="argoDomain" placeholder="输入新的 ARGO域名" />
+      </div>
+
       <button type="submit">提交</button>
     </form>
   </div>
 
   <script>
-    // 获取当前配置并显示
     async function fetchCurrentConfig() {
       try {
         const response = await fetch('/getArgoConfig');
         const data = await response.json();
-        
-        if (data.GOOD_DOMAIN) {
-          document.getElementById('currentGoodDomain').textContent = data.GOOD_DOMAIN;
-        }
-        if (data.ARGO_AUTH) {
-          document.getElementById('currentArgoAuth').textContent = data.ARGO_AUTH;
-        }
-        if (data.ARGO_DOMAIN) {
-          document.getElementById('currentArgoDomain').textContent = data.ARGO_DOMAIN;
-        }
+
+        document.getElementById('currentGoodDomain').textContent = data.GOOD_DOMAIN || '未设置';
+        document.getElementById('currentArgoAuth').textContent = data.ARGO_AUTH || '未设置';
+        document.getElementById('currentArgoDomain').textContent = data.ARGO_DOMAIN || '未设置';
       } catch (error) {
         console.error('获取当前配置失败:', error);
       }
     }
 
-    // 提交表单修改配置
     document.getElementById('configForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -118,7 +129,7 @@
       const newArgoDomain = document.getElementById('argoDomain').value.trim();
 
       if (!newGoodDomain && !newArgoAuth && !newArgoDomain) {
-        return alert('请至少填写一个字段');
+        return alert('请至少填写一项');
       }
 
       const requestData = {};
@@ -136,7 +147,7 @@
         const result = await response.json();
         if (result.success) {
           alert('配置更新成功！');
-          fetchCurrentConfig(); // 刷新当前配置
+          fetchCurrentConfig();
         } else {
           alert(`更新失败：${result.error}`);
         }
@@ -146,7 +157,6 @@
       }
     });
 
-    // 初次加载时获取当前配置
     fetchCurrentConfig();
   </script>
 </body>
