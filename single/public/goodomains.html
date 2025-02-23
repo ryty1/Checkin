@@ -90,7 +90,7 @@
   <script>
     async function fetchCurrentConfig() {
       try {
-        const response = await fetch('/getArgoConfig');
+        const response = await fetch('/getConfig');
         const data = await response.json();
 
         document.getElementById('currentGoodDomain').textContent = data.GOOD_DOMAIN || '未设置';
@@ -109,7 +109,7 @@
       const requestData = { [key]: newValue };
 
       try {
-        const response = await fetch('/updateArgoConfig', {
+        const response = await fetch('/updateConfig', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestData),
