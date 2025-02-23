@@ -215,6 +215,9 @@
                 let res = await fetch("/getOutboundStatus");
                 let data = await res.json();
                 let statusElement = document.getElementById("status-mode");
+                
+                // 只显示模式，不显示“已配置”三个字
+                statusElement.textContent = data.status.replace("已配置", "");
 
                 // 根据当前状态添加颜色样式
                 if (data.status.includes("WireGuard") || data.status.includes("Socks")) {
