@@ -600,6 +600,11 @@ app.post("/setWireGuard", (req, res) => {
         "reserved": [26, 21, 228]
     });
 
+    // 只修改 route.rules 中的第一个 outbound
+    if (config.route && config.route.rules.length > 0) {
+        config.route.rules[0].outbound = "wireguard-out";
+    }
+
     writeConfig(config);
     res.json({ message: "WireGuard 出站已设置" });
 });
@@ -628,6 +633,11 @@ app.post("/setSocks", (req, res) => {
         "password": password
     });
 
+    // 只修改 route.rules 中的第一个 outbound
+    if (config.route && config.route.rules.length > 0) {
+        config.route.rules[0].outbound = "socks5_outbound";
+    }
+
     writeConfig(config);
     res.json({ message: "Socks 出站已设置" });
 });
@@ -637,13 +647,20 @@ app.post("/disableOutbound", (req, res) => {
     let config = readConfig();
     if (!config) return res.status(500).json({ error: "读取配置失败" });
 
+    // 关闭 WireGuard 和 Socks 出站
     config.outbounds = config.outbounds.filter(outbound =>
         outbound.type !== "wireguard" && outbound.type !== "socks"
     );
 
+    // 只修改 route.rules 中的第一个 outbound
+    if (config.route && config.route.rules.length > 0) {
+        config.route.rules[0].outbound = "direct";
+    }
+
     writeConfig(config);
     res.json({ message: "已关闭出站" });
 });
+
 // 提供页面
 app.get("/outbounds", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "outbounds.html"));
