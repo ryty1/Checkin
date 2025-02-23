@@ -476,7 +476,8 @@ app.get('/newset', (req, res) => {
     res.sendFile(path.join(__dirname, "public", 'newset.html'));
 });
 
-app.get('/getGoodDomain', (req, res) => {
+// 获取当前配置
+app.get('/getArgoConfig', (req, res) => {
   fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
     if (err) {
       return res.status(500).json({ error: '读取配置文件失败' });
@@ -484,35 +485,45 @@ app.get('/getGoodDomain', (req, res) => {
 
     try {
       const config = JSON.parse(data);
-      res.json({ GOOD_DOMAIN: config.GOOD_DOMAIN });
+      res.json({
+        GOOD_DOMAIN: config.GOOD_DOMAIN,
+        ARGO_AUTH: config.ARGO_AUTH,
+        ARGO_DOMAIN: config.ARGO_DOMAIN
+      });
     } catch (parseError) {
       return res.status(500).json({ error: '解析 JSON 失败' });
     }
   });
 });
 
-app.post('/updateGoodDomain', async (req, res) => {
-  const { GOOD_DOMAIN } = req.body;
+// 更新配置
+app.post('/updateArgoConfig', async (req, res) => {
+  const { GOOD_DOMAIN, ARGO_AUTH, ARGO_DOMAIN } = req.body;
 
-  if (!GOOD_DOMAIN) {
-    return res.status(400).json({ success: false, error: '缺少 GOOD_DOMAIN 参数' });
+  if (!GOOD_DOMAIN && !ARGO_AUTH && !ARGO_DOMAIN) {
+    return res.status(400).json({ success: false, error: '请至少填写一个字段' });
   }
 
   try {
     const data = fs.readFileSync(SINGBOX_CONFIG_PATH, 'utf8');
     const config = JSON.parse(data);
 
-    config.GOOD_DOMAIN = GOOD_DOMAIN;
+    // 更新相应的字段
+    if (GOOD_DOMAIN) config.GOOD_DOMAIN = GOOD_DOMAIN;
+    if (ARGO_AUTH) config.ARGO_AUTH = ARGO_AUTH;
+    if (ARGO_DOMAIN) config.ARGO_DOMAIN = ARGO_DOMAIN;
 
+    // 写回更新后的配置
     fs.writeFileSync(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 2), 'utf8');
-    console.log(`优选域名 已更新为: ${GOOD_DOMAIN}`);
+    console.log('配置已更新');
 
+    // 重启 singbox
     stopShellCommand();
     setTimeout(() => {
         runShellCommand();
     }, 3000); 
 
-    res.json({ success: true, message: `优选域名 更新为: ${GOOD_DOMAIN} 并已重启singbox` });
+    res.json({ success: true, message: '配置更新成功并重启singbox' });
 
   } catch (err) {
     console.error('更新失败:', err);
@@ -520,6 +531,7 @@ app.post('/updateGoodDomain', async (req, res) => {
   }
 });
 
+// 提供页面
 app.get("/goodomains", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "goodomains.html"));
 });
