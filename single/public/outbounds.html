@@ -24,6 +24,10 @@
             text-align: center;
             margin-top: 30px;
         }
+        h2 {
+            font-size: 12px;
+            color: #444;
+        }
 
         /* 主容器样式 */
         .container {
@@ -162,9 +166,8 @@
 
         <!-- 模式选择 -->
         <div class="mode-select">
-            <label for="mode-select">选择出站模式: </label>
+            <label for="mode-select">出站模式: </label>
             <select id="mode-select" onchange="showModeSettings(this.value)">
-                <option value="none">请选择模式</option>
                 <option value="wireguard">WireGuard</option>
                 <option value="socks">Socks</option>
                 <option value="disable">关闭出站</option>
@@ -174,7 +177,8 @@
         <!-- WireGuard 设置 -->
         <div class="settings-section" id="wireguard-settings">
             <h3>WireGuard 配置</h3>
-            <button onclick="setWireGuard()">确认设置 WireGuard</button>
+            <h3>默认通用 配置</h3>
+            <button onclick="setWireGuard()">确认设置</button>
         </div>
 
         <!-- Socks 设置 -->
@@ -192,13 +196,13 @@
             <div class="input-container">
                 <input type="password" id="password" placeholder="密码">
             </div>
-            <button onclick="setSocks()">确认设置 Socks</button>
+            <button onclick="setSocks()">确认设置</button>
             <div class="error" id="socks-error"></div>
         </div>
 
         <!-- 关闭出站按钮 -->
         <div class="settings-section" id="disable-outbound-container">
-            <button onclick="disableOutbound()">确认关闭出站</button>
+            <button onclick="disableOutbound()">关闭出站</button>
         </div>
     </div>
 
@@ -211,7 +215,7 @@
                 let statusElement = document.getElementById("status-mode");
                 statusElement.textContent = data.status;
 
-                if (data.status === "已配置 WireGuard" || data.status === "已配置 Socks") {
+                if (data.status === "WireGuard" || data.status === "Socks") {
                     statusElement.classList.add("green");
                 } else {
                     statusElement.classList.remove("green");
@@ -219,9 +223,9 @@
 
                 // 自动选择当前模式
                 let modeSelect = document.getElementById("mode-select");
-                if (data.status === "已配置 WireGuard") {
+                if (data.status === "WireGuard") {
                     modeSelect.value = "wireguard";
-                } else if (data.status === "已配置 Socks") {
+                } else if (data.status === "Socks") {
                     modeSelect.value = "socks";
                 } else {
                     modeSelect.value = "none";
