@@ -1,166 +1,510 @@
-require('dotenv').config();
 const express = require("express");
+const session = require("express-session");
+const FileStore = require("session-file-store")(session);
+const http = require("http");
 const { exec } = require("child_process");
-const util = require('util');
+const socketIo = require("socket.io");
+const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
+const cron = require("node-cron");
+const TelegramBot = require("node-telegram-bot-api");
+const bodyParser = require("body-parser");
+const crypto = require("crypto");
+
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 
-const username = process.env.USER.toLowerCase(); // 获取当前用户名并转换为小写
-const DOMAIN_DIR = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "public_nodejs");
-const scriptPath = path.join(process.env.HOME, "serv00-play", "singbox", "start.sh");
-const configFilePath = path.join(__dirname, 'config.json');
-const SINGBOX_CONFIG_PATH = path.join(process.env.HOME, "serv00-play", "singbox", "singbox.json");
+const PORT = 3000;
+const ACCOUNTS_FILE = path.join(__dirname, "accounts.json");
+const SETTINGS_FILE = path.join(__dirname, "settings.json");
+const PASSWORD_FILE = path.join(__dirname, "password.json");
+const SESSION_DIR = path.join(__dirname, "sessions"); 
+const SESSION_FILE = path.join(__dirname, "session_secret.json");
+const otaScriptPath = path.join(__dirname, 'ota.sh');
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+app.use(express.json()); 
+app.use(express.static(path.join(__dirname, "public")));
 
-let logs = [];
-let latestStartLog = "";
-function logMessage(message) {
-    logs.push(message);
-    if (logs.length > 5) logs.shift();
+app.use((req, res, next) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    next();
+});
+
+function getSessionSecret() {
+    if (fs.existsSync(SESSION_FILE)) {
+        return JSON.parse(fs.readFileSync(SESSION_FILE, "utf-8")).secret;
+    } else {
+        const secret = crypto.randomBytes(32).toString("hex");
+        fs.writeFileSync(SESSION_FILE, JSON.stringify({ secret }), "utf-8");
+        return secret;
+    }
 }
-function executeCommand(command, actionName, isStartLog = false, callback) {
-    exec(command, (err, stdout, stderr) => {
-        const timestamp = new Date().toLocaleString();
-        if (err) {
-            logMessage(`${actionName} 执行失败: ${err.message}`);
-            if (callback) callback(err.message);
+
+app.use(session({
+    store: new FileStore({
+        path: path.join(__dirname, "sessions"), 
+        ttl: 60 * 60,  
+        retries: 1,
+        clearInterval: 600 
+    }),
+    secret: getSessionSecret(), 
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false, httpOnly: true }
+}));
+
+app.use(bodyParser.urlencoded({ extended: true }));
+
+function checkPassword(req, res, next) {
+    if (!fs.existsSync(PASSWORD_FILE)) {
+        return res.redirect("/setPassword");
+    }
+    next();
+}
+
+app.get("/checkSession", (req, res) => {
+    if (req.session.authenticated) {
+        res.status(200).json({ authenticated: true });
+    } else {
+        res.status(401).json({ authenticated: false });
+    }
+});
+
+function isAuthenticated(req, res, next) {
+    if (req.session.authenticated) {
+        return next();
+    }
+    res.redirect("/login");  
+}
+
+app.get("/setPassword", (req, res) => {
+    res.sendFile(path.join(__dirname, "protected", "set_password.html"));
+});
+
+app.post("/setPassword", (req, res) => {
+    const { password } = req.body;
+    if (!password) {
+        return res.status(400).send("密码不能为空");
+    }
+    fs.writeFileSync(PASSWORD_FILE, JSON.stringify({ password }), "utf-8");
+    res.redirect("/login");
+});
+
+async function sendErrorToTG(errorMessage) {
+    try {
+        const settings = getNotificationSettings();
+        if (!settings.telegramToken || !settings.telegramChatId) {
+            console.log("❌ Telegram 设置不完整，无法发送通知");
             return;
         }
-        if (stderr) {
-            logMessage(`${actionName} 执行标准错误输出: ${stderr}`);
-        }
-        const successMsg = `${actionName} 执行成功:\n${stdout}`;
-        logMessage(successMsg);
-        if (isStartLog) latestStartLog = successMsg;
-        if (callback) callback(stdout);
-    });
-}
-function runShellCommand() {
-    const command = `cd ${process.env.HOME}/serv00-play/singbox/ && bash start.sh`;
-    executeCommand(command, "start.sh", true);
+
+        const bot = new TelegramBot(settings.telegramToken, { polling: false });
+        await bot.sendMessage(settings.telegramChatId, `❌ 访问失败通知: ${errorMessage}`, { parse_mode: "MarkdownV2" });
+    } catch (err) {
+        console.error("❌ 发送 Telegram 通知失败:", err);
+    }
 }
 
-function stopShellCommand() {
-    const command = `cd ${process.env.HOME}/serv00-play/singbox/ && bash killsing-box.sh`;
-    executeCommand(command, "killsing-box.sh", true);
-}
+app.get("/login", async (req, res) => {
+    try {
+        const accounts = await getAccounts(true);
+        const users = Object.keys(accounts);
 
-function KeepAlive() {
-    const command = `cd ${process.env.HOME}/serv00-play/ && bash keepalive.sh`;
-    executeCommand(command, "keepalive.sh", true);
-}
-setInterval(KeepAlive, 20000);
+        const requests = users.map(user =>
+            axios.get(`https://${user}.serv00.net/info`)
+                .then(response => {
+                    if (response.status = 200) {
+                        console.log(`${user} 保活成功，状态码: ${response.status}`);
+                    } else {
+                        console.log(`${user} 保活失败，状态码: ${response.status}`);
+                        sendErrorToTG(`${user} 保活失败，状态码: ${response.status}`);
+                    }
+                })
+                .catch(err => {
+                    console.log(`${user} 保活失败:`, err.message);
+                    sendErrorToTG(`${user} 保活失败: ${err.message}`);
+                })
+        );
 
-app.get("/info", (req, res) => {
-    runShellCommand();
-    KeepAlive();
-    res.sendFile(path.join(__dirname, "public", "info.html"));
+        await Promise.all(requests);
+        console.log("所有账号的进程保活已访问完成");
+    } catch (error) {
+        console.error("访问 /info 失败:", error);
+        sendErrorToTG(`保活失败: ${error.message}`);
+    }
+
+    res.sendFile(path.join(__dirname, "protected", "login.html"));
 });
 
-app.use(express.urlencoded({ extended: true }));
-function executeHy2ipScript(logMessages, callback) {
-    const downloadCommand = "curl -Ls https://raw.githubusercontent.com/ryty1/serv00-save-me/refs/heads/main/single/hy2ip.sh -o /tmp/hy2ip.sh";
-    exec(downloadCommand, (error, stdout, stderr) => {
-        if (error) {
-            return callback(error, "", stderr);
+app.post("/login", (req, res) => {
+    const { password } = req.body;
+    if (!fs.existsSync(PASSWORD_FILE)) {
+        return res.status(400).send("密码文件不存在，请先设置密码");
+    }
+
+    const savedPassword = JSON.parse(fs.readFileSync(PASSWORD_FILE, "utf-8")).password;
+    if (password === savedPassword) {
+        req.session.authenticated = true;
+        res.redirect("/");
+    } else {
+        res.status(401).send("密码错误");
+    }
+});
+
+app.get("/logout", (req, res) => {
+    try {
+        if (fs.existsSync(SESSION_DIR)) {
+            fs.readdirSync(SESSION_DIR).forEach(file => {
+                const filePath = path.join(SESSION_DIR, file);
+                if (file.endsWith(".json")) { // 只删除 JSON 文件
+                    fs.unlinkSync(filePath);
+                    console.log("已删除 session 文件:", filePath);
+                }
+            });
         }
-        const executeCommand = "bash /tmp/hy2ip.sh";
-        exec(executeCommand, (error, stdout, stderr) => {
-            exec("rm -f /tmp/hy2ip.sh", (err) => {
-                if (err) {
-                    console.error(`❌ 删除临时文件失败: ${err.message}`);
-                } else {
-                    console.log("✅ 临时文件已删除");
+    } catch (error) {
+        console.error("删除 session JSON 文件失败:", error);
+    }
+
+    res.redirect("/login"); 
+});
+
+const protectedRoutes = ["/", "/ota", "/accounts", "/nodes"];
+protectedRoutes.forEach(route => {
+    app.get(route, checkPassword, isAuthenticated, (req, res) => {
+        res.sendFile(path.join(__dirname, "protected", route === "/" ? "index.html" : `${route.slice(1)}.html`));
+    });
+});
+
+const MAIN_SERVER_USER = process.env.USER || process.env.USERNAME || "default_user"; 
+async function getAccounts(excludeMainUser = true) {
+    if (!fs.existsSync(ACCOUNTS_FILE)) return {};
+    let accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
+    if (excludeMainUser) {
+        delete accounts[MAIN_SERVER_USER];  
+    }
+    return accounts;
+}
+
+io.on("connection", (socket) => {
+    console.log("Client connected");
+    socket.on("startNodesSummary", () => {
+        getNodesSummary(socket);
+    });
+
+    socket.on("loadAccounts", async () => {
+        const accounts = await getAccounts(true);
+        socket.emit("accountsList", accounts);
+    });
+
+    socket.on("saveAccount", async (accountData) => {
+        const accounts = await getAccounts(false);
+        accounts[accountData.user] = { 
+            user: accountData.user, 
+            season: accountData.season || ""  
+        };
+        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+        socket.emit("accountsList", await getAccounts(true));
+    });
+
+    socket.on("deleteAccount", async (user) => {
+        const accounts = await getAccounts(false);
+        delete accounts[user];
+        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+        socket.emit("accountsList", await getAccounts(true));
+    });
+
+    socket.on("updateSeason", async (data) => {
+        const accounts = await getAccounts(false);
+        if (accounts[data.user]) {
+            accounts[data.user].season = data.season; 
+            fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+        }
+        socket.emit("accountsList", await getAccounts(true));
+    });
+});
+function filterNodes(nodes) {
+    return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
+}
+
+async function getNodesSummary(socket) {
+    const accounts = await getAccounts(true);
+    if (!accounts || Object.keys(accounts).length === 0) {
+        console.log("⚠️ 未找到账号数据！");
+        socket.emit("nodesSummary", { successfulNodes: { hysteria2: [], vmess: [] }, failedAccounts: [] });
+        return;
+    }
+
+    const users = Object.keys(accounts); 
+    let successfulNodes = { hysteria2: [], vmess: [] }; // hytseria2 放前，vmess 放后
+    let failedAccounts = [];
+
+    for (let i = 0; i < users.length; i++) {
+        const userKey = users[i];  
+        const user = accounts[userKey]?.user || userKey; 
+
+        const nodeUrl = `https://${user}.serv00.net/node`;
+        try {
+            console.log(`请求节点数据: ${nodeUrl}`);
+            const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
+            const nodeData = nodeResponse.data;
+
+            // 获取 vmess 和 hysteria2 节点链接
+            const nodeLinks = filterNodes([
+                ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []),
+                ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])
+            ]);
+
+            // 按协议分类节点
+            nodeLinks.forEach(link => {
+                if (link.startsWith("hysteria2://")) {
+                    successfulNodes.hysteria2.push(link);
+                } else if (link.startsWith("vmess://")) {
+                    successfulNodes.vmess.push(link);
                 }
             });
 
-            callback(error, stdout, stderr);
-        });
+            if (nodeLinks.length === 0) {
+                console.log(`账号 ${user} 连接成功但无有效节点`);
+                failedAccounts.push(user);
+            }
+        } catch (error) {
+            console.log(`账号 ${user} 获取节点失败: ${error.message}`);
+            failedAccounts.push(user);
+        }
+    }
+
+    // 确保成功节点按账号顺序排列
+    successfulNodes.hysteria2 = successfulNodes.hysteria2.sort((a, b) => {
+        const userA = a.split('@')[0].split('//')[1];
+        const userB = b.split('@')[0].split('//')[1];
+        return users.indexOf(userA) - users.indexOf(userB);
+    });
+
+    successfulNodes.vmess = successfulNodes.vmess.sort((a, b) => {
+        const userA = a.split('@')[0].split('//')[1];
+        const userB = b.split('@')[0].split('//')[1];
+        return users.indexOf(userA) - users.indexOf(userB);
+    });
+
+    console.log("成功的 hysteria2 节点:", successfulNodes.hysteria2);
+    console.log("成功的 vmess 节点:", successfulNodes.vmess);
+    console.log("失败的账号:", failedAccounts);
+
+    socket.emit("nodesSummary", { successfulNodes, failedAccounts });
+}
+
+let cronJob = null; 
+
+function getNotificationSettings() {
+    if (!fs.existsSync(SETTINGS_FILE)) return {};
+    return JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
+}
+
+function saveNotificationSettings(settings) {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+}
+
+function getCronExpression(scheduleType, timeValue) {
+    if (scheduleType === "interval") {
+        const minutes = parseInt(timeValue, 10);
+        if (isNaN(minutes) || minutes <= 0) return null;
+        return `*/${minutes} * * * *`;
+    } else if (scheduleType === "daily") {
+        const [hour, minute] = timeValue.split(":").map(num => parseInt(num, 10));
+        if (isNaN(hour) || isNaN(minute)) return null;
+        return `${minute} ${hour} * * *`;
+    } else if (scheduleType === "weekly") {
+        const [day, time] = timeValue.split("-");
+        const [hour, minute] = time.split(":").map(num => parseInt(num, 10));
+        const weekDays = { "周日": 0, "周一": 1, "周二": 2, "周三": 3, "周四": 4, "周五": 5, "周六": 6 };
+        if (!weekDays.hasOwnProperty(day) || isNaN(hour) || isNaN(minute)) return null;
+        return `${minute} ${hour} * * ${weekDays[day]}`;
+    }
+    return null;
+}
+
+function resetCronJob() {
+    if (cronJob) cronJob.stop(); 
+    const settings = getNotificationSettings();
+    if (!settings || !settings.scheduleType || !settings.timeValue) return;
+
+    const cronExpression = getCronExpression(settings.scheduleType, settings.timeValue);
+    if (!cronExpression) return console.error("无效的 cron 表达式");
+
+    cronJob = cron.schedule(cronExpression, () => {
+        console.log("⏰ 运行账号检测任务...");
+        sendCheckResultsToTG();
     });
 }
 
-app.get("/hy2ip", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "hy2ip.html"));
+app.post("/setTelegramSettings", (req, res) => {
+    const { telegramToken, telegramChatId } = req.body;
+    if (!telegramToken || !telegramChatId) {
+        return res.status(400).json({ message: "Telegram 配置不完整" });
+    }
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ telegramToken, telegramChatId }, null, 2));
+    res.json({ message: "Telegram 设置已更新" });
+});
+app.get("/getTelegramSettings", (req, res) => {
+    if (!fs.existsSync(SETTINGS_FILE)) {
+        return res.json({ telegramToken: "", telegramChatId: "" });
+    }
+    const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
+    res.json(settings);
 });
 
-app.post("/hy2ip/execute", (req, res) => {
-    const confirmation = req.body.confirmation?.trim();
-
-    if (confirmation !== "更新") {
-        return res.json({ success: false, errorMessage: "输入错误！请返回并输入“更新”以确认。" });
-    }
-
+async function sendCheckResultsToTG() {
     try {
-        let logMessages = [];
+        const settings = getNotificationSettings();
+        if (!settings.telegramToken || !settings.telegramChatId) {
+            console.log("❌ Telegram 设置不完整，无法发送通知");
+            return;
+        }
 
-        executeHy2ipScript(logMessages, (error, stdout, stderr) => {
-            let updatedIp = "";
+        const bot = new TelegramBot(settings.telegramToken, { polling: false });
+        const response = await axios.get(`https://${process.env.USER}.serv00.net/checkAccounts`);
+        const data = response.data.results;
 
-            if (stdout) {
-                let outputMessages = stdout.split("\n");
-                outputMessages.forEach(line => {
-                    if (line.includes("SingBox 配置文件成功更新IP为")) {
-                        updatedIp = line.split("SingBox 配置文件成功更新IP为")[1].trim();
-                    }
-                    if (line.includes("Config 配置文件成功更新IP为")) {
-                        updatedIp = line.split("Config 配置文件成功更新IP为")[1].trim();
-                    }
-                });
-                updatedIp = updatedIp.replace(/\x1B\[[0-9;]*m/g, "");
+        if (!data || Object.keys(data).length === 0) {
+            await bot.sendMessage(settings.telegramChatId, "📋 账号检测结果：没有账号需要检测", { parse_mode: "MarkdownV2" });
+            return;
+        }
 
-                if (updatedIp && updatedIp !== "未找到可用的 IP！") {
-                    logMessages.push("命令执行成功");
-                    logMessages.push(`SingBox 配置文件成功更新IP为 ${updatedIp}`);
-                    logMessages.push(`Config 配置文件成功更新IP为 ${updatedIp}`);
-                    logMessages.push("sing-box 已重启");
-                    res.json({ success: true, ip: updatedIp, logs: logMessages });
-                } else {
-                    logMessages.push("命令执行成功");
-                    logMessages.push("没有找到有效 IP");
-                    res.json({ success: false, errorMessage: "没有找到有效的 IP", logs: logMessages });
+        let results = [];
+        let maxUserLength = 0;
+        let maxSeasonLength = 0;
+
+        const users = Object.keys(data);  
+
+        users.forEach(user => {
+            maxUserLength = Math.max(maxUserLength, user.length);
+            maxSeasonLength = Math.max(maxSeasonLength, (data[user]?.season || "").length);
+        });
+
+        users.forEach((user, index) => {
+            const paddedUser = user.padEnd(maxUserLength, " ");
+            const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 1, " ");
+            const status = data[user]?.status || "未知状态";
+            results.push(`${index + 1}. ${paddedUser} : ${season}- ${status}`);
+        });
+
+        const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
+        let message = `📢 账号检测结果：\n\`\`\`\n${results.join("\n")}\n\`\`\`\n⏰ 北京时间：${beijingTime}`;
+        await bot.sendMessage(settings.telegramChatId, message, { parse_mode: "MarkdownV2" });
+
+    } catch (error) {
+        console.error("❌ 发送 Telegram 失败:", error);
+    }
+}
+
+app.get("/", isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, "protected", "index.html"));
+});
+app.get("/getMainUser", isAuthenticated, (req, res) => {
+    res.json({ mainUser: MAIN_SERVER_USER });
+});
+app.get("/accounts", isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, "protected", "accounts.html"));
+});
+app.get("/nodes", isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, "protected", "nodes.html"));
+});
+app.get("/info", (req, res) => {
+    const user = req.query.user;
+    if (!user) return res.status(400).send("用户未指定");
+    res.redirect(`https://${user}.serv00.net/info`);
+});
+
+app.get("/checkAccountsPage", isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
+});
+
+app.get("/checkAccounts", async (req, res) => {
+    try {
+        const accounts = await getAccounts(); 
+        const users = Object.keys(accounts); 
+
+        if (users.length === 0) {
+            return res.json({ status: "success", results: {} });
+        }
+
+        let results = {};
+        const promises = users.map(async (username) => {
+            try {
+                const apiUrl = `https://check.594880.xyz/api/accunts?user=${username}`;
+                const response = await axios.get(apiUrl);
+                const data = response.data;
+
+                let status = "未知状态";
+                if (data.message) {
+                    const parts = data.message.split("：");
+                    status = parts.length > 1 ? parts.pop() : data.message;
                 }
+
+                results[username] = {
+                    status: status,
+                    season: accounts[username]?.season || "--"
+                };
+            } catch (error) {
+                console.error(`账号 ${username} 检测失败:`, error.message);
+                results[username] = {
+                    status: "检测失败",
+                    season: accounts[username]?.season || "--"
+                };
             }
         });
+
+        await Promise.all(promises);
+
+        let orderedResults = {};
+        users.forEach(user => {
+            orderedResults[user] = results[user];
+        });
+
+        res.json({ status: "success", results: orderedResults });
+
     } catch (error) {
-        let logMessages = ["命令执行成功", "没有找到有效 IP"];
-        res.json({ success: false, errorMessage: "命令执行失败", logs: logMessages });
+        console.error("批量账号检测错误:", error);
+        res.status(500).json({ status: "error", message: "检测失败，请稍后再试" });
     }
 });
 
-app.get("/api/log", (req, res) => {
-    const command = "ps aux"; 
-
-    exec(command, (err, stdout, stderr) => {
-        if (err) {
-            return res.json({
-                error: true,
-                message: `执行错误: ${err.message}`,
-                logs: "暂无日志",
-                processOutput: ""
-            });
-        }
-
-        const processOutput = stdout.trim(); 
-        const latestLog = logs[logs.length - 1] || "暂无日志";
-        
-        res.json({
-            error: false,
-            message: "成功获取数据",
-            logs: latestLog,
-            processOutput: processOutput
-        });
-    });
+app.get("/getNotificationSettings", (req, res) => {
+    res.json(getNotificationSettings());
 });
 
-app.get("/log", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "log.html"));
+app.post("/setNotificationSettings", (req, res) => {
+    const { telegramToken, telegramChatId, scheduleType, timeValue } = req.body;
+    
+    if (!telegramToken || !telegramChatId || !scheduleType || !timeValue) {
+        return res.status(400).json({ message: "所有字段都是必填项" });
+    }
+
+    if (!getCronExpression(scheduleType, timeValue)) {
+        return res.status(400).json({ message: "时间格式不正确，请检查输入" });
+    }
+
+    const settings = { telegramToken, telegramChatId, scheduleType, timeValue };
+    saveNotificationSettings(settings);
+
+    resetCronJob();
+
+    res.json({ message: "✅ 设置已保存并生效" });
 });
 
-app.get('/ota/update', (req, res) => {
-    const downloadScriptCommand = 'curl -Ls https://raw.githubusercontent.com/ryty1/serv00-save-me/refs/heads/main/single/ota.sh -o /tmp/ota.sh';
+resetCronJob();
+
+app.get("/notificationSettings", isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "notification_settings.html"));
+});
+
+app.get('/ota/update', isAuthenticated, (req, res) => {
+    const downloadScriptCommand = 'curl -Ls https://raw.githubusercontent.com/ryty1/My-test/refs/heads/main/server/ota.sh -o /tmp/ota.sh';
 
     exec(downloadScriptCommand, (error, stdout, stderr) => {
         if (error) {
@@ -197,339 +541,10 @@ app.get('/ota/update', (req, res) => {
     });
 });
 
-app.get('/ota', (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "ota.html"));
+app.get('/ota', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, "protected", "ota.html"));
 });
 
-app.get("/node", (req, res) => {
-    const filePath = path.join(process.env.HOME, "serv00-play/singbox/list");
-    fs.readFile(filePath, "utf8", (err, data) => {
-        if (err) {
-            res.type("html").send(`<pre>无法读取文件: ${err.message}</pre>`);
-            return;
-        }
-
-        const cleanedData = data
-            .replace(/(vmess:\/\/|hysteria2:\/\/|proxyip:\/\/|https:\/\/)/g, '\n$1')
-            .trim();
-
-        const vmessPattern = /vmess:\/\/[^\n]+/g;
-        const hysteriaPattern = /hysteria2:\/\/[^\n]+/g;
-        const httpsPattern = /https:\/\/[^\n]+/g;
-        const proxyipPattern = /proxyip:\/\/[^\n]+/g;
-        const vmessConfigs = cleanedData.match(vmessPattern) || [];
-        const hysteriaConfigs = cleanedData.match(hysteriaPattern) || [];
-        const httpsConfigs = cleanedData.match(httpsPattern) || [];
-        const proxyipConfigs = cleanedData.match(proxyipPattern) || [];
-        const allConfigs = [...vmessConfigs, ...hysteriaConfigs, ...httpsConfigs, ...proxyipConfigs];
-
-        let htmlContent = `
-            <html>
-            <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-                <title>节点信息</title>
-                <style>
-                    body {
-                        margin: 0;
-                        padding: 0;
-                        font-family: Arial, sans-serif;
-                        background-color: #f4f4f4;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        min-height: 100vh;
-                        padding: 10px;
-                    }
-                    .content-container {
-                        width: 90%;
-                        max-width: 600px;
-                        background-color: #fff;
-                        padding: 15px;
-                        border-radius: 8px;
-                        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-                        text-align: left;
-                        box-sizing: border-box;
-                    }
-                    h3 {
-                        font-size: 20px;
-                        margin-bottom: 10px;
-                        text-align: center;
-                    }
-                    .config-box {
-                        max-height: 65vh;
-                        overflow-y: auto;
-                        border: 1px solid #ccc;
-                        padding: 8px;
-                        background-color: #f9f9f9;
-                        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
-                        border-radius: 5px;
-                        white-space: pre-wrap;
-                        word-break: break-word;
-                        font-size: 14px;
-                    }
-                    .copy-btn {
-                        display: block;
-                        width: 100%;
-                        padding: 12px;
-                        font-size: 16px;
-                        background-color: #007bff;
-                        color: white;
-                        border: none;
-                        border-radius: 5px;
-                        cursor: pointer;
-                        text-align: center;
-                        margin-top: 15px;
-                        transition: background-color 0.3s;
-                    }
-                    .copy-btn:hover {
-                        background-color: #0056b3;
-                    }
-                    @media (max-width: 600px) {
-                        .content-container {
-                            padding: 12px;
-                        }
-                        .config-box {
-                            font-size: 13px;
-                        }
-                        .copy-btn {
-                            font-size: 15px;
-                            padding: 10px;
-                        }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="content-container">
-                    <h3>节点信息</h3>
-                    <div class="config-box" id="configBox">
-        `;
-
-        allConfigs.forEach((config) => {
-            htmlContent += `<div>${config.trim()}</div>`; // 去掉首尾空格
-        });
-
-        htmlContent += `
-                    </div>
-                    <button class="copy-btn" onclick="copyToClipboard()">一键复制</button>
-                </div>
-
-                <script>
-                    function copyToClipboard() {
-                        const element = document.getElementById("configBox");
-                        let text = Array.from(element.children)
-                            .map(child => child.textContent.trim())
-                            .join("\\n");
-
-                        navigator.clipboard.writeText(text).then(() => {
-                            alert("已复制到剪贴板！");
-                        }).catch(() => {
-                            alert("复制失败，请手动复制！");
-                        });
-                    }
-                </script>
-            </body>
-            </html>
-        `;
-        res.type("html").send(htmlContent);
-    });
-});
-
-function getConfigFile() {
-    console.log('检查配置文件是否存在:', configFilePath);
-    
-    try {
-        if (fs.existsSync(configFilePath)) {
-            console.log('配置文件已存在，读取文件内容...');
-            return JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
-        } else {
-            console.log('配置文件不存在，创建默认配置并写入...');
-            const defaultConfig = {
-                vmessname: "Argo-vmess",
-                hy2name: "Hy2",
-                HIDE_USERNAME: false 
-            };
-            fs.writeFileSync(configFilePath, JSON.stringify(defaultConfig));
-            console.log('配置文件已创建:', configFilePath);
-            
-            writeDefaultConfigToScript(defaultConfig);
-            return defaultConfig;
-        }
-    } catch (error) {
-        console.error('读取配置文件时出错:', error);
-        return null;
-    }
-}
-
-function writeDefaultConfigToScript(config) {
-    console.log('写入默认配置到脚本:', scriptPath);
-    let scriptContent;
-
-    try {
-        scriptContent = fs.readFileSync(scriptPath, 'utf8');
-    } catch (error) {
-        console.error('读取脚本文件时出错:', error);
-        return;
-    }
-
-    const exportListFuncPattern = /export_list\(\)\s*{\n([\s\S]*?)}/m;
-    const match = scriptContent.match(exportListFuncPattern);
-
-    if (match) {
-        let exportListContent = match[1];
-
-        if (!exportListContent.includes('custom_vmess')) {
-            exportListContent = `  custom_vmess="${config.vmessname}"\n` + exportListContent;
-        }
-        if (!exportListContent.includes('custom_hy2')) {
-            exportListContent = `  custom_hy2="${config.hy2name}"\n` + exportListContent;
-        }
-
-        scriptContent = scriptContent.replace(exportListFuncPattern, `export_list() {\n${exportListContent}}`);
-    } else {
-        console.log("没有找到 export_list() 函数，无法插入变量定义。");
-    }
-
-    scriptContent = scriptContent.replaceAll(/vmessname=".*?"/g, `vmessname="\$custom_vmess-\$host-\$user"`);
-    scriptContent = scriptContent.replaceAll(/hy2name=".*?"/g, `hy2name="\$custom_hy2-\$host-\$user"`);
-
-    if (config.HIDE_USERNAME) {
-        scriptContent = scriptContent.replaceAll(/user=".*?"/g, `user="\$(whoami | tail -c 2 | head -c 1)"`);
-    } else {
-        scriptContent = scriptContent.replaceAll(/user=".*?"/g, `user="\$(whoami)"`);
-    }
-
-    scriptContent = scriptContent.replace(/\n{2,}/g, '\n').trim();
-
-    try {
-        fs.writeFileSync(scriptPath, scriptContent);
-        console.log('脚本已更新:', scriptPath);
-    } catch (error) {
-        console.error('写入脚本文件时出错:', error);
-    }
-}
-
-async function updateConfigFile(config) {
-    console.log('更新配置文件:', configFilePath);
-    try {
-        fs.writeFileSync(configFilePath, JSON.stringify(config));
-        console.log('配置文件更新成功');
-    } catch (error) {
-        console.error('更新配置文件时出错:', error);
-        return;
-    }
-
-    console.log('更新脚本内容:', scriptPath);
-    let scriptContent;
-
-    try {
-        scriptContent = fs.readFileSync(scriptPath, 'utf8');
-    } catch (error) {
-        console.error('读取脚本文件时出错:', error);
-        return;
-    }
-
-    scriptContent = scriptContent.replaceAll(/custom_vmess=".*?"/g, `custom_vmess="${config.vmessname}"`);
-    scriptContent = scriptContent.replaceAll(/custom_hy2=".*?"/g, `custom_hy2="${config.hy2name}"`);
-    scriptContent = scriptContent.replaceAll(/vmessname=".*?"/g, `vmessname="\$custom_vmess-\$host-\$user"`);
-    scriptContent = scriptContent.replaceAll(/hy2name=".*?"/g, `hy2name="\$custom_hy2-\$host-\$user"`);
-
-    if (config.HIDE_USERNAME) {
-        scriptContent = scriptContent.replaceAll(/user=".*?"/g, `user="\$(whoami | tail -c 2 | head -c 1)"`);
-    } else {
-        scriptContent = scriptContent.replaceAll(/user=".*?"/g, `user="\$(whoami)"`);
-    }
-
-    scriptContent = scriptContent.replace(/\n{2,}/g, '\n').trim();
-
-    try {
-        fs.writeFileSync(scriptPath, scriptContent);
-        console.log('脚本更新成功:', scriptPath);
-    } catch (error) {
-        console.error('写入脚本文件时出错:', error);
-        return;
-    }
-    stopShellCommand();
-    setTimeout(() => {
-        runShellCommand();
-    }, 3000); 
-}
-
-app.get('/api/get-config', (req, res) => {
-    const config = getConfigFile();
-    res.json(config);
-});
-
-app.post('/api/update-config', (req, res) => {
-    const { vmessname, hy2name, HIDE_USERNAME } = req.body;
-    const newConfig = { vmessname, hy2name, HIDE_USERNAME };
-
-    updateConfigFile(newConfig);
-
-    res.json({ success: true });
-});
-
-app.get('/newset', (req, res) => {
-    res.sendFile(path.join(__dirname, "public", 'newset.html'));
-});
-
-app.get('/getGoodDomain', (req, res) => {
-  fs.readFile(SINGBOX_CONFIG_PATH, 'utf8', (err, data) => {
-    if (err) {
-      return res.status(500).json({ error: '读取配置文件失败' });
-    }
-
-    try {
-      const config = JSON.parse(data);
-      res.json({ GOOD_DOMAIN: config.GOOD_DOMAIN });
-    } catch (parseError) {
-      return res.status(500).json({ error: '解析 JSON 失败' });
-    }
-  });
-});
-
-app.post('/updateGoodDomain', async (req, res) => {
-  const { GOOD_DOMAIN } = req.body;
-
-  if (!GOOD_DOMAIN) {
-    return res.status(400).json({ success: false, error: '缺少 GOOD_DOMAIN 参数' });
-  }
-
-  try {
-    const data = fs.readFileSync(SINGBOX_CONFIG_PATH, 'utf8');
-    const config = JSON.parse(data);
-
-    config.GOOD_DOMAIN = GOOD_DOMAIN;
-
-    fs.writeFileSync(SINGBOX_CONFIG_PATH, JSON.stringify(config, null, 2), 'utf8');
-    console.log(`优选域名 已更新为: ${GOOD_DOMAIN}`);
-
-    stopShellCommand();
-    setTimeout(() => {
-        runShellCommand();
-    }, 3000); 
-
-    res.json({ success: true, message: `优选域名 更新为: ${GOOD_DOMAIN} 并已重启singbox` });
-
-  } catch (err) {
-    console.error('更新失败:', err);
-    res.status(500).json({ success: false, error: '更新失败，请稍后再试' });
-  }
-});
-
-app.get("/goodomains", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "goodomains.html"));
-});
-
-app.use((req, res, next) => {
-    const validPaths = ["/info", "/hy2ip", "/node", "/log", "/newset", "/goodomains", "/ota"];
-    if (validPaths.includes(req.path)) {
-        return next();
-    }
-    res.status(404).send("页面未找到");
-});
-app.listen(3000, () => {
-    const timestamp = new Date().toLocaleString();
-    const startMsg = `${timestamp} 服务器已启动，监听端口 3000`;
-    logMessage(startMsg);
-    console.log(startMsg);
+server.listen(PORT, () => {
+    console.log(`🚀 Server is running on port ${PORT}`);
 });
