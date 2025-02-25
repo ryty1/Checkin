@@ -41,6 +41,10 @@
         .btn-primary:hover {
             background-color: #0056b3;
         }
+        .btn-loading {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
         .results-box {
             margin-top: 15px;
             padding: 15px;
@@ -66,36 +70,61 @@
         .status {
             text-align: left;
         }
+        .status.normal {
+            color: green;  
+        }
+        .status.unregistered {
+            color: blue;   
+        }
+        .status.error {
+            color: red;    
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>账号检测</h1>
-        <button class="btn btn-primary" onclick="checkAccounts()">开始检测</button>
+        <button id="checkBtn" class="btn btn-primary" onclick="checkAccounts()">开始检测</button>
         
         <div id="results" class="results-box"></div>
     </div>
 
     <script>
         function checkAccounts() {
+            const checkBtn = document.getElementById("checkBtn");
+            checkBtn.classList.add("btn-loading");
+            checkBtn.innerText = "正在检测...";
+
             fetch('/checkAccounts')
                 .then(response => response.json())
                 .then(data => {
+                    checkBtn.classList.remove("btn-loading");
+                    checkBtn.innerText = "开始检测";
+                    
                     if (data.status === "success") {
                         const results = data.results;
                         let resultHTML = '<table>';
                         resultHTML += '<tr><th>#</th><th>账号</th><th>赛季</th><th>状态</th></tr>';
 
-                        // 按账号配置顺序显示账号
                         const users = Object.keys(results);
                         users.forEach((user, index) => {
-                            const season = results[user]?.season || "--";  // 取 season
-                            const status = results[user]?.status || "未知状态"; // 取 status
+                            const season = results[user]?.season || "--";  
+                            const status = results[user]?.status || "未知状态"; 
+                            let statusClass = "normal"; 
+                            
+                            if (status === "账号未注册") {
+                                statusClass = "unregistered"; 
+                            }
+                        
+                            else if (status === "账号已封禁" || status === "检测失败" || status === "未知状态" || status.startsWith("服务器") || status.startsWith("网关")) {
+                                statusClass = "error"; 
+                            }
+
                             resultHTML += `<tr>
                                 <td>${index + 1}</td>
                                 <td>${user}</td>
                                 <td>${season}</td>
-                                <td class="status">${status}</td>
+                                <td class="status ${statusClass}">${status}</td>
                             </tr>`;
                         });
 
@@ -108,6 +137,9 @@
                 .catch(error => {
                     console.error('检测失败:', error);
                     alert('检测失败，请稍后再试');
+                
+                    checkBtn.classList.remove("btn-loading");
+                    checkBtn.innerText = "开始检测";
                 });
         }
     </script>
