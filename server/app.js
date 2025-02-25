@@ -22,7 +22,6 @@ const SETTINGS_FILE = path.join(__dirname, "settings.json");
 const PASSWORD_FILE = path.join(__dirname, "password.json");
 const SESSION_DIR = path.join(__dirname, "sessions"); 
 const SESSION_FILE = path.join(__dirname, "session_secret.json");
-const otaScriptPath = path.join(__dirname, 'ota.sh');
 
 app.use(express.json()); 
 app.use(express.static(path.join(__dirname, "public")));
@@ -94,7 +93,7 @@ app.post("/setPassword", (req, res) => {
     res.redirect("/login");
 });
 
-async function sendErrorToTG(errorMessage) {
+async function sendErrorToTG(user, status, message) {
     try {
         const settings = getNotificationSettings();
         if (!settings.telegramToken || !settings.telegramChatId) {
@@ -103,7 +102,31 @@ async function sendErrorToTG(errorMessage) {
         }
 
         const bot = new TelegramBot(settings.telegramToken, { polling: false });
-        await bot.sendMessage(settings.telegramChatId, `❌ 访问失败通知: ${errorMessage}`, { parse_mode: "MarkdownV2" });
+
+        const now = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
+
+        // 根据状态码设置具体提示信息
+        let statusMessage;
+        if (status === 403) {
+            statusMessage = "账号已封禁";
+        } else if (status === 404) {
+            statusMessage = "保活未安装";
+        } else if (status >= 500 && status <= 599) {
+            statusMessage = "服务器错误";
+        } else {
+            statusMessage = `🔄 访问异常（状态码: ${status}）`;
+        }
+
+        const formattedMessage = `
+⚠️ *手动保活失败通知*
+——————————————————
+👤 账号: \`${user}\`
+📶 状态: *${statusMessage}*
+📝 详情: *${status}*：\`${message}\`
+🕒 时间: \`${now}\`
+——————————————————`;
+
+        await bot.sendMessage(settings.telegramChatId, formattedMessage, { parse_mode: "Markdown" });
     } catch (err) {
         console.error("❌ 发送 Telegram 通知失败:", err);
     }
@@ -117,24 +140,31 @@ app.get("/login", async (req, res) => {
         const requests = users.map(user =>
             axios.get(`https://${user}.serv00.net/info`)
                 .then(response => {
-                    if (response.status = 200) {
-                        console.log(`${user} 保活成功，状态码: ${response.status}`);
+                    if (response.status === 200) {
+                        console.log(`✅ ${user} 保活成功，状态码: ${response.status}`);
                     } else {
-                        console.log(`${user} 保活失败，状态码: ${response.status}`);
-                        sendErrorToTG(`${user} 保活失败，状态码: ${response.status}`);
+                        console.log(`❌ ${user} 保活失败，状态码: ${response.status}`);
+                        sendErrorToTG(user, response.status, "响应状态异常");
                     }
                 })
                 .catch(err => {
-                    console.log(`${user} 保活失败:`, err.message);
-                    sendErrorToTG(`${user} 保活失败: ${err.message}`);
+                    if (err.response) {
+                        // 服务器返回了一个 HTTP 错误
+                        console.log(`❌ ${user} 保活失败，状态码: ${err.response.status}`);
+                        sendErrorToTG(user, err.response.status, err.response.statusText);
+                    } else {
+                        // 其他网络错误
+                        console.log(`❌ ${user} 保活失败: ${err.message}`);
+                        sendErrorToTG(user, "请求失败", err.message);
+                    }
                 })
         );
 
         await Promise.all(requests);
-        console.log("所有账号的进程保活已访问完成");
+        console.log("✅ 所有账号的进程保活已访问完成");
     } catch (error) {
-        console.error("访问 /info 失败:", error);
-        sendErrorToTG(`保活失败: ${error.message}`);
+        console.error("❌ 访问 /info 失败:", error);
+        sendErrorToTG("系统", "全局错误", error.message);
     }
 
     res.sendFile(path.join(__dirname, "protected", "login.html"));
@@ -424,9 +454,20 @@ app.get("/checkAccountsPage", isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "public", "check_accounts.html"));
 });
 
+const statusMessages = {
+    200: "账号正常",
+    301: "账号未注册",
+    403: "账号已封禁",
+    404: "账号正常",
+    500: "服务器错误",
+    502: "网关错误",
+    503: "VPS不可用",
+    504: "网关超时", 
+};
+
 app.get("/checkAccounts", async (req, res) => {
     try {
-        const accounts = await getAccounts(); 
+        const accounts = await getAccounts();
         const users = Object.keys(accounts); 
 
         if (users.length === 0) {
@@ -435,27 +476,32 @@ app.get("/checkAccounts", async (req, res) => {
 
         let results = {};
         const promises = users.map(async (username) => {
+            const apiUrl = `https://${username}.serv00.net`;
+
             try {
-                const apiUrl = `https://check.594880.xyz/api/accunts?user=${username}`;
-                const response = await axios.get(apiUrl);
-                const data = response.data;
-
-                let status = "未知状态";
-                if (data.message) {
-                    const parts = data.message.split("：");
-                    status = parts.length > 1 ? parts.pop() : data.message;
-                }
-
+                const response = await axios.get(apiUrl, { maxRedirects: 0 });
+                const status = response.status;
+                const message = statusMessages[status] || "未知状态"; 
                 results[username] = {
-                    status: status,
-                    season: accounts[username]?.season || "--"
+                    status: message,
+                    season: accounts[username]?.season || "--" 
                 };
             } catch (error) {
-                console.error(`账号 ${username} 检测失败:`, error.message);
-                results[username] = {
-                    status: "检测失败",
-                    season: accounts[username]?.season || "--"
-                };
+                
+                const status = error.response ? error.response.status : "检测失败";
+                
+                if (error.response && error.response.status === 301) {
+                    results[username] = {
+                        status: "账号未注册", 
+                        season: accounts[username]?.season || "--"
+                    };
+                } else {
+        
+                    results[username] = {
+                        status: statusMessages[status] || "未知状态",
+                        season: accounts[username]?.season || "--" // 传递账户的 season 或者默认值
+                    };
+                }
             }
         });
 
