@@ -22,6 +22,7 @@ const SETTINGS_FILE = path.join(__dirname, "settings.json");
 const PASSWORD_FILE = path.join(__dirname, "password.json");
 const SESSION_DIR = path.join(__dirname, "sessions"); 
 const SESSION_FILE = path.join(__dirname, "session_secret.json");
+const otaScriptPath = path.join(__dirname, 'ota.sh');
 
 app.use(express.json()); 
 app.use(express.static(path.join(__dirname, "public")));
