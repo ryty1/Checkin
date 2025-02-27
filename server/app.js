@@ -458,6 +458,7 @@ app.get("/checkAccountsPage", isAuthenticated, (req, res) => {
 const statusMessages = {
     200: "账号正常",
     301: "账号未注册",
+    302: "账号正常",
     403: "账号已封禁",
     404: "账号正常",
     500: "服务器错误",
