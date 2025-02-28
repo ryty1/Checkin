@@ -27,14 +27,15 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 120px; /* 固定宽度 */
-            height: 40px; /* 统一高度 */
+            width: 140px; /* 按钮宽度 */
+            height: 42px; /* 按钮高度 */
             font-size: 16px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: 0.3s;
             position: relative;
+            margin: 10px; /* 增加间距 */
         }
         .btn-primary {
             background-color: #007BFF;
@@ -57,7 +58,7 @@
         .node-box {
             border: 1px solid #ccc;
             padding: 5px;
-            margin-top: 5px;
+            margin-top: 10px;
             border-radius: 5px;
             background-color: #f9f9f9;
             text-align: left;
@@ -76,28 +77,26 @@
             border: 1px solid #DC3545;
             text-align: left;
         }
-
-        /* 保持加载动画和文本占位一致 */
+        /* 让加载动画和文本保持对齐 */
         .btn-content {
-            display: inline-flex;
+            display: flex;
             align-items: center;
+            justify-content: center;
+            width: 100%;
         }
         .btn span {
-            display: inline-block;
             height: 16px;
             line-height: 16px;
-            vertical-align: middle;
         }
         .loader {
-            display: inline-block;
             width: 16px;
             height: 16px;
             border: 2px solid white;
             border-radius: 50%;
             border-top-color: transparent;
             animation: spin 0.8s linear infinite;
-            visibility: hidden; /* 默认隐藏但占位 */
-            margin-left: 5px;
+            margin-left: 8px;
+            visibility: hidden; /* 默认隐藏 */
         }
         @keyframes spin {
             to {
@@ -110,13 +109,15 @@
     <div class="container">
         <h1>科学采集</h1>
 
-        <button id="startBtn" class="btn btn-primary" onclick="startNodesSummary()">
-            <span class="btn-content">
-                <span id="startText">开始采集</span>
-                <span id="startLoader" class="loader"></span>
-            </span>
-        </button>
-        <button class="btn btn-danger" onclick="copyNodes()">提取资源</button>
+        <div>
+            <button id="startBtn" class="btn btn-primary" onclick="startNodesSummary()">
+                <span class="btn-content">
+                    <span id="startText">开始采集</span>
+                    <span id="startLoader" class="loader"></span>
+                </span>
+            </button>
+            <button class="btn btn-danger" onclick="copyNodes()">提取资源</button>
+        </div>
 
         <div id="allNodes" class="node-box"></div>
 
@@ -132,7 +133,7 @@
         const startLoader = document.getElementById("startLoader");
 
         function startNodesSummary() {
-            startText.style.visibility = "hidden"; // 隐藏文本但保持占位
+            startText.style.visibility = "hidden"; // 隐藏文字但保持占位
             startLoader.style.visibility = "visible"; // 显示加载圈
             startBtn.classList.add("btn-disabled");
             startBtn.disabled = true;
