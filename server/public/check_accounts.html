@@ -79,6 +79,21 @@
         .status.error {
             color: red;    
         }
+        /* 动态加载的转圈 */
+        .loader {
+            width: 18px;
+            height: 18px;
+            border: 3px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block; /* 默认显示 */
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
 <body>
@@ -92,15 +107,28 @@
     <script>
         function checkAccounts() {
             const checkBtn = document.getElementById("checkBtn");
+
+            // 创建转圈元素
+            const loader = document.createElement("span");
+            loader.classList.add("loader");
+
+            // 改变按钮状态，仅显示转圈
             checkBtn.classList.add("btn-loading");
-            checkBtn.innerText = "正在检测...";
+            checkBtn.innerHTML = ''; // 清空按钮文字
+            checkBtn.appendChild(loader); // 只显示转圈
+            
+            // 禁用按钮
+            checkBtn.disabled = true;
 
             fetch('/checkAccounts')
                 .then(response => response.json())
                 .then(data => {
                     checkBtn.classList.remove("btn-loading");
-                    checkBtn.innerText = "开始检测";
+                    checkBtn.innerText = "开始检测"; // 恢复按钮文字
                     
+                    // 恢复按钮的点击状态
+                    checkBtn.disabled = false;
+
                     if (data.status === "success") {
                         const results = data.results;
                         let resultHTML = '<table>';
@@ -140,6 +168,7 @@
                 
                     checkBtn.classList.remove("btn-loading");
                     checkBtn.innerText = "开始检测";
+                    checkBtn.disabled = false;
                 });
         }
     </script>
