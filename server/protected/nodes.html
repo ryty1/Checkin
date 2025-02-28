@@ -23,22 +23,18 @@
         h1 {
             color: #333;
         }
-        .btn-group {
-            display: flex;
-            justify-content: center;
-            gap: 10px; /* 按钮间距 */
-        }
         .btn {
             display: flex;
             align-items: center;
             justify-content: center;
-            min-width: 140px; /* 确保按钮大小一致 */
-            height: 42px;
+            width: 140px; /* 按钮宽度 */
+            height: 42px; /* 按钮高度 */
             font-size: 16px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: 0.3s;
+            margin: 10px; /* 增加间距 */
         }
         .btn-primary {
             background-color: #007BFF;
@@ -88,7 +84,7 @@
             border-top-color: transparent;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            display: none;
+            display: inline-block; /* 默认显示 */
         }
         @keyframes spin {
             to {
@@ -101,7 +97,7 @@
     <div class="container">
         <h1>科学采集</h1>
 
-        <div class="btn-group">
+        <div>
             <button id="startBtn" class="btn btn-primary" onclick="startNodesSummary()">
                 <span id="startContent">开始采集</span>
             </button>
@@ -121,9 +117,15 @@
         const startContent = document.getElementById("startContent");
 
         function startNodesSummary() {
-            // 替换按钮内容为加载动画
-            startContent.innerHTML = `<span class="loader"></span>`;
-            
+            // 创建加载动画
+            const loader = document.createElement("span");
+            loader.classList.add("loader");
+            loader.style.display = "inline-block"; // 显示加载动画
+
+            // 替换按钮内容
+            startContent.innerText = ""; // 清空文本
+            startContent.appendChild(loader); // 插入动画
+
             // 禁用按钮
             startBtn.classList.add("btn-disabled");
             startBtn.disabled = true;
@@ -164,7 +166,7 @@
             }
 
             // 采集完成后恢复按钮状态
-            startContent.innerHTML = "开始采集";
+            startContent.innerText = "开始采集"; // 恢复按钮文字
             startBtn.classList.remove("btn-disabled");
             startBtn.disabled = false;
         });
