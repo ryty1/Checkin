@@ -47,6 +47,26 @@
         .btn-danger:hover {
             background-color: #b02a37;
         }
+        .btn-disabled {
+            background-color: #aaa !important;
+            cursor: not-allowed;
+        }
+        .loader {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid white;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
         .node-box {
             border: 1px solid #ccc;
             padding: 5px;
@@ -75,7 +95,9 @@
     <div class="container">
         <h1>科学采集</h1>
 
-        <button class="btn btn-primary" onclick="startNodesSummary()">开始采集</button>
+        <button id="startBtn" class="btn btn-primary" onclick="startNodesSummary()">
+            开始采集
+        </button>
         <button class="btn btn-danger" onclick="copyNodes()">提取资源</button>
 
         <div id="allNodes" class="node-box"></div>
@@ -87,8 +109,13 @@
     <script>
         const socket = io();
         let nodesText = "";
+        const startBtn = document.getElementById("startBtn");
 
         function startNodesSummary() {
+            startBtn.innerHTML = '采集中... <span class="loader"></span>';
+            startBtn.classList.add("btn-disabled");
+            startBtn.disabled = true;
+
             socket.emit("startNodesSummary");
         }
 
@@ -103,15 +130,13 @@
         }
 
         socket.on("nodesSummary", (data) => {
-            console.log('完整返回数据:', data);  // 打印完整返回数据，确认是否正确接收到
+            console.log('完整返回数据:', data); 
 
             const allNodesDiv = document.getElementById("allNodes");
             const failedAccountsDiv = document.getElementById("failedAccounts");
 
-            // 整理所有节点，hysteria2 先，vmess 后，不加分类标题
             let allNodes = [...data.successfulNodes.hysteria2, ...data.successfulNodes.vmess];
 
-            // 更新节点内容，无空行
             if (allNodes.length > 0) {
                 nodesText = allNodes.join("\n");
                 allNodesDiv.innerText = nodesText;
@@ -120,12 +145,16 @@
                 nodesText = "";
             }
 
-            // 显示失败的账号
             if (data.failedAccounts && data.failedAccounts.length > 0) {
                 failedAccountsDiv.innerHTML = `<b>以下账号获取失败：</b><br>${data.failedAccounts.join("<br>")}`;
             } else {
                 failedAccountsDiv.innerHTML = "暂无失败账号";
             }
+
+            // 采集完成后恢复按钮状态
+            startBtn.innerHTML = "开始采集";
+            startBtn.classList.remove("btn-disabled");
+            startBtn.disabled = false;
         });
     </script>
 </body>
