@@ -34,6 +34,8 @@
             cursor: pointer;
             transition: 0.3s;
             height: 50px; /* 固定按钮高度 */
+            background-color: #007BFF; /* 初始蓝色 */
+            color: white;
         }
         .btn-primary {
             background-color: #007BFF;
@@ -43,8 +45,9 @@
             background-color: #0056b3;
         }
         .btn-loading {
-            background-color: #ccc;
-            cursor: not-allowed;
+            background-color: #ccc;  /* 背景颜色变灰 */
+            color: white;  /* 文本保持白色 */
+            cursor: not-allowed; /* 禁用状态不允许点击 */
         }
         .results-box {
             margin-top: 15px;
