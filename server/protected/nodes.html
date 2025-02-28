@@ -24,9 +24,12 @@
             color: #333;
         }
         .btn {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 120px; /* 固定宽度 */
+            height: 40px; /* 统一高度 */
             margin: 10px;
-            padding: 10px 20px;
             font-size: 16px;
             border: none;
             border-radius: 5px;
@@ -52,15 +55,13 @@
             cursor: not-allowed;
         }
         .loader {
-            display: inline-block;
+            display: none;
             width: 16px;
             height: 16px;
             border: 2px solid white;
             border-radius: 50%;
             border-top-color: transparent;
             animation: spin 0.8s linear infinite;
-            vertical-align: middle;
-            margin-left: 5px;
         }
         @keyframes spin {
             to {
@@ -96,7 +97,8 @@
         <h1>科学采集</h1>
 
         <button id="startBtn" class="btn btn-primary" onclick="startNodesSummary()">
-            开始采集
+            <span id="startText">开始采集</span>
+            <span class="loader" id="startLoader"></span>
         </button>
         <button class="btn btn-danger" onclick="copyNodes()">提取资源</button>
 
@@ -110,9 +112,12 @@
         const socket = io();
         let nodesText = "";
         const startBtn = document.getElementById("startBtn");
+        const startText = document.getElementById("startText");
+        const startLoader = document.getElementById("startLoader");
 
         function startNodesSummary() {
-            startBtn.innerHTML = '采集中... <span class="loader"></span>';
+            startText.style.display = "none"; // 隐藏文本
+            startLoader.style.display = "inline-block"; // 显示加载动画
             startBtn.classList.add("btn-disabled");
             startBtn.disabled = true;
 
@@ -152,7 +157,8 @@
             }
 
             // 采集完成后恢复按钮状态
-            startBtn.innerHTML = "开始采集";
+            startText.style.display = "inline"; // 显示文本
+            startLoader.style.display = "none"; // 隐藏加载动画
             startBtn.classList.remove("btn-disabled");
             startBtn.disabled = false;
         });
