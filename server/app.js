@@ -481,7 +481,10 @@ app.get("/checkAccounts", async (req, res) => {
             const apiUrl = `https://${username}.serv00.net`;
 
             try {
-                const response = await axios.get(apiUrl, { maxRedirects: 0 });
+                const response = await axios.get(apiUrl, { 
+                    maxRedirects: 0, 
+                    timeout: 5000 
+                });
                 const status = response.status;
                 const message = statusMessages[status] || "未知状态"; 
                 results[username] = {
@@ -489,21 +492,18 @@ app.get("/checkAccounts", async (req, res) => {
                     season: accounts[username]?.season || "--" 
                 };
             } catch (error) {
-                
-                const status = error.response ? error.response.status : "检测失败";
-                
-                if (error.response && error.response.status === 301) {
-                    results[username] = {
-                        status: "账号未注册", 
-                        season: accounts[username]?.season || "--"
-                    };
-                } else {
-        
-                    results[username] = {
-                        status: statusMessages[status] || "未知状态",
-                        season: accounts[username]?.season || "--" // 传递账户的 season 或者默认值
-                    };
+                let status = "检测失败";
+
+                if (error.response) {
+                    status = error.response.status;
+                } else if (error.code === 'ECONNABORTED') {
+                    status = "请求超时";
                 }
+
+                results[username] = {
+                    status: statusMessages[status] || "未知状态",
+                    season: accounts[username]?.season || "--"
+                };
             }
         });
 
