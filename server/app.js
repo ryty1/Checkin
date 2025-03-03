@@ -49,7 +49,7 @@ app.use(session({
         path: path.join(__dirname, "sessions"), 
         ttl: 60 * 60,  
         retries: 1,
-        clearInterval: 600 
+        clearInterval: 3600 
     }),
     secret: getSessionSecret(), 
     resave: false,
@@ -94,6 +94,8 @@ app.post("/setPassword", (req, res) => {
     res.redirect("/login");
 });
 
+const errorCache = new Map(); 
+
 async function sendErrorToTG(user, status, message) {
     try {
         const settings = getNotificationSettings();
@@ -102,11 +104,20 @@ async function sendErrorToTG(user, status, message) {
             return;
         }
 
+        const now = Date.now();
+        const cacheKey = `${user}:${status}`; 
+        const lastSentTime = errorCache.get(cacheKey);
+
+        if (lastSentTime && now - lastSentTime < 30 * 60 * 1000) {
+            console.log(`⏳ 30分钟内已发送过 ${user} 的状态 ${status}，跳过通知`);
+            return;
+        }
+
+        errorCache.set(cacheKey, now); 
+
         const bot = new TelegramBot(settings.telegramToken, { polling: false });
+        const nowStr = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
 
-        const now = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
-
-        // 根据状态码设置具体提示信息
         let statusMessage;
         if (status === 403) {
             statusMessage = "账号已封禁";
@@ -115,19 +126,21 @@ async function sendErrorToTG(user, status, message) {
         } else if (status >= 500 && status <= 599) {
             statusMessage = "服务器错误";
         } else {
-            statusMessage = `🔄 访问异常（状态码: ${status}）`;
+            statusMessage = `访问异常`;
         }
 
         const formattedMessage = `
-⚠️ *手动保活失败通知*
+⚠️ *失败通知*
 ——————————————————
 👤 账号: \`${user}\`
 📶 状态: *${statusMessage}*
-📝 详情: *${status}*：\`${message}\`
-🕒 时间: \`${now}\`
-——————————————————`;
+📝 详情: *${status}*•\`${message}\`
+——————————————————
+🕒 时间: \`${nowStr}\``
 
         await bot.sendMessage(settings.telegramChatId, formattedMessage, { parse_mode: "Markdown" });
+
+        console.log(`✅ 已发送 Telegram 通知: ${user} - ${status}`);
     } catch (err) {
         console.error("❌ 发送 Telegram 通知失败:", err);
     }
@@ -284,13 +297,11 @@ async function getNodesSummary(socket) {
             const nodeResponse = await axios.get(nodeUrl, { timeout: 5000 });
             const nodeData = nodeResponse.data;
 
-            // 获取 vmess 和 hysteria2 节点链接
             const nodeLinks = filterNodes([
                 ...(nodeData.match(/vmess:\/\/[^\s<>"]+/g) || []),
                 ...(nodeData.match(/hysteria2:\/\/[^\s<>"]+/g) || [])
             ]);
 
-            // 按协议分类节点
             nodeLinks.forEach(link => {
                 if (link.startsWith("hysteria2://")) {
                     successfulNodes.hysteria2.push(link);
@@ -309,7 +320,6 @@ async function getNodesSummary(socket) {
         }
     }
 
-    // 确保成功节点按账号顺序排列
     successfulNodes.hysteria2 = successfulNodes.hysteria2.sort((a, b) => {
         const userA = a.split('@')[0].split('//')[1];
         const userB = b.split('@')[0].split('//')[1];
@@ -552,7 +562,7 @@ app.get("/notificationSettings", isAuthenticated, (req, res) => {
 });
 
 app.get('/ota/update', isAuthenticated, (req, res) => {
-    const downloadScriptCommand = 'curl -Ls https://raw.githubusercontent.com/ryty1/My-test/refs/heads/main/server/ota.sh -o /tmp/ota.sh';
+    const downloadScriptCommand = 'curl -Ls https://raw.githubusercontent.com/ryty1/serv00-save-me/refs/heads/main/server/ota.sh -o /tmp/ota.sh';
 
     exec(downloadScriptCommand, (error, stdout, stderr) => {
         if (error) {
@@ -593,6 +603,14 @@ app.get('/ota', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, "protected", "ota.html"));
 });
 
+cron.schedule("0 */12 * * *", () => {
+    const logFile = path.join(process.env.HOME, "domains", `${username}.serv00.net`, "logs", "error.log");
+    if (fs.existsSync(logFile)) {
+        fs.truncateSync(logFile, 0);  // 清空文件内容
+        console.log("✅ 日志文件已清空:", new Date().toLocaleString());
+    }
+});
+
 server.listen(PORT, () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`🚀 服务己启动，监听端口: ${PORT}`);
 });
