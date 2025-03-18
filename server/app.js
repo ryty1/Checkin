@@ -117,28 +117,57 @@ async function sendErrorToTG(user, status, message) {
 
         const bot = new TelegramBot(settings.telegramToken, { polling: false });
         const nowStr = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
+        
+        try {
+            const accountsData = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf8"));
+            const season = accountsData[user]?.season?.toLowerCase() || "unknown"; 
+        } catch (err) {
+            console.error("⚠️ 读取 accounts.json 失败:", err);
+            const season = "unknown"; 
+        }
 
         let statusMessage;
+        let buttonText = "手动进入保活";
+        let buttonUrl = "https://${user}.serv00.net/info"; // 默认链接
+
         if (status === 403) {
             statusMessage = "账号已封禁";
+            buttonText = "重新申请账号";
+            buttonUrl = "https://www.serv00.com/offer/create_new_account";
         } else if (status === 404) {
             statusMessage = "保活未安装";
+            buttonText = "前往安装保活";
+            buttonUrl = "https://github.com/ryty1/serv00-save-me";
         } else if (status >= 500 && status <= 599) {
             statusMessage = "服务器错误";
+            buttonText = "查看服务器状态";
+            buttonUrl = "https://ssss.nyc.mn/";
         } else {
             statusMessage = `访问异常`;
+            buttonText = "手动进入保活";
+            buttonUrl = "https://${user}.serv00.net/info";
         }
 
         const formattedMessage = `
-⚠️ *失败通知*
+㊙️ *失败通知*
 ——————————————————
 👤 账号: \`${user}\`
+🖥️ 主机: \`${season}.serv00.com\`
 📶 状态: *${statusMessage}*
 📝 详情: *${status}*•\`${message}\`
 ——————————————————
-🕒 时间: \`${nowStr}\``
+🕒 时间: \`${nowStr}\``;
 
-        await bot.sendMessage(settings.telegramChatId, formattedMessage, { parse_mode: "Markdown" });
+        const options = {
+            parse_mode: "Markdown",
+            reply_markup: {
+                inline_keyboard: [[
+                    { text: buttonText, url: buttonUrl }
+                ]]
+            }
+        };
+
+        await bot.sendMessage(settings.telegramChatId, formattedMessage, options);
 
         console.log(`✅ 已发送 Telegram 通知: ${user} - ${status}`);
     } catch (err) {
@@ -163,11 +192,11 @@ app.get("/login", async (req, res) => {
                 })
                 .catch(err => {
                     if (err.response) {
-                        // 服务器返回了一个 HTTP 错误
+                       
                         console.log(`❌ ${user} 保活失败，状态码: ${err.response.status}`);
                         sendErrorToTG(user, err.response.status, err.response.statusText);
                     } else {
-                        // 其他网络错误
+                     
                         console.log(`❌ ${user} 保活失败: ${err.message}`);
                         sendErrorToTG(user, "请求失败", err.message);
                     }
