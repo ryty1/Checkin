@@ -118,18 +118,16 @@ async function sendErrorToTG(user, status, message) {
         const bot = new TelegramBot(settings.telegramToken, { polling: false });
         const nowStr = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
         
+        let seasons; 
+
         try {
             const accountsData = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf8"));
-            const season = accountsData[user]?.season?.toLowerCase() || "unknown"; 
+            seasons = accountsData[user]?.season?.toLowerCase();
         } catch (err) {
             console.error("⚠️ 读取 accounts.json 失败:", err);
-            const season = "unknown"; 
         }
 
-        let statusMessage;
-        let buttonText = "手动进入保活";
-        let buttonUrl = "https://${user}.serv00.net/info"; // 默认链接
-
+        let statusMessage, buttonText, buttonUrl;
         if (status === 403) {
             statusMessage = "账号已封禁";
             buttonText = "重新申请账号";
@@ -152,7 +150,7 @@ async function sendErrorToTG(user, status, message) {
 ㊙️ *失败通知*
 ——————————————————
 👤 账号: \`${user}\`
-🖥️ 主机: \`${season}.serv00.com\`
+🖥️ 主机: \`${seasons}.serv00.com\`
 📶 状态: *${statusMessage}*
 📝 详情: *${status}*•\`${message}\`
 ——————————————————
