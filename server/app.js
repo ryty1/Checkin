@@ -299,6 +299,9 @@ io.on("connection", (socket) => {
         socket.emit("accountsList", await getAccounts(true));
     });
 });
+
+const SUB_FILE_PATH = path.join(__dirname, "sub.json");
+
 function filterNodes(nodes) {
     return nodes.filter(node => node.startsWith("vmess://") || node.startsWith("hysteria2://"));
 }
@@ -312,13 +315,10 @@ async function getNodesSummary(socket) {
     }
 
     const users = Object.keys(accounts); 
-    let successfulNodes = { hysteria2: [], vmess: [] }; // hytseria2 放前，vmess 放后
+    let successfulNodes = { hysteria2: [], vmess: [] };
     let failedAccounts = [];
 
-    for (let i = 0; i < users.length; i++) {
-        const userKey = users[i];  
-        const user = accounts[userKey]?.user || userKey; 
-
+    for (let user of users) {
         const nodeUrl = `https://${user}.serv00.net/node`;
         try {
             console.log(`请求节点数据: ${nodeUrl}`);
@@ -348,24 +348,34 @@ async function getNodesSummary(socket) {
         }
     }
 
-    successfulNodes.hysteria2 = successfulNodes.hysteria2.sort((a, b) => {
-        const userA = a.split('@')[0].split('//')[1];
-        const userB = b.split('@')[0].split('//')[1];
-        return users.indexOf(userA) - users.indexOf(userB);
-    });
+    // 整理成 Base64 订阅格式
+    const allNodes = [...successfulNodes.hysteria2, ...successfulNodes.vmess].join("\n");
+    const base64Sub = Buffer.from(allNodes).toString("base64");
 
-    successfulNodes.vmess = successfulNodes.vmess.sort((a, b) => {
-        const userA = a.split('@')[0].split('//')[1];
-        const userB = b.split('@')[0].split('//')[1];
-        return users.indexOf(userA) - users.indexOf(userB);
-    });
+    // 生成 `sub.json`
+    const subData = { sub: base64Sub };
+    fs.writeFileSync(SUB_FILE_PATH, JSON.stringify(subData, null, 4));
 
-    console.log("成功的 hysteria2 节点:", successfulNodes.hysteria2);
-    console.log("成功的 vmess 节点:", successfulNodes.vmess);
-    console.log("失败的账号:", failedAccounts);
+    console.log("订阅文件 sub.json 已更新！");
 
     socket.emit("nodesSummary", { successfulNodes, failedAccounts });
 }
+
+io.on("connection", (socket) => {
+    console.log("客户端已连接");
+
+    socket.on("startNodesSummary", async () => {
+        await getNodesSummary(socket);
+    });
+});
+
+app.get("/sub", (req, res) => {
+    if (fs.existsSync(SUB_FILE_PATH)) {
+        res.sendFile(SUB_FILE_PATH);
+    } else {
+        res.status(404).json({ error: "订阅文件不存在" });
+    }
+});
 
 let cronJob = null; 
 
