@@ -7,15 +7,17 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
             margin: 0;
             padding: 0;
             text-align: center;
+            background: linear-gradient(135deg, #ff7300, #ffeb00, #47e500, #00e5c0);
+            background-attachment: fixed;
+            background-size: 100% 100%;
         }
         .container {
             max-width: 600px;
             margin: 40px auto;
-            background: white;
+            background: rgba(255, 255, 255, 0.2);
             padding: 8px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -24,23 +26,23 @@
             color: #333;
         }
         .button-container {
-            display: inline-flex; /* 保证按钮在一行内 */
+            display: inline-flex;
             justify-content: center;
             align-items: center;
-            gap: 30px; /* 增加按钮之间的间隔 */
+            gap: 30px;
         }
         .btn {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 120px; /* 按钮宽度 */
-            height: 42px; /* 按钮高度 */
+            width: 120px;
+            height: 42px;
             font-size: 16px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: 0.3s;
-            margin: 10px; /* 增加间距 */
+            margin: 10px;
         }
         .btn-primary {
             background-color: #007BFF;
@@ -65,7 +67,7 @@
             padding: 5px;
             margin-top: 10px;
             border-radius: 5px;
-            background-color: #f9f9f9;
+            background-color: transparent;
             text-align: left;
             width: 97%;
             height: 320px;
@@ -77,12 +79,11 @@
             margin-top: 15px;
             padding: 10px;
             border-radius: 5px;
-            background-color: #ffe5e5;
+            background-color: transparent;
             color: #b02a37;
             border: 1px solid #DC3545;
             text-align: left;
         }
-        /* 加载动画样式 */
         .loader {
             width: 18px;
             height: 18px;
@@ -90,12 +91,26 @@
             border-top-color: transparent;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            display: inline-block; /* 默认显示 */
+            display: inline-block;
         }
         @keyframes spin {
             to {
                 transform: rotate(360deg);
             }
+        }
+        .sub-box {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: white;
+            text-align: center;
+        }
+        .sub-box input {
+            width: 80%;
+            text-align: center;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -110,9 +125,14 @@
             <button class="btn btn-danger" onclick="copyNodes()">提取资源</button>
         </div>
 
-        <div id="allNodes" class="node-box"></div>
+        <div id="allNodes" class="node-box">点击“开始采集”开始获取数据...</div>
 
-        <div id="failedAccounts" class="failed-box">点击“开始采集”开始获取数据...</div>
+        <div id="failedAccounts" class="failed-box">暂无失败账号</div>
+
+        <div class="sub-box">
+            <input id="subLink" type="text" value="https://local.hostname/sub" readonly>
+            <button onclick="copySubLink()" class="btn btn-primary">复制订阅</button>
+        </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -123,16 +143,13 @@
         const startContent = document.getElementById("startContent");
 
         function startNodesSummary() {
-            // 创建加载动画
             const loader = document.createElement("span");
             loader.classList.add("loader");
-            loader.style.display = "inline-block"; // 显示加载动画
+            loader.style.display = "inline-block"; 
 
-            // 替换按钮内容
-            startContent.innerText = ""; // 清空文本
-            startContent.appendChild(loader); // 插入动画
+            startContent.innerText = ""; 
+            startContent.appendChild(loader); 
 
-            // 禁用按钮
             startBtn.classList.add("btn-disabled");
             startBtn.disabled = true;
 
@@ -149,8 +166,15 @@
             }
         }
 
+        function copySubLink() {
+            const subLink = document.getElementById("subLink");
+            navigator.clipboard.writeText(subLink.value).then(() => {
+                alert("订阅链接已复制！");
+            });
+        }
+
         socket.on("nodesSummary", (data) => {
-            console.log('完整返回数据:', data);
+            console.log("完整返回数据:", data);
 
             const allNodesDiv = document.getElementById("allNodes");
             const failedAccountsDiv = document.getElementById("failedAccounts");
@@ -171,8 +195,7 @@
                 failedAccountsDiv.innerHTML = "暂无失败账号";
             }
 
-            // 采集完成后恢复按钮状态
-            startContent.innerText = "开始采集"; // 恢复按钮文字
+            startContent.innerText = "开始采集"; 
             startBtn.classList.remove("btn-disabled");
             startBtn.disabled = false;
         });
