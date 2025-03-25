@@ -102,15 +102,35 @@
             margin-top: 15px;
             padding: 10px;
             border-radius: 5px;
-            background-color: white;
+            background-color: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             text-align: center;
+            gap: 10px;
         }
         .sub-box input {
-            width: 80%;
-            text-align: center;
+            flex-grow: 1;
+            max-width: 400px;
             padding: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
+            text-align: left;
+            font-size: 14px;
+        }
+        .sub-box button {
+            width: 100px;
+            height: 36px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+            background-color: #007BFF;
+            color: white;
+        }
+        .sub-box button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
