@@ -369,11 +369,13 @@ io.on("connection", (socket) => {
     });
 });
 
-app.get("/sub", (req, res) => {
-    if (fs.existsSync(SUB_FILE_PATH)) {
-        res.sendFile(SUB_FILE_PATH);
-    } else {
-        res.status(404).json({ error: "订阅文件不存在" });
+app.get('/sub', (req, res) => {
+    try {
+        const subData = fs.readFileSync('sub.json', 'utf8').trim(); // 读取并去掉多余空格
+        res.setHeader('Content-Type', 'text/plain'); // 设置纯文本响应
+        res.send(subData); // 直接返回 Base64 订阅内容
+    } catch (err) {
+        res.status(500).send('订阅文件读取失败');
     }
 });
 
