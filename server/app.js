@@ -371,9 +371,13 @@ io.on("connection", (socket) => {
 
 app.get('/sub', (req, res) => {
     try {
-        const subData = fs.readFileSync('sub.json', 'utf8').trim(); // 读取并去掉多余空格
-        res.setHeader('Content-Type', 'text/plain'); // 设置纯文本响应
-        res.send(subData); // 直接返回 Base64 订阅内容
+        const subData = JSON.parse(fs.readFileSync('sub.json', 'utf8')); // 解析 JSON
+        if (subData.sub) {
+            res.setHeader('Content-Type', 'text/plain'); // 纯文本
+            res.send(subData.sub); // 只返回 Base64 订阅内容
+        } else {
+            res.status(500).send('订阅内容为空');
+        }
     } catch (err) {
         res.status(500).send('订阅文件读取失败');
     }
