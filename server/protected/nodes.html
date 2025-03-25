@@ -26,10 +26,10 @@
             color: #333;
         }
         .button-container {
-            display: inline-flex;
+            display: flex;
             justify-content: center;
-            align-items: center;
             gap: 30px;
+            margin-bottom: 15px;
         }
         .btn {
             display: flex;
@@ -42,7 +42,6 @@
             border-radius: 5px;
             cursor: pointer;
             transition: 0.3s;
-            margin: 10px;
         }
         .btn-primary {
             background-color: #007BFF;
@@ -65,15 +64,13 @@
         .node-box {
             border: 1px solid #ccc;
             padding: 5px;
-            margin-top: 10px;
             border-radius: 5px;
             background-color: transparent;
             text-align: left;
             width: 97%;
             height: 320px;
+            overflow: auto;
             white-space: nowrap;
-            overflow-x: auto;
-            overflow-y: auto;
         }
         .failed-box {
             margin-top: 15px;
@@ -100,37 +97,25 @@
         }
         .sub-box {
             margin-top: 15px;
-            padding: 10px;
-            border-radius: 5px;
-            background-color: transparent;
             display: flex;
             justify-content: center;
             align-items: center;
-            text-align: center;
             gap: 10px;
+            background: transparent;
         }
         .sub-box input {
-            flex-grow: 1;
-            max-width: 400px;
-            padding: 5px;
+            flex: 1;
+            text-align: center;
+            padding: 8px;
             border: 1px solid #ccc;
             border-radius: 5px;
-            text-align: left;
             font-size: 14px;
         }
         .sub-box button {
+            flex-shrink: 0;
             width: 100px;
-            height: 36px;
+            height: 38px;
             font-size: 14px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: 0.3s;
-            background-color: #007BFF;
-            color: white;
-        }
-        .sub-box button:hover {
-            background-color: #0056b3;
         }
     </style>
 </head>
@@ -150,7 +135,7 @@
         <div id="failedAccounts" class="failed-box">暂无失败账号</div>
 
         <div class="sub-box">
-            <input id="subLink" type="text" value="https://${location.hostname}/sub" readonly>
+            <input id="subLink" type="text" readonly>
             <button onclick="copySubLink()" class="btn btn-primary">复制订阅</button>
         </div>
     </div>
@@ -161,6 +146,10 @@
         let nodesText = "";
         const startBtn = document.getElementById("startBtn");
         const startContent = document.getElementById("startContent");
+        const subLinkInput = document.getElementById("subLink");
+
+        // 设置订阅链接
+        subLinkInput.value = `https://${location.hostname}/sub`;
 
         function startNodesSummary() {
             const loader = document.createElement("span");
@@ -187,8 +176,7 @@
         }
 
         function copySubLink() {
-            const subLink = document.getElementById("subLink");
-            navigator.clipboard.writeText(subLink.value).then(() => {
+            navigator.clipboard.writeText(subLinkInput.value).then(() => {
                 alert("订阅链接已复制！");
             });
         }
