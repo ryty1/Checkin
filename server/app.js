@@ -181,30 +181,38 @@ app.get("/login", async (req, res) => {
         const users = Object.keys(accounts);
 
         const requests = users.map(user =>
-            axios.get(`https://${user}.serv00.net/info`, { timeout: 10000 })
-                .then(response => {
-                    if (response.status === 200 && response.data) {
-                        console.log(`✅ ${user} 保活成功，状态码: ${response.status}`);
-                        console.log(`📄 ${user} 响应大小: ${response.data.length} 字节`);
-                    } else {
-                        console.log(`❌ ${user} 保活失败，状态码: ${response.status}，无数据`);
-                        sendErrorToTG(user, response.status, "响应数据为空");
-                    }
-                })
-                .catch(err => {
-                    if (err.response) {
-                        console.log(`❌ ${user} 保活失败，状态码: ${err.response.status}`);
-                        sendErrorToTG(user, err.response.status, err.response.statusText);
-                    } else {
-                        console.log(`❌ ${user} 保活失败: ${err.message}`);
-                        sendErrorToTG(user, "请求失败", err.message);
-                    }
-                })
+            axios.get(`https://${user}.serv00.net/info`, {
+                timeout: 10000,
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+                }
+            })
+            .then(response => {
+                if (response.status === 200 && response.data) {
+                    console.log(`✅ ${user} 保活成功，状态码: ${response.status}`);
+                    console.log(`📄 ${user} 响应大小: ${response.data.length} 字节`);
+
+                    // 模拟浏览器保持页面 3 秒
+                    return new Promise(resolve => setTimeout(resolve, 3000));
+                } else {
+                    console.log(`❌ ${user} 保活失败，状态码: ${response.status}，无数据`);
+                    sendErrorToTG(user, response.status, "响应数据为空");
+                }
+            })
+            .catch(err => {
+                if (err.response) {
+                    console.log(`❌ ${user} 保活失败，状态码: ${err.response.status}`);
+                    sendErrorToTG(user, err.response.status, err.response.statusText);
+                } else {
+                    console.log(`❌ ${user} 保活失败: ${err.message}`);
+                    sendErrorToTG(user, "请求失败", err.message);
+                }
+            })
         );
 
-        Promise.allSettled(requests).then(() => {
-            console.log("✅ 所有账号的进程保活已访问完成");
-        });
+        await Promise.allSettled(requests);
+        console.log("✅ 所有账号的进程保活已访问完成");
 
     } catch (error) {
         console.error("❌ 访问 /info 失败:", error);
@@ -452,7 +460,7 @@ async function sendCheckResultsToTG() {
         }
 
         const bot = new TelegramBot(settings.telegramToken, { polling: false });
-        const response = await axios.get(`https://${process.env.USER}.serv00.net/checkAccounts`);
+        const response = await axios.post(`https://${process.env.USER}.serv00.net/checkAccounts`, {});
         const data = response.data.results;
 
         if (!data || Object.keys(data).length === 0) {
