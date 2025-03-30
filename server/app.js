@@ -473,6 +473,7 @@ async function sendCheckResultsToTG() {
         let maxSeasonLength = 0;
 
         const users = Object.keys(data);  
+        const maxIndexLength = String(users.length).length;
 
         users.forEach(user => {
             maxUserLength = Math.max(maxUserLength, user.length);
@@ -480,15 +481,25 @@ async function sendCheckResultsToTG() {
         });
 
         users.forEach((user, index) => {
+            const paddedIndex = String(index + 1).padStart(maxIndexLength, "0");
             const paddedUser = user.padEnd(maxUserLength, " ");
             const season = (data[user]?.season || "--").padEnd(maxSeasonLength + 1, " ");
             const status = data[user]?.status || "未知状态";
-            results.push(`${index + 1}. ${paddedUser} : ${season}- ${status}`);
+            results.push(`${paddedIndex}. ${paddedUser} : ${season}- ${status}`);
         });
 
         const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
-        let message = `📢 账号检测结果：\n\`\`\`\n${results.join("\n")}\n\`\`\`\n⏰ 北京时间：${beijingTime}`;
-        await bot.sendMessage(settings.telegramChatId, message, { parse_mode: "MarkdownV2" });
+        let message = `㊙️ 账号检测结果：\n\n\`\`\`\n${results.join("\n")}\n\`\`\`\n\n⏰ 北京时间：${beijingTime}`;
+        const options = {
+            parse_mode: "MarkdownV2",
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "🔍 其它账号检测", url: "https://checks.594880.xyz" }]
+                ]
+            }
+        };
+
+        await bot.sendMessage(settings.telegramChatId, message, options);
 
     } catch (error) {
         console.error("❌ 发送 Telegram 失败:", error);
@@ -614,39 +625,29 @@ app.get("/notificationSettings", isAuthenticated, (req, res) => {
 });
 
 app.get('/ota/update', isAuthenticated, (req, res) => {
-    const downloadScriptCommand = 'curl -Ls https://raw.githubusercontent.com/ryty1/serv00-save-me/refs/heads/main/server/ota.sh -o /tmp/ota.sh';
+    console.log("🚀 开始 OTA 更新...");
+
+    const downloadScriptCommand = 'curl -Ls -o /tmp/ota.sh https://raw.githubusercontent.com/ryty1/serv00-save-me/refs/heads/main/server/ota.sh';
 
     exec(downloadScriptCommand, (error, stdout, stderr) => {
         if (error) {
-            console.error(`❌ 下载脚本错误: ${error.message}`);
-            return res.status(500).json({ success: false, message: error.message });
-        }
-        if (stderr) {
-            console.error(`❌ 下载脚本错误输出: ${stderr}`);
-            return res.status(500).json({ success: false, message: stderr });
+            console.error(`❌ 下载失败: ${error.message}`);
+            return res.status(500).json({ success: false, message: `下载失败: ${error.message}` });
         }
 
+        console.log("✅ 下载完成");
         const executeScriptCommand = 'bash /tmp/ota.sh';
 
         exec(executeScriptCommand, (error, stdout, stderr) => {
-            exec('rm -f /tmp/ota.sh', (err) => {
-                if (err) {
-                    console.error(`❌ 删除临时文件失败: ${err.message}`);
-                } else {
-                    console.log('✅ 临时文件已删除');
-                }
-            });
+            exec('rm -f /tmp/ota.sh', () => console.log('✅ 清理完成'));
 
             if (error) {
-                console.error(`❌ 执行脚本错误: ${error.message}`);
-                return res.status(500).json({ success: false, message: error.message });
+                console.error(`❌ 执行失败: ${error.message}`);
+                return res.status(500).json({ success: false, message: `执行失败: ${error.message}` });
             }
-            if (stderr) {
-                console.error(`❌ 脚本错误输出: ${stderr}`);
-                return res.status(500).json({ success: false, message: stderr });
-            }
-            
-            res.json({ success: true, output: stdout });
+
+            console.log("✅ 脚本执行完成");
+            res.json({ success: true, output: stdout || '执行成功' });
         });
     });
 });
