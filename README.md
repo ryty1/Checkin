@@ -11,11 +11,15 @@
 
 ## PC端 cookie 抓取，需要登录 [NodeSeek](https://www.nodeseek.com/) 账号
 - 具体按图操作：
+  
 ![](https://tc.889269.xyz/1753172830433_image_2025-07-22_16-27-06.png)
 
 - 复制到TXT，后面备用。
 
 ## IOS端 打开 Loon APP
+
+![](https://tc.889269.xyz/1753174749092_Snipaste_2025-07-22_16-58-26.png)
+
 ```bash
 https://raw.githubusercontent.com/ryty1/NodeSeek/refs/heads/main/Checkin.js
 ```
