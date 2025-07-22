@@ -16,8 +16,16 @@
 - 复制到TXT，后面备用。
 
 ## IOS端 打开 Loon APP
+```bash
+https://raw.githubusercontent.com/ryty1/NodeSeek/refs/heads/main/Checkin.js
+```
+```bash
+[Script]
+cron "0 0 * * *" script-path=https://raw.githubusercontent.com/ryty1/NodeSeek/refs/heads/main/Checkin.js, timeout=60, tag=NS自动签
 
-
+[MITM]
+hostname = %APPEND% www.nodeseek.com
+```
 ## ----------- 环境变量说明 -------------
 | 环境变量名        | 描述 / 示例值                                 |
 |------------------|----------------------------------------------|
