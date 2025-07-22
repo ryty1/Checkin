@@ -21,20 +21,17 @@
 ![](https://tc.889269.xyz/1753174749092_Snipaste_2025-07-22_16-58-26.png)
 
 ```bash
-https://raw.githubusercontent.com/ryty1/NodeSeek/refs/heads/main/Checkin.js
-```
-```bash
 [Script]
 cron "0 0 * * *" script-path=https://raw.githubusercontent.com/ryty1/NodeSeek/refs/heads/main/Checkin.js, timeout=60, tag=NS自动签
 
 [MITM]
 hostname = %APPEND% www.nodeseek.com
 ```
-## ----------- 环境变量说明 -------------
-| 环境变量名        | 描述 / 示例值                                 |
-|------------------|----------------------------------------------|
-| NODESEEK_COOKIE  | 账号A@cookie1&账号B@cookie2&账号C@cookie3     |
-| TG_TOKEN         | 123456789:ABCDEF_xxxxxxx                      |
-| TG_CHATID        | 123456789                                     |
-| TG_PROXY         | 策略名（如需TG走代理）                        |
+## ----------- 环境变量（数据持久化）说明 -------------
+| 变量名（Key）        | 值（Value）                                 |        说明    |
+|------------------|----------------------------------------------|-------------|
+| NODESEEK_COOKIE  | 账号A@cookie1&账号B@cookie2&账号C@cookie3     |  必须  |
+| TG_TOKEN         | 123456789:ABCDEF_xxxxxxx                      |  非必须  |
+| TG_CHATID        | 123456789                                     |  非必须  |
+| TG_PROXY         | 策略名（如需TG走代理）                        |  非必须  |
 
