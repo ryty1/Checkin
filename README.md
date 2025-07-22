@@ -1,9 +1,11 @@
 ## ==说明==
-
->   @name         NodeSeek 多账号签到（带Loon通知） 
->   @compatible   loon
->   @version      1.4
->   @description  NodeSeek 多账号签到 + 网络重试 + TG推送 + Loon本地通知
+>    @name         NodeSeek 多账号签到（带Loon通知） 
+>
+>    @compatible   loon
+>
+>    @version      1.4
+>
+>    @description  NodeSeek 多账号签到 + 网络重试 + TG推送 + Loon本地通知
 
 
 // ----------- 环境变量说明 -------------
