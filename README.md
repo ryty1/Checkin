@@ -11,7 +11,8 @@
 
 ## PC端 cookie 抓取，需要登录 [NodeSeek](https://www.nodeseek.com/) 账号
 - 具体按图操作：
-  
+<img src="https://tc.889269.xyz/1753172830433_image_2025-07-22_16-27-06.png" alt="预览图" width="600"/>
+
 ![](https://tc.889269.xyz/1753172830433_image_2025-07-22_16-27-06.png)
 
 - 复制到TXT，后面备用。
