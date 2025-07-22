@@ -6,7 +6,7 @@
 >
 >    @description  NodeSeek 多账号签到 + 网络重试 + TG推送 + Loon本地通知
 
-### 「本脚本为Loon软件的脚本，其他app测试」
+### 「本脚本为Loon软件的脚本，其他app自行测试」
 
 ## = PC端 cookie 抓取，需要登录 [NodeSeek](https://www.nodeseek.com/) 账号
 - 具体按图操作：
