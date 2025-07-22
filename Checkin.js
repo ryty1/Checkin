@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NodeSeek 多账号签到（带Loon通知）
 // @compatible   loon
-// @version      1.4
+// @version      1.5
 // @description  NodeSeek 多账号签到 + 网络重试 + TG推送 + Loon本地通知
 // ==/UserScript==
 
