@@ -1,9 +1,0 @@
-app.js
-protected/index.html
-protected/nodes.html
-protected/accounts.html
-protected/ota.html
-protected/login.html
-protected/set_password.html
-public/check_accounts.html
-public/notification_settings.html
