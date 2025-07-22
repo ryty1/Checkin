@@ -74,7 +74,7 @@ function signIn(index = 0) {
           const msg = json.message || json.Message || "未知消息";
 
           if (msg.includes("签到收益")) {
-            const match = msg.match(/(\d+)\s*个?🍗/);
+            const match = msg.match(/(\d+)/);
             const amount = match ? match[1] : "?";
             results.push(`✅ <${name}> ，签到收益${amount} 个🍗`);
             $notification.post("✅ NodeSeek 签到成功", `账号:${name}`, msg);
