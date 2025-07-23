@@ -144,7 +144,7 @@ function sendTgPush() {
       const errorText = typeof err === "string" ? err : JSON.stringify(err);
       $notification.post("❌ TG 推送失败", "", errorText);
     } else {
-      $notification.post("✅ NodeSeek 签到完成", "TG 推送成功", `✅ ${successCount} ☑️ ${repeatCount} ｜🚫 ${failCount}`);
+      $notification.post("✅ NodeSeek 签到完成", "TG 推送成功", `✅ ${successCount} ｜☑️ ${repeatCount} ｜🚫 ${failCount}`);
     }
     $done();
   });
