@@ -144,16 +144,5 @@ function sendTgPush() {
     $done();
   });
 }
+signIn();
 
-// 延迟函数
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// 启动流程
-(async () => {
-  const delay = Math.floor(Math.random() * 120000);
-  console.log(`⏱ 延迟执行 ${Math.floor(delay / 1000)} 秒...`);
-  await sleep(delay);
-  signIn();
-})();
