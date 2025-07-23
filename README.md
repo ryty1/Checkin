@@ -1,10 +1,10 @@
-## = NodeSeek 多账号签到（带Loon通知） 
+## = NodeSeek 签到（带Loon通知） 
 >
 >    @compatible   loon
 >
 >    @version      1.5
 >
->    @description  NodeSeek 多账号签到 + 网络重试 + TG推送 + Loon本地通知
+>    @description  多账号签到 + 网络重试 + TG推送 + Loon本地通知 + 随机延迟（2分钟内）
 
 ### 「本脚本为Loon软件的脚本，其他app自行测试」
 
