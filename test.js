@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         NodeSeek 多账号签到（带Loon通知）
 // @compatible   loon
-// @version      1.6
-// @description  NodeSeek 多账号签到 + 网络重试 + TG推送 + 模式选择 + 去重优化
+// @version      1.7
+// @description  NodeSeek 多账号签到 + 网络重试 + TG推送 + Loon本地通知（每账号一次） + 模式选择
 // ==/UserScript==
 
 // ------------ 环境变量说明 --------------
@@ -64,32 +64,43 @@ function signIn(index = 0) {
 
         if (err || !body || typeof body !== "string") {
           if (attempt < 3) return resolve(attemptSign());
-          results.push(`👤:${name} ❌ 失败，网络错误或无响应`);
+          const msg = `👤:${name} ❌ 失败，网络错误或无响应`;
+          results.push(msg);
           failCount++;
+          $notification.post("❌ NodeSeek 签到失败", `账号: ${name}`, "网络错误或无响应");
           return resolve();
         }
 
         try {
           const json = JSON.parse(body);
-          const msg = json.message || json.Message || "未知消息";
+          const msgRaw = json.message || json.Message || "未知消息";
+          let msg = "";
 
-          if (msg.includes("签到收益")) {
-            const match = msg.match(/(\d+)/);
+          if (msgRaw.includes("签到收益")) {
+            const match = msgRaw.match(/(\d+)/);
             const amount = match ? match[1] : (defaultMode ? "?" : "5");
-            results.push(`👤:${name} ✅ 成功，签到收益 ${amount} 个🍗`);
+            msg = `👤:${name} ✅ 成功，签到收益 ${amount} 个🍗`;
             successCount++;
-          } else if (msg.includes("重复") || msg.includes("请勿重复")) {
-            results.push(`👤:${name} ❌ 失败，今天重复签到`);
+            $notification.post("✅ NodeSeek 签到成功", `账号: ${name}`, msgRaw);
+          } else if (msgRaw.includes("重复") || msgRaw.includes("请勿重复")) {
+            msg = `👤:${name} ❌ 失败，今天重复签到`;
             failCount++;
+            $notification.post("⚠️ NodeSeek 签到提醒", `账号: ${name}`, msgRaw);
           } else {
-            results.push(`👤:${name} ❌ 失败，${msg}`);
+            msg = `👤:${name} ❌ 失败，${msgRaw}`;
             failCount++;
+            $notification.post("❌ NodeSeek 签到失败", `账号: ${name}`, msgRaw);
           }
+
+          results.push(msg);
         } catch (e) {
           if (attempt < 3) return resolve(attemptSign());
-          results.push(`👤:${name} ❌ 失败，返回解析异常`);
+          const msg = `👤:${name} ❌ 失败，返回解析异常`;
+          results.push(msg);
           failCount++;
+          $notification.post("❌ NodeSeek 解析异常", `账号: ${name}`, e.message || "JSON解析失败");
         }
+
         resolve();
       });
     });
@@ -100,9 +111,9 @@ function signIn(index = 0) {
 
 function sendTgPush() {
   const text =
-    `🛠 当前模式：${signModeText}\n` +
     `📋 *NodeSeek 签到结果*\n\n` +
     `✅ 成功 ${successCount} 个 ｜❌ 失败 ${failCount} 个\n\n` +
+    `🛠 当前模式：${signModeText}\n` +
     results.join("\n");
 
   const tgUrl = `https://api.telegram.org/bot${tgToken}/sendMessage`;
@@ -133,3 +144,4 @@ function sendTgPush() {
 }
 
 signIn();
+
