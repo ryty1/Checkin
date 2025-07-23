@@ -34,7 +34,7 @@ hostname = %APPEND% www.nodeseek.com
 | NODESEEK_COOKIE  | 账号A@cookie1&账号B@cookie2&账号C@cookie3     |  必须  |
 | TG_TOKEN         | 123456789:ABCDEF_xxxxxxx                      |  非必须  |
 | TG_CHATID        | 123456789                                     |  非必须  |
-| TG_PROXY         | 策略名（如需TG走代理）                        |  非必须  |
+| TG_PROXY         | 策略名（如果TG推送不成功需要设置）                        |  非必须  |
 | DEFAULT         | true （随机模式，不填写为固定模式）                       |  非必须  |
 
 ## = 设置完成后可以`手动运行`一次，查看是否正常！
