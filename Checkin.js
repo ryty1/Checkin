@@ -112,8 +112,8 @@ function signIn(index = 0) {
 function sendTgPush() {
   const text =
     `📋 *NodeSeek 签到结果*\n\n` +
-    `✅ 成功 ${successCount} 个 ｜❌ 失败 ${failCount} 个\n\n` +
-    `🛠 当前模式：${signModeText}\n` +
+    `✅ 成功 ${successCount} 个 ｜❌ 失败 ${failCount} 个\n` +
+    `🛠 当前模式：${signModeText}\n\n` +
     results.join("\n");
 
   const tgUrl = `https://api.telegram.org/bot${tgToken}/sendMessage`;
