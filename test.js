@@ -118,9 +118,9 @@ function sendTgPush() {
     `📋 *NodeSeek 签到结果*\n\n` +
     `✅ 成功 ${successCount} 个 ｜☑️ 已签 ${repeatCount} 个 ｜🚫 失败 ${failCount} 个\n` +
     `🛠 当前：${signModeText}\n\n` +
-    (successList.length > 0 ? `*\n${successList.join("\n")}\n` : "") +
-    (repeatList.length > 0 ? `*\n${repeatList.join("\n")}\n` : "") +
-    (failList.length > 0 ? `*\n${failList.join("\n")}` : "");
+    (successList.length > 0 ? `${successList.join("\n")}\n` : "") +
+    (repeatList.length > 0 ? `${repeatList.join("\n")}\n` : "") +
+    (failList.length > 0 ? `${failList.join("\n")}` : "");
 
   const tgUrl = `https://api.telegram.org/bot${tgToken}/sendMessage`;
   const body = {
