@@ -2,21 +2,25 @@
 // @name         NodeSeek 多账号签到（带Loon通知）
 // @compatible   loon
 // @version      1.5
-// @description  NodeSeek 多账号签到 + 网络重试 + TG推送 + Loon本地通知
+// @description  NodeSeek 多账号签到 + 网络重试 + TG推送 + Loon本地通知 + 模式选择
 // ==/UserScript==
 
-// ----------- 环境变量说明 -------------
+// ------------ 环境变量说明 --------------
 // NODESEEK_COOKIE=账号A@cookie1&账号B@cookie2&账号C@cookie3
 // TG_TOKEN=123456789:ABCDEF_xxxxxxx
 // TG_CHATID=123456789
 // TG_PROXY=策略名（如需TG走代理）
+// DEFAULT=true  # true=随机领取鸡腿，未设置=固定5个
 // ---------------------------------------
 
 const cookiesStr = $persistentStore.read("NODESEEK_COOKIE");
 const tgToken = $persistentStore.read("TG_TOKEN");
 const tgChatID = $persistentStore.read("TG_CHATID");
 const tgproxy = $persistentStore.read("TG_PROXY") || "";
-const defaultMode = ($persistentStore.read("DEFAULT") || "").toLowerCase() === "true"; // true=随机鸡腿
+
+// 模式判断：默认 false 为固定领取 5 个鸡腿
+const defaultEnv = ($persistentStore.read("DEFAULT") || "").trim().toLowerCase();
+const defaultMode = defaultEnv === "true";
 
 if (!cookiesStr) {
   $notification.post("❌ NodeSeek 签到失败", "环境变量 NODESEEK_COOKIE 未配置", "");
@@ -28,9 +32,7 @@ if (!tgToken || !tgChatID) {
 }
 
 const cookies = cookiesStr.split("&");
-const signUrl = defaultMode
-  ? "https://www.nodeseek.com/api/attendance?default=false"
-  : "https://www.nodeseek.com/api/attendance";
+const signUrl = "https://www.nodeseek.com/api/attendance";
 const headersBase = {
   "Content-Type": "application/json",
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
@@ -76,17 +78,21 @@ function signIn(index = 0) {
           const msg = json.message || json.Message || "未知消息";
 
           if (msg.includes("签到收益")) {
-            const match = msg.match(/(\d+)/);
-            const amount = match ? match[1] : "?";
+            const match = msg.match(/(\d+)\s*个?🍗/);
+            const amount = match ? match[1] : (defaultMode ? "?" : "5"); // 默认 5 个
             results.push(`👤:${name} ✅ 成功，签到收益${amount} 个🍗`);
             $notification.post("NodeSeek 签到成功", `账号:${name}`, msg);
             successCount++;
+          } else if (msg.includes("重复") || msg.includes("请勿重复")) {
+            results.push(`👤:${name} ❌ 失败，今天重复签到`);
+            $notification.post("NodeSeek 签到失败", `账号:${name}`, "今天重复签到");
+            failCount++;
           } else {
-            const simplified = msg.includes("重复") || msg.includes("已完成") ? "今天重复签到" : msg;
-            results.push(`👤:${name} ❌ 失败，${simplified}`);
+            results.push(`👤:${name} ❌ 失败，${msg}`);
             $notification.post("NodeSeek 签到失败", `账号:${name}`, msg);
             failCount++;
           }
+
           resolve();
         } catch (e) {
           results.push(`👤:${name} ❌ 失败，返回解析异常`);
@@ -107,11 +113,9 @@ function signIn(index = 0) {
 }
 
 function sendTgPush() {
-  const mode = defaultMode ? "随机领取鸡腿" : "固定领取 5 个鸡腿";
   const text =
     `📋 *NodeSeek 签到结果*\n\n` +
-    `✅ 成功 ${successCount} 个 ｜❌ 失败 ${failCount} 个\n` +
-    `🎯 签到模式：${mode}\n\n` +
+    `✅ 成功 ${successCount} 个 ｜❌ 失败 ${failCount} 个\n\n` +
     results.join("\n");
 
   const tgUrl = `https://api.telegram.org/bot${tgToken}/sendMessage`;
