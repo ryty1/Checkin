@@ -16,6 +16,7 @@ const cookiesStr = $persistentStore.read("NODESEEK_COOKIE");
 const tgToken = $persistentStore.read("TG_TOKEN");
 const tgChatID = $persistentStore.read("TG_CHATID");
 const tgproxy = $persistentStore.read("TG_PROXY") || "";
+const defaultMode = ($persistentStore.read("DEFAULT") || "").toLowerCase() === "true"; // true=随机鸡腿
 
 if (!cookiesStr) {
   $notification.post("❌ NodeSeek 签到失败", "环境变量 NODESEEK_COOKIE 未配置", "");
@@ -27,7 +28,9 @@ if (!tgToken || !tgChatID) {
 }
 
 const cookies = cookiesStr.split("&");
-const signUrl = "https://www.nodeseek.com/api/attendance";
+const signUrl = defaultMode
+  ? "https://www.nodeseek.com/api/attendance?default=false"
+  : "https://www.nodeseek.com/api/attendance";
 const headersBase = {
   "Content-Type": "application/json",
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
@@ -41,7 +44,6 @@ let results = [];
 let successCount = 0;
 let failCount = 0;
 
-// 自动重试请求
 function retryRequest(attempt, max, fn) {
   return fn().catch(err => {
     if (attempt + 1 < max) return retryRequest(attempt + 1, max, fn);
@@ -63,8 +65,8 @@ function signIn(index = 0) {
     return new Promise((resolve, reject) => {
       $httpClient.post({ url: signUrl, headers, body: "{}" }, (err, resp, body) => {
         if (err) {
-          $notification.post("❌ NodeSeek 签到失败", `账号:${name}`, "网络错误");
-          results.push(`❌ <${name}> ，网络异常`);
+          $notification.post("NodeSeek 签到失败", `账号:${name}`, "网络错误");
+          results.push(`👤:${name} ❌ 失败，网络异常`);
           failCount++;
           return reject("网络错误");
         }
@@ -76,19 +78,19 @@ function signIn(index = 0) {
           if (msg.includes("签到收益")) {
             const match = msg.match(/(\d+)/);
             const amount = match ? match[1] : "?";
-            results.push(`✅ <${name}> ，签到收益${amount} 个🍗`);
-            $notification.post("✅ NodeSeek 签到成功", `账号:${name}`, msg);
+            results.push(`👤:${name} ✅ 成功，签到收益${amount} 个🍗`);
+            $notification.post("NodeSeek 签到成功", `账号:${name}`, msg);
             successCount++;
           } else {
-            const simplifiedMsg = msg.includes("重复") || msg.includes("已完成") ? "今天重复签到" : msg;
-            results.push(`❌ <${name}> ，${simplifiedMsg}`);
-            $notification.post("❌ NodeSeek 签到失败", `账号:${name}`, simplifiedMsg);
+            const simplified = msg.includes("重复") || msg.includes("已完成") ? "今天重复签到" : msg;
+            results.push(`👤:${name} ❌ 失败，${simplified}`);
+            $notification.post("NodeSeek 签到失败", `账号:${name}`, msg);
             failCount++;
           }
           resolve();
         } catch (e) {
-          results.push(`❌ <${name}> ，返回解析异常`);
-          $notification.post("❌ NodeSeek 返回解析失败", `账号:${name}`, e.message || body);
+          results.push(`👤:${name} ❌ 失败，返回解析异常`);
+          $notification.post("NodeSeek 返回解析失败", `账号:${name}`, e.message || body);
           failCount++;
           reject("返回解析失败");
         }
@@ -97,7 +99,7 @@ function signIn(index = 0) {
   }).then(() => {
     signIn(index + 1);
   }).catch((err) => {
-    results.push(`❌ <${name}> ，${err}`);
+    results.push(`👤:${name} ❌ 失败，${err}`);
     $notification.post("NodeSeek 签到异常", `账号:${name}`, err);
     failCount++;
     signIn(index + 1);
@@ -105,9 +107,11 @@ function signIn(index = 0) {
 }
 
 function sendTgPush() {
+  const mode = defaultMode ? "随机领取鸡腿" : "固定领取 5 个鸡腿";
   const text =
     `📋 *NodeSeek 签到结果*\n\n` +
-    `✅ 成功 ${successCount} 个 ｜❌ 失败 ${failCount} 个\n\n` +
+    `✅ 成功 ${successCount} 个 ｜❌ 失败 ${failCount} 个\n` +
+    `🎯 签到模式：${mode}\n\n` +
     results.join("\n");
 
   const tgUrl = `https://api.telegram.org/bot${tgToken}/sendMessage`;
