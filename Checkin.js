@@ -137,5 +137,15 @@ function sendTgPush() {
   });
 }
 
-// 开始签到
-signIn();
+// 延迟函数（单位毫秒）
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// 开始前随机延迟 0 ~ 120 秒
+(async () => {
+  const delay = Math.floor(Math.random() * 120000); // 0-120000 毫秒
+  console.log(`⏱ 延迟执行 ${Math.floor(delay / 1000)} 秒...`);
+  await sleep(delay);
+  signIn();
+})();
