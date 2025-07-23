@@ -2,7 +2,7 @@
 // @name         NodeSeek 多账号签到（带Loon通知）
 // @compatible   loon
 // @version      1.7
-// @description  NodeSeek 多账号签到 + 网络重试 + TG推送 + Loon本地通知（每账号一次） + 模式选择
+// @description  NodeSeek 多账号签到 + 网络重试 + TG推送 + Loon本地通知 + 模式选择
 // ==/UserScript==
 
 // ------------ 环境变量说明 --------------
