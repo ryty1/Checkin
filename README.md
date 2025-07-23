@@ -2,9 +2,9 @@
 >
 >    @compatible   loon
 >
->    @version      1.5
+>    @version      1.7
 >
->    @description  多账号签到 + 网络重试 + TG推送 + Loon本地通知 + 随机延迟（2分钟内）
+>    @description  多账号签到 + 网络重试 + TG推送 + Loon本地通知 + 随机延迟（2分钟内）+ 模式选择
 
 ### 「本脚本为Loon软件的脚本，其他app自行测试」
 
@@ -35,5 +35,6 @@ hostname = %APPEND% www.nodeseek.com
 | TG_TOKEN         | 123456789:ABCDEF_xxxxxxx                      |  非必须  |
 | TG_CHATID        | 123456789                                     |  非必须  |
 | TG_PROXY         | 策略名（如需TG走代理）                        |  非必须  |
+| DEFAULT         | true （随机模式，不填写为固定模式）                       |  非必须  |
 
 ## = 设置完成后可以`手动运行`一次，查看是否正常！
