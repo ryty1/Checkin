@@ -111,7 +111,7 @@ function main(retryCount) {
         msg = `🗓️ 获得 ${energy} ⚡能量`;
       } else if (json.success === false) {
         title += "☑️ 已签到";
-        msg = json.message || "🗓️ 今天你已经领取过 10 个能量值了~";
+        msg = json.message || "您今天已经签到过了";
       } else {
         title += "🆖 签到失败";
         msg = json.message || "🔴 未知错误";
