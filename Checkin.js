@@ -73,34 +73,30 @@ function signIn(index = 0) {
         }
 
         try {
-          const json = JSON.parse(body);
-          const msgRaw = json.message || json.Message || "未知消息";
+  const json = JSON.parse(body);
+  const isSuccess = json.success === true;
+  const msgRaw = json.message || json.Message || "未知消息";
 
-          if (msgRaw.includes("签到收益")) {
-            const match = msgRaw.match(/(\d+)/);
-            const amount = match ? match[1] : "未知";
-            const msg = `👤: ${name} ✅ ，签到收益 ${amount}个🍗`;
-            results.push(msg);
-            successCount++;
-            $notification.post("✅ NodeSeek 签到成功", `账号: ${name}`, msgRaw);
-          } else if (msgRaw.includes("重复") || msgRaw.includes("请勿重复")) {
-            const msg = `👤: ${name} ☑️，重复签到`;
-            results.push(msg);
-            repeatCount++;
-            $notification.post("⚠️ NodeSeek 签到提醒", `账号: ${name}`, msgRaw);
-          } else {
-            const msg = `👤: ${name} 🚫，签到失败`;
-            results.push(msg);
-            failCount++;
-            $notification.post("❌ NodeSeek 签到失败", `账号: ${name}`, msgRaw);
-          }
-        } catch (e) {
-          if (attempt < 3) return resolve(attemptSign());
-          const msg = `👤: ${name} 🚫，返回解析异常`;
-          results.push(msg);
-          failCount++;
-          $notification.post("❌ NodeSeek 解析异常", `账号: ${name}`, e.message || "JSON解析失败");
-        }
+  if (isSuccess) {
+    const match = msgRaw.match(/(\d+)/);
+    const amount = match ? match[1] : "未知";
+    const msg = `👤: ${name} ✅ ，签到收益 ${amount}个🍗`;
+    results.push(msg);
+    successCount++;
+    $notification.post("✅ NodeSeek 签到成功", `账号: ${name}`, msgRaw);
+  } else {
+    const msg = `👤: ${name} ☑️，重复签到`;
+    results.push(msg);
+    repeatCount++;
+    $notification.post("⚠️ NodeSeek 已签到", `账号: ${name}`, msgRaw);
+  }
+} catch (e) {
+  if (attempt < 3) return resolve(attemptSign());
+  const msg = `👤: ${name} 🚫，签到失败`;
+  results.push(msg);
+  failCount++;
+  $notification.post("❌ NodeSeek 异常", `账号: ${name}`, e.message || "解析失败");
+}
 
         resolve();
       });
