@@ -1,5 +1,5 @@
 /*
-📌 NodeLoc 签到脚本（带 Telegram 推送）
+📌 NodeLoc 签到（Loon 版，支持 TG 推送）
 📅 2025-07-24
 */
 
@@ -8,25 +8,20 @@ const csrf = $persistentStore.read("NODELOC_CSRF");
 
 const TG_TOKEN = $persistentStore.read("TG_TOKEN");
 const TG_CHATID = $persistentStore.read("TG_CHATID");
-const TG_PROXY = $persistentStore.read("TG_PROXY");
-
-const url = "https://nodeloc.cc/checkin";
-
-const headers = {
-  "cookie": cookie,
-  "origin": "https://nodeloc.cc",
-  "referer": "https://nodeloc.cc/latest",
-  "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-  "x-csrf-token": csrf,
-  "x-requested-with": "XMLHttpRequest",
-  "accept": "*/*",
-  "content-length": "0"
-};
+const TG_PROXY = $persistentStore.read("TG_PROXY"); // 可选
 
 const request = {
-  url: url,
+  url: "https://nodeloc.cc/checkin",
   method: "POST",
-  headers: headers,
+  headers: {
+    "cookie": cookie,
+    "origin": "https://nodeloc.cc",
+    "referer": "https://nodeloc.cc/latest",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "x-csrf-token": csrf,
+    "x-requested-with": "XMLHttpRequest",
+    "accept": "*/*"
+  },
   body: ""
 };
 
@@ -37,9 +32,9 @@ function sendTG(title, message) {
   }
 
   const tgUrl = `https://api.telegram.org/bot${TG_TOKEN}/sendMessage`;
-  const body = {
+  const tgBody = {
     chat_id: TG_CHATID,
-    text: `📢 *${title}*\n\n${message}`,
+    text: `📢 ${title}\n\n${message}`,
     parse_mode: "Markdown"
   };
 
@@ -47,28 +42,38 @@ function sendTG(title, message) {
     url: tgUrl,
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
+    body: JSON.stringify(tgBody)
   };
 
   if (TG_PROXY) {
-    tgOptions["proxy"] = TG_PROXY;
+    tgOptions.proxy = TG_PROXY;
   }
 
-  $task.fetch(tgOptions).then(() => {
-    console.log("✅ TG 推送成功");
-  }).catch((err) => {
-    console.log("❌ TG 推送失败: " + err);
+  $httpClient.post(tgOptions, function (error, response, data) {
+    if (error) {
+      console.log("❌ TG 推送失败: " + error);
+    } else {
+      console.log("✅ TG 推送成功");
+    }
   });
 }
 
-$task.fetch(request).then((response) => {
-  const body = response.body;
+// 执行签到请求
+$httpClient.post(request, function (error, response, data) {
+  if (error) {
+    const errMsg = "签到请求失败: " + error;
+    sendTG("❌ NodeLoc 签到失败", errMsg);
+    $notification.post("❌ NodeLoc 签到失败", "", errMsg);
+    $done();
+    return;
+  }
+
   let msg = "";
   try {
-    const json = JSON.parse(body);
+    const json = JSON.parse(data);
     msg = json.message || "未知响应";
   } catch (e) {
-    msg = body || "解析失败";
+    msg = data || "解析失败";
   }
 
   let title = "NodeLoc 签到";
@@ -78,9 +83,5 @@ $task.fetch(request).then((response) => {
 
   sendTG(title, msg);
   $notification.post(title, "", msg);
-  $done();
-}, (err) => {
-  sendTG("❌ NodeLoc 签到失败", err);
-  $notification.post("❌ NodeLoc 签到失败", "", err);
   $done();
 });
