@@ -22,9 +22,6 @@
 ```bash
 [Script]
 cron "0 0 * * *" script-path=https://raw.githubusercontent.com/ryty1/NodeSeek/refs/heads/main/Checkin.js, timeout=60, tag=NS自动签
-
-[MITM]
-hostname = %APPEND% www.nodeseek.com
 ```
 - 定时 可以在 `Loon ---> 脚本` 中修改.
 
@@ -38,3 +35,21 @@ hostname = %APPEND% www.nodeseek.com
 | DEFAULT         | true （随机模式，不填写为固定模式）                       |  非必须  |
 
 ## = 设置完成后可以`手动运行`一次，查看是否正常！
+
+
+# = NodeLoc 签到
+## ----------- 环境变量（`数据持久化`）说明 -------------
+| 变量名（Key）        | 值（Value）                                 |        说明    |
+|------------------|----------------------------------------------|-------------|
+| NODELOC_COOKIE  | cookie    |  必须  |
+| NODELOC_CSRF         | X-Csrf-Token （在cookie值的下面几行）                      |  必须  |
+| TG_TOKEN         | 123456789:ABCDEF_xxxxxxx                      |  非必须  |
+| TG_CHATID        | 123456789                                     |  非必须  |
+| TG_PROXY         | 策略名（如果TG推送不成功需要设置）                        |  非必须  |
+
+```bash
+[Script]
+cron "0 0 * * *" script-path=https://raw.githubusercontent.com/ryty1/NodeSeek/refs/heads/main/NodeLoc-Checkin.js, timeout=60, tag=NL自动签
+
+```
+> 0 0 * * * 时间自己按需修改 
