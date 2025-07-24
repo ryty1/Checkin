@@ -70,7 +70,7 @@ function main(retryCount) {
 
     $httpClient.post(tgOptions, (err, resp, data) => {
       if (err) {
-        console.log("❌ TG 推送失败：" + err);
+        console.log("🆖 TG 推送失败：" + err);
       } else {
         console.log("✅ TG 推送成功");
       }
@@ -79,7 +79,7 @@ function main(retryCount) {
 
   $httpClient.post(request, (error, response, data) => {
     if (error) {
-      console.log("签到请求失败：" + error);
+      console.log("🆖 签到请求失败：" + error);
       if (retryCount > 0) {
         console.log(`等待 ${RETRY_INTERVAL / 1000} 秒后重试...`);
         setTimeout(() => {
@@ -87,11 +87,11 @@ function main(retryCount) {
         }, RETRY_INTERVAL);
       } else {
         // 重试用尽，推送失败消息
-        const failMsg = "请检查网络是否异常，重试已达最大次数";
-        const title = "📢 NodeLoc 签到结果\n———————————————————\n签到失败";
+        const failMsg = "⚠️ 请检查网络是否异常，重试已达最大次数";
+        const title = "📢 NodeLoc 签到结果\n———————————————————\n🆖 签到失败";
         const msg = `${title}\n${failMsg}`;
-        sendTG("NodeLoc 签到失败", msg);
-        $notification.post("❌ NodeLoc 签到失败", "", failMsg);
+        sendTG("🆖 NodeLoc 签到失败", msg);
+        $notification.post("🆖 NodeLoc 签到失败", "", failMsg);
         $done();
       }
       return;
@@ -114,13 +114,13 @@ function main(retryCount) {
         const energy = msg.match(/(\d+)\s*个能量/)?.[1] || "10";
         msg = `🗓️ 获得 ${energy} ⚡能量`;
       } else {
-        title += "签到失败";
-        msg = "请检查网络是否异常";
+        title += "🆖 签到失败";
+        msg = "⚠️ 请检查网络是否异常";
       }
     } catch (e) {
-      console.log("解析签到返回异常：" + e);
-      title += "签到失败";
-      msg = "数据解析异常";
+      console.log("⚠️ 解析签到返回异常：" + e);
+      title += "🆖 签到失败";
+      msg = "⚠️ 数据解析异常";
     }
 
     const fullMsg = `${title}\n${msg}`;
