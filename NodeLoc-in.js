@@ -1,21 +1,27 @@
 /*
-📌 NodeLoc 签到脚本（Loon版，支持TG推送+随机延时2分钟内）
+📌 NodeLoc 签到脚本（Loon版，随机延时+网络重试+TG推送仅一次）
 */
+
+const MAX_RETRY = 3;        // 最大重试次数
+const RETRY_INTERVAL = 5000; // 重试间隔，单位毫秒（5秒）
+const MAX_DELAY = 120;       // 最大随机延时，单位秒（2分钟）
 
 function randomDelay(maxSeconds) {
   return Math.floor(Math.random() * maxSeconds * 1000);
 }
 
-const delayMs = randomDelay(120); // 0~120秒随机延时
+const delayMs = randomDelay(MAX_DELAY);
 console.log(`【NodeLoc 签到】延时 ${delayMs / 1000} 秒后开始执行`);
 
-setTimeout(main, delayMs);
+setTimeout(() => {
+  main(MAX_RETRY);
+}, delayMs);
 
-function main() {
+function main(retryCount) {
   const cookie = $persistentStore.read("NODELOC_COOKIE");
   const csrf = $persistentStore.read("NODELOC_CSRF");
 
-  console.log("【NodeLoc 签到】开始");
+  console.log(`【NodeLoc 签到】开始，剩余重试次数：${retryCount}`);
   console.log("Cookie 长度: " + (cookie ? cookie.length : "无"));
   console.log("CSRF Token: " + (csrf || "无"));
 
@@ -74,12 +80,20 @@ function main() {
   $httpClient.post(request, (error, response, data) => {
     if (error) {
       console.log("签到请求失败：" + error);
-      const failMsg = "请检查网络是否异常";
-      const title = "📢 NodeLoc 签到结果\n———————————————————\n签到失败";
-      const msg = `${title}\n${failMsg}`;
-      sendTG("NodeLoc 签到失败", msg);
-      $notification.post("❌ NodeLoc 签到失败", "", failMsg);
-      $done();
+      if (retryCount > 0) {
+        console.log(`等待 ${RETRY_INTERVAL / 1000} 秒后重试...`);
+        setTimeout(() => {
+          main(retryCount - 1);
+        }, RETRY_INTERVAL);
+      } else {
+        // 重试用尽，推送失败消息
+        const failMsg = "请检查网络是否异常，重试已达最大次数";
+        const title = "📢 NodeLoc 签到结果\n———————————————————\n签到失败";
+        const msg = `${title}\n${failMsg}`;
+        sendTG("NodeLoc 签到失败", msg);
+        $notification.post("❌ NodeLoc 签到失败", "", failMsg);
+        $done();
+      }
       return;
     }
 
