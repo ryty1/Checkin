@@ -1,5 +1,5 @@
 /*
-📌 NodeLoc 签到脚本（Loon版，随机延时+网络重试+TG推送仅一次）
+📌 NodeLoc 签到脚本（Loon版，success 字段判断 + 重试 + TG 推送）
 */
 
 const MAX_RETRY = 3;        // 最大重试次数
@@ -70,7 +70,7 @@ function main(retryCount) {
 
     $httpClient.post(tgOptions, (err, resp, data) => {
       if (err) {
-        console.log("🆖 TG 推送失败：" + err);
+        console.log("❌ TG 推送失败：" + err);
       } else {
         console.log("✅ TG 推送成功");
       }
@@ -79,19 +79,18 @@ function main(retryCount) {
 
   $httpClient.post(request, (error, response, data) => {
     if (error) {
-      console.log("🆖 签到请求失败：" + error);
+      console.log("签到请求失败：" + error);
       if (retryCount > 0) {
         console.log(`等待 ${RETRY_INTERVAL / 1000} 秒后重试...`);
         setTimeout(() => {
           main(retryCount - 1);
         }, RETRY_INTERVAL);
       } else {
-        // 重试用尽，推送失败消息
-        const failMsg = "⚠️ 请检查网络是否异常，重试已达最大次数";
-        const title = "📢 NodeLoc 签到结果\n———————————————————\n🆖 签到失败";
+        const failMsg = "请检查网络是否异常，重试已达最大次数";
+        const title = "📢 NodeLoc 签到结果\n———————————————————\n签到失败";
         const msg = `${title}\n${failMsg}`;
-        sendTG("🆖 NodeLoc 签到失败", msg);
-        $notification.post("🆖 NodeLoc 签到失败", "", failMsg);
+        sendTG("NodeLoc 签到失败", msg);
+        $notification.post("❌ NodeLoc 签到失败", "", failMsg);
         $done();
       }
       return;
@@ -99,32 +98,32 @@ function main(retryCount) {
 
     console.log("签到接口返回：" + data);
 
-    let msg = "";
     let title = "📢 NodeLoc 签到结果\n———————————————————\n";
+    let msg = "";
 
     try {
       const json = JSON.parse(data);
-      msg = json.message || data || "无返回信息";
 
-      if (/已经签到/.test(msg)) {
-        title += "☑️ 已签到";
-        msg = "🗓️ 今天你已经领取过 10 个能量值了~";
-      } else if (/成功/.test(msg)) {
+      if (json.success === true) {
         title += "✅ 签到成功";
-        const energy = msg.match(/(\d+)\s*个能量/)?.[1] || "10";
+        // 提取能量数量，默认10
+        const energy = (json.message && json.message.match(/(\d+)\s*个能量/))?.[1] || "10";
         msg = `🗓️ 获得 ${energy} ⚡能量`;
+      } else if (json.success === false) {
+        title += "☑️ 已签到";
+        msg = json.message || "🗓️ 今天你已经领取过 10 个能量值了~";
       } else {
         title += "🆖 签到失败";
-        msg = "⚠️ 请检查网络是否异常";
+        msg = json.message || "🔴 未知错误";
       }
     } catch (e) {
-      console.log("⚠️ 解析签到返回异常：" + e);
+      console.log("解析签到返回异常：" + e);
       title += "🆖 签到失败";
-      msg = "⚠️ 数据解析异常";
+      msg = "🔴 数据解析异常";
     }
 
     const fullMsg = `${title}\n${msg}`;
-    sendTG("NodeLoc 签到结果", fullMsg);
+    sendTG("NodeLoc 他到结果", fullMsg);
     $notification.post("NodeLoc 签到结果", "", fullMsg);
     console.log("签到完成，通知发送");
     $done();
