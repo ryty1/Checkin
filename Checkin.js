@@ -11,34 +11,31 @@ const tgChatID = $persistentStore.read("TG_CHATID");
 const tgproxy = $persistentStore.read("TG_PROXY") || "";
 
 const defaultEnv = ($persistentStore.read("DEFAULT") || "").trim().toLowerCase();
-const defaultMode = defaultEnv === "true"; // true为随机模式，否则固定模式
+const defaultMode = defaultEnv === "true"; // true 为随机模式
 const signModeText = defaultMode ? "随机模式" : "固定模式";
 
 if (!cookiesStr) {
   $notification.post("❌ NodeSeek 签到失败", "环境变量 NODESEEK_COOKIE 未配置", "");
+  console.log("❌ 未配置 NODESEEK_COOKIE");
   $done();
 }
 if (!tgToken || !tgChatID) {
   $notification.post("❌ Telegram 推送失败", "TG_TOKEN 或 TG_CHATID 未配置", "");
+  console.log("❌ 未配置 TG_TOKEN 或 TG_CHATID");
   $done();
 }
 
 const cookies = cookiesStr.split("&");
-
 const baseUrl = "https://www.nodeseek.com/api/attendance";
-// 根据模式拼接参数
 const signUrl = baseUrl + "?random=" + (defaultMode ? "true" : "false");
 
 const headersBase = {
   "Content-Type": "application/json",
-  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
-  "Referer": "https://www.nodeseek.com/sw.js?v=0.3.32",
+  "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_2 like Mac OS X)",
+  "Referer": "https://www.nodeseek.com/board",
   "Origin": "https://www.nodeseek.com",
   "Accept-Language": "zh-CN,zh;q=0.9",
-  "Accept": "*/*",
-  "Sec-Fetch-Dest": "empty",
-  "Sec-Fetch-Mode": "cors",
-  "Sec-Fetch-Site": "same-origin"
+  "Accept": "*/*"
 };
 
 let results = [];
@@ -59,17 +56,23 @@ function signIn(index = 0) {
 
   function attemptSign() {
     return new Promise((resolve) => {
-      $httpClient.post({ url: signUrl, headers, body: "" }, (err, resp, body) => {
-        attempt++;
+      attempt++;
+      console.log(`\n=== 📦 正在处理账号：${name} （尝试 ${attempt}/3） ===`);
+      console.log(`请求 URL: ${signUrl}`);
+      console.log(`请求 Headers（Cookie 已省略）: ${JSON.stringify({...headers, Cookie:"[隐藏]"})}`);
 
-        if (err || !body || typeof body !== "string") {
+      $httpClient.post({ url: signUrl, headers, body: "" }, (err, resp, body) => {
+        if (err || !body) {
+          console.log(`❗ 第 ${attempt} 次请求失败，错误: ${err || "无响应"}`);
           if (attempt < 3) return resolve(attemptSign());
           const msg = `👤: ${name} 🚫，网络错误或无响应`;
           results.push(msg);
           failCount++;
-          $notification.post("❌ NodeSeek 签到失败", `账号: ${name}`, "网络错误或无响应");
+          $notification.post("❌ NodeSeek 签到失败", `账号: ${name}`, "多次重试无响应");
           return resolve();
         }
+
+        console.log(`【${name}】响应原始内容:\n${body}`);
 
         try {
           const json = JSON.parse(body);
@@ -81,14 +84,17 @@ function signIn(index = 0) {
             const msg = `👤: ${name} ✅ ，签到收益 ${amount}个🍗`;
             results.push(msg);
             successCount++;
+            console.log(`✅ 签到成功，返回消息: ${msgRaw}`);
             $notification.post("✅ NodeSeek 签到成功", `账号: ${name}`, msgRaw);
           } else {
             const msg = `👤: ${name} ☑️，重复签到`;
             results.push(msg);
             repeatCount++;
+            console.log(`☑️ 重复签到，返回消息: ${msgRaw}`);
             $notification.post("⚠️ NodeSeek 已签到", `账号: ${name}`, msgRaw);
           }
         } catch (e) {
+          console.log(`❌ JSON解析失败: ${e.message}`);
           if (attempt < 3) return resolve(attemptSign());
           const msg = `👤: ${name} 🚫，返回解析异常`;
           results.push(msg);
@@ -124,14 +130,15 @@ function sendTgPush() {
     body: JSON.stringify(body)
   };
 
-  if (tgproxy) {
-    options.opts = { policy: tgproxy };
-  }
+  if (tgproxy) options.opts = { policy: tgproxy };
 
+  console.log(`📤 正在推送 Telegram 消息...`);
   $httpClient.post(options, (err, resp, data) => {
     if (err) {
-      $notification.post("❌ TG 推送失败", "", JSON.stringify(err));
+      console.log("❌ TG 推送失败: " + (typeof err === "string" ? err : JSON.stringify(err)));
+      $notification.post("❌ TG 推送失败", "", String(err));
     } else {
+      console.log("✅ TG 推送成功");
       $notification.post("✅ NodeSeek 签到完成", "TG 推送成功", `✅ ${successCount} ☑️ ${repeatCount} ｜🚫 ${failCount}`);
     }
     $done();
