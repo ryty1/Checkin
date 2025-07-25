@@ -31,7 +31,7 @@ const signUrl = baseUrl + "?random=" + (defaultMode ? "true" : "false");
 
 const headersBase = {
   "Content-Type": "application/json",
-  "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_2 like Mac OS X)",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
   "Referer": "https://www.nodeseek.com/board",
   "Origin": "https://www.nodeseek.com",
   "Accept-Language": "zh-CN,zh;q=0.9",
