@@ -21,7 +21,7 @@
 
 ```bash
 [Script]
-cron "0 0 * * *" script-path=https://raw.githubusercontent.com/ryty1/NodeSeek/refs/heads/main/Checkin.js, timeout=60, tag=NS自动签
+cron "0 0 * * *" script-path=https://raw.githubusercontent.com/ryty1/Checkin/refs/heads/main/NodeSeek.js, timeout=60, tag=NS自动签
 ```
 - 定时 可以在 `Loon ---> 脚本` 中修改.
 
@@ -52,7 +52,21 @@ cron "0 0 * * *" script-path=https://raw.githubusercontent.com/ryty1/NodeSeek/re
 
 ```bash
 [Script]
-cron "0 0 * * *" script-path=https://raw.githubusercontent.com/ryty1/NodeSeek/refs/heads/main/NodeLoc-Checkin.js, timeout=60, tag=NL自动签
+cron "0 0 * * *" script-path=https://raw.githubusercontent.com/ryty1/Checkin/refs/heads/main/NodeLoc.js, timeout=60, tag=NL自动签
 
 ```
-> 0 0 * * * 时间自己按需修改 
+> 0 0 * * * 时间自己按需修改
+
+# = 69云 签到
+## ----------- 环境变量（`数据持久化`）说明 -------------
+| 变量名（Key）        | 值（Value）                                 |        说明    |
+|------------------|----------------------------------------------|-------------|
+| 69YUN_COOKIE  | cookie    |  必须  |
+| TG_TOKEN         | 123456789:ABCDEF_xxxxxxx                      |  非必须  |
+| TG_CHATID        | 123456789                                     |  非必须  |
+
+```bash
+[Script]
+cron "0 0 * * *" script-path=https://raw.githubusercontent.com/ryty1/Checkin/refs/heads/main/69yun.js, timeout=60, tag=69云自动签
+
+```
