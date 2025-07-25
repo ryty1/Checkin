@@ -61,7 +61,7 @@ cron "0 0 * * *" script-path=https://raw.githubusercontent.com/ryty1/Checkin/ref
 ## ----------- 环境变量（`数据持久化`）说明 -------------
 | 变量名（Key）        | 值（Value）                                 |        说明    |
 |------------------|----------------------------------------------|-------------|
-| 69YUN_COOKIE  | cookie    |  必须  |
+| 69YUN_COOKIE  | 账号A@cookie1&账号B@cookie2&账号C@cookie3    |  必须  |
 | TG_TOKEN         | 123456789:ABCDEF_xxxxxxx                      |  非必须  |
 | TG_CHATID        | 123456789                                     |  非必须  |
 
