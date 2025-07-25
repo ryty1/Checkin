@@ -70,3 +70,4 @@ cron "0 0 * * *" script-path=https://raw.githubusercontent.com/ryty1/Checkin/ref
 cron "0 0 * * *" script-path=https://raw.githubusercontent.com/ryty1/Checkin/refs/heads/main/69yun.js, timeout=60, tag=69云自动签
 
 ```
+# `变量都是一样的，如果使用了多个脚本，可以共享TG变量，只要添加一次就行了，不用每个脚本重复添加！`
