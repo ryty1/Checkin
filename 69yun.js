@@ -8,7 +8,7 @@ const TG_CHAT_ID = $persistentStore.read('TG_CHATID');
 
 function randomDelay(maxSeconds = 120) {
   const ms = Math.floor(Math.random() * maxSeconds * 1000);
-  console.log(`等待随机延迟 ${ms} 毫秒`);
+  console.log(`等待随机延迟 ${Math.floor(ms / 1000)} 秒`);
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
@@ -145,9 +145,12 @@ async function main() {
     results.push(res);
   }
 
-  // 自定义 Telegram 推送消息格式
   let summary = results.map(res => {
-    const [name, msg] = res.split(' - ');
+    const [name, rawMsg] = res.split(' - ');
+
+    // 只取第一行，过滤 Emby 及账号信息
+    let msg = rawMsg.split('\n')[0];
+
     let formattedMsg = '';
 
     if (/签到成功/.test(msg)) {
