@@ -162,7 +162,7 @@ async function main() {
 
       formattedMsg = `尊贵的「*${escapeMarkdown(name)}*」免费会员\n- ${escapeMarkdown(cleanMsg)}`;
     } else if (/已签到|签到.*过了|您似乎已经签到/.test(msg)) {
-      formattedMsg = `尊贵的「*${escapeMarkdown(name)}*」免费会员\n- ⚠️ 今日已签到，消息：${escapeMarkdown(msg)}`;
+      formattedMsg = `尊贵的「*${escapeMarkdown(name)}*」免费会员\n- ⚠️ ${escapeMarkdown(msg)}`;
     } else {
       formattedMsg = `尊贵的「*${escapeMarkdown(name)}*」免费会员\n- ❌ 签到失败: ${escapeMarkdown(msg)}`;
     }
