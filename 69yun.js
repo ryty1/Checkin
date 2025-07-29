@@ -85,6 +85,10 @@ async function signIn(cookie, name) {
   }
 }
 
+function escapeMarkdown(text) {
+  return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
+}
+
 function tgPush(message) {
   return new Promise((resolve) => {
     if (!TG_BOT_TOKEN || !TG_CHAT_ID) {
@@ -141,11 +145,32 @@ async function main() {
     results.push(res);
   }
 
-  let summary = results.join('\n');
+  // 自定义 Telegram 推送消息格式
+  let summary = results.map(res => {
+    const [name, msg] = res.split(' - ');
+    let formattedMsg = '';
+
+    if (/签到成功/.test(msg)) {
+      const trafficMatch = msg.match(/获得了\s+([\d.]+GB)/);
+      const traffic = trafficMatch ? `*${trafficMatch[1]}*` : '未知流量';
+      const cleanMsg = msg.replace(/获得了\s+[\d.]+GB/, `获得了 ${traffic}`);
+
+      formattedMsg = `尊贵的「*${escapeMarkdown(name)}*」免费会员\n- ${escapeMarkdown(cleanMsg)}`;
+    } else if (/已签到|签到.*过了|您似乎已经签到/.test(msg)) {
+      formattedMsg = `尊贵的「*${escapeMarkdown(name)}*」免费会员\n- ⚠️ 今日已签到，消息：${escapeMarkdown(msg)}`;
+    } else {
+      formattedMsg = `尊贵的「*${escapeMarkdown(name)}*」免费会员\n- ❌ 签到失败: ${escapeMarkdown(msg)}`;
+    }
+
+    return formattedMsg;
+  }).join('\n\n');
+
+  let finalMsg = `*69云签到结果：*\n\n${summary}`;
+
   $notification.post('69云签到结果', '', summary);
   console.log('签到结果:\n' + summary);
 
-  let tgResult = await tgPush(`69云签到结果：\n${summary}`);
+  let tgResult = await tgPush(finalMsg);
   console.log(tgResult);
 
   $done();
