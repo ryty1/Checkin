@@ -150,6 +150,8 @@ async function main() {
 
     // 只取第一行，过滤 Emby 及账号信息
     let msg = rawMsg.split('\n')[0];
+    // 去除所有 ... 和 \.\.\.
+    msg = msg.replace(/(\\\.)+|\.{2,}/g, '');
 
     let formattedMsg = '';
 
