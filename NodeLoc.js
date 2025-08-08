@@ -30,12 +30,12 @@ function main(retryCount) {
   const TG_PROXY = $persistentStore.read("TG_PROXY"); // 可选
 
   const request = {
-    url: "https://nodeloc.cc/checkin",
+    url: "https://nodeloc.com/checkin",
     method: "POST",
     headers: {
       "cookie": cookie,
-      "origin": "https://nodeloc.cc",
-      "referer": "https://nodeloc.cc/latest",
+      "origin": "https://nodeloc.com",
+      "referer": "https://nodeloc.com/latest",
       "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
       "x-csrf-token": csrf,
       "x-requested-with": "XMLHttpRequest",
