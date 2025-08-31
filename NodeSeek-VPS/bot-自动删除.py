@@ -811,8 +811,8 @@ def register_jobs(app: Application):
 
     # 用户签到任务 (每个用户自己的时间)
     for uid, u in data.get("users", {}).items():
-        hour = u.get("sign_hour", 0)
-        minute = u.get("sign_minute", 0)
+        hour = u.get("sign_hour")
+        minute = u.get("sign_minute")
 
         async def user_job(context: CallbackContext, user_id=uid):
             await user_daily_check(app, user_id)
