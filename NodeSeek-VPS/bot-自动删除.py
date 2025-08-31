@@ -54,6 +54,7 @@ def ensure_user_structure(data, uid):
 
     return u
 
+
 # ========== 数据存取 ==========
 def ensure_file(file_path, default):
     """确保文件存在"""
@@ -147,6 +148,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /del   - 删除账号
 /mode  - 签到模式（true=随机，默认固定false）
 /list  - 账号列表
+/hz    - 每日汇总
 /log   - 签到记录(默认7天)
 /stats - 签到统计(默认30天)
 /settime - 自动签到时间（范围 0–10 点）
@@ -246,7 +248,7 @@ async def cmd_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
 
     save_data(data)
-
+    
     # 删除 "正在登录" 提示
     await temp_msg.delete()
 
@@ -288,6 +290,7 @@ async def delete(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if not data["users"][user_id]["accounts"]:
                 del data["users"][user_id]
             save_data(data)
+            
             return await send_and_auto_delete(update.message.chat, f"🗑 已删除账号: {args}", 300)
     else:
         if args.isdigit():
@@ -632,14 +635,18 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
         u = data["users"][uid]
         u.setdefault("logs", [])
         for r in logs:
-            if not r.get("no_log"):
-                u["logs"].append({
-                    **r,
-                    "source": "manual",
-                    "time": now_str(),
-                    "by": manual_by
-                })
-        u["logs"] = u["logs"][-30:]  # 只保留 30 条
+            if r.get("no_log"):
+                continue
+            if "收益" not in str(r.get("result", "")):
+                continue
+                    
+            u["logs"].append({
+                **r,
+                "source": "manual",
+                "time": now_str(),
+                "by": manual_by
+            })
+        u["logs"] = u["logs"][-10:]  # 只保留 10 条
     save_data(data)
 
     # ✅ 输出推送内容
@@ -653,7 +660,7 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     continue
                 line = f"{mask_username(r['name'])} - {r['result']}"
                 if r.get("cookie_refreshed"):
-                    line += "  ♻️ Cookie 刷新成功"
+                    line += " [♻️ Cookie]"
                 text += line + "\n"
     else:
         logs = results.get(user_id, [])
@@ -663,10 +670,10 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 continue
             line = f"{mask_username(r['name'])} - {r['result']}"
             if r.get("cookie_refreshed"):
-                line += "  ♻️ Cookie 刷新成功"
+                line += " [♻️ Cookie]"
             text += line + "\n"
 
-    await send_and_auto_delete(update.message.chat, text, 180)
+    await send_and_auto_delete(update.message.chat, text, 300)
 
     # 删除“签到中...”提示
     try:
@@ -697,13 +704,14 @@ async def user_daily_check(app: Application, uid: str):
         u["logs"].append({
             **r,
             "source": "auto",
-            "time": now_str()
+            "time": now_str(),
+            "by": "system"
         })
-    u["logs"] = u.get("logs", [])[-30:]
+    u["logs"] = u.get("logs", [])[-10:]
     save_data(data)
 
     # 推送结果给用户
-    text = f"📋 自动签到结果（模式 {mode_text(user_modes[uid])}）：\n"
+    text = f"📋 自动签到结果（{mode_text(user_modes[uid])}）：\n"
     for r in results.get(uid, []):
         text += f"{mask_username(r['name'])} - {r['result']}\n"
         if r.get("cookie_refreshed"):
@@ -713,35 +721,54 @@ async def user_daily_check(app: Application, uid: str):
     except Exception:
         pass
 
+# ================= 管理员手动汇总接口 =================
+async def hz(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    # 只允许管理员用
+    if not is_admin(user_id):
+        return await update.message.reply_text("⚠️ 你没有权限使用此命令")
 
+    # 限制时间：每天 10:10 ~ 23:59
+    now = datetime.now().time()
+    start = time(10, 10)  # 10:10
+    end = time(23, 59)
+    if not (start <= now <= end):
+        return await update.message.reply_text("⚠️ 请在 10:10 后使用")
+
+    # ✅ 直接调用每日汇总逻辑
+    await admin_daily_summary(context.application)
+    
 # ================= 管理员每日汇总 =================
 async def admin_daily_summary(app: Application):
     data = load_data()
     today = now_str()[:10]  # e.g. "2025-08-30"
 
-    text = "📋 每日签到汇总（仅统计今日自动签到）:\n"
+    text = "📋 今日签到成功汇总:\n"
     any_user_shown = False
 
     for uid, u in data.get("users", {}).items():
         logs = u.get("logs", [])
-        # 只取：今天 + 自动
-        todays_auto = [
+        # 只取：今天 + 含“收益”
+        todays = [
             l for l in logs
-            if l.get("source") == "auto" and l.get("time", "")[:10] == today
+            if l.get("time", "")[:10] == today
+            and "收益" in str(l.get("result", ""))
         ]
-        if not todays_auto:
+        if not todays:
             continue
 
         any_user_shown = True
         text += f"\n👤 {u.get('tgUsername', uid)}【{mode_text(u.get('mode', False))}】\n🆔 {uid}\n"
-        for r in todays_auto:
-            line = f"{mask_username(r['name'])} - {r['result']}"
+
+        for r in todays:
+            tag = "[手动]" if r.get("source") == "manual" else "[自动]"
+            line = f"{mask_username(r['name'])} - ✅ {tag} {r['result']}"
             if r.get("cookie_refreshed"):
                 line += "  ♻️"
             text += line + "\n"
 
     if not any_user_shown:
-        text += "\n（今天暂无自动签到记录）"
+        text += "\n（今天暂无签到收益记录）"
 
     await notify_admins(app, text)
 
@@ -907,7 +934,8 @@ async def post_init(application: Application):
         BotCommand("del", "删除账号"),
         BotCommand("mode", "签到模式"),
         BotCommand("list", "账号列表"),
-        BotCommand("log", "签到记录"),
+        BotCommand("hz", "每日汇总"),
+        BotCommand("log", "签到记录"),       
         BotCommand("settime", "设置每日签到时间 (0–10点)"),
         BotCommand("txt", "管理员喊话"),
     ]
@@ -943,6 +971,7 @@ def main():
     app.add_handler(CommandHandler("mode", mode))
     app.add_handler(CommandHandler("list", list_accounts))
     app.add_handler(CommandHandler("log", log))
+    app.add_handler(CommandHandler("hz", hz))
     app.add_handler(CommandHandler("settime", settime))
     app.add_handler(CommandHandler("stats", stats))
     app.add_handler(CommandHandler("txt", txt))
