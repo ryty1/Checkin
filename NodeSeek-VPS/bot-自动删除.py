@@ -139,8 +139,7 @@ async def send_and_auto_delete(chat, text: str, delay: int):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if is_admin(user_id):
-        text = """管理员菜单:
-欢迎使用 NodeSeek 签到机器人！
+        text = """欢迎使用 NodeSeek 签到机器人！
 ------- 【菜 单】 --------
 /start - 显示帮助
 /check - 手动签到
@@ -168,8 +167,7 @@ txt 格式(/txt 内容)全体喊话
 txt 格式(/txt TGID,内容)指定喊话
 -------------------------"""
     else:
-        text = """用户菜单:
-欢迎使用 NodeSeek 签到机器人！
+        text = """欢迎使用 NodeSeek 签到机器人！
 ------- 【菜 单】 --------
 /start - 显示帮助
 /check - 手动签到
