@@ -47,7 +47,12 @@ def ensure_user_structure(data, uid):
         u["logs"] = []
     if "tgUsername" not in u:
         u["tgUsername"] = ""
+    if "sign_hour" not in u:   # ✅ 补齐默认签到时间
+        u["sign_hour"] = 0
+    if "sign_minute" not in u:
+        u["sign_minute"] = 0
 
+    return u
 
 # ========== 数据存取 ==========
 def ensure_file(file_path, default):
