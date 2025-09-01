@@ -5,9 +5,9 @@ show_menu() {
     echo "=========================="
     echo "        Vip 工 具 箱      "
     echo "=========================="
-    echo "1) 安装 TG_ask"
-    echo "2) 安装 MJJVM"
-    echo "3) 安装 TG_Talk"
+    echo "1) TG_ask  菜单"
+    echo "2) MJJVM   菜单"
+    echo "3) TG_Talk 菜单"
     echo "0) 退出"
     echo "=========================="
     read -p "请输入你的选择: " choice
