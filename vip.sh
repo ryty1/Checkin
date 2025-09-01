@@ -3,11 +3,11 @@
 # 菜单函数
 show_menu() {
     echo "=========================="
-    echo "      安装工具箱菜单      "
+    echo "        Vip 工 具 箱      "
     echo "=========================="
-    echo "1) TG_ask"
-    echo "2) MJJVM"
-    echo "3) TG_Talk"
+    echo "1) 安装 TG_ask"
+    echo "2) 安装 MJJVM"
+    echo "3) 安装 TG_Talk"
     echo "0) 退出"
     echo "=========================="
     read -p "请输入你的选择: " choice
