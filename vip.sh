@@ -3,7 +3,7 @@
 # 菜单函数
 show_menu() {
     echo "=========================="
-    echo "        Vip 工 具 箱      "
+    echo "  Vip 真 ● 一 键 工 具 箱   "
     echo "=========================="
     echo "1) TG_ask  菜单"
     echo "2) MJJVM   菜单"
