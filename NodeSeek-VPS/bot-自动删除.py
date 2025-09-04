@@ -120,23 +120,31 @@ async def notify_admins(app, message: str):
             pass
 
 # 自动删除用户命令 + 机器人回复
+import asyncio
+
 async def send_and_auto_delete(chat, text: str, delay: int, user_msg=None):
     # 机器人发送的消息
     sent = await chat.send_message(text)
+    print(f"Bot message sent: {sent.message_id}")  # 日志输出，确认消息发送
 
     async def _delete_later():
+        print(f"Waiting {delay} seconds before deleting.")  # 日志输出，确认延时
         await asyncio.sleep(delay)
+
         # 删掉机器人回复
         try:
             await sent.delete()
-        except:
-            pass
+            print(f"Deleted bot message: {sent.message_id}")  # 日志输出，确认删除
+        except Exception as e:
+            print(f"Failed to delete bot message {sent.message_id}: {e}")  # 日志输出错误
+
         # 删掉用户命令消息
         if user_msg:
             try:
                 await user_msg.delete()
-            except:
-                pass
+                print(f"Deleted user command message: {user_msg.message_id}")  # 日志输出，确认删除
+            except Exception as e:
+                print(f"Failed to delete user message {user_msg.message_id}: {e}")  # 日志输出错误
 
     # 创建后台任务，不阻塞主流程
     asyncio.create_task(_delete_later())
@@ -150,7 +158,7 @@ def require_account(func):
         user_id = str(update.effective_user.id)
         data = load_data()
         if user_id not in data.get("users", {}) or not data["users"][user_id].get("accounts"):
-            return await send_and_auto_delete(update.message.chat, "⚠️ 无效指令，请添加账号后使用", 10, user_msg=update.message)
+            return await send_and_auto_delete(update.message.chat, "⚠️ 无效指令，请添加账号后使用", 3, user_msg=update.message)
         return await func(update, context, *args, **kwargs)
     return wrapper
     
@@ -210,7 +218,11 @@ log 格式(/log 天数)所有账号的指定天数
 log 格式(/log 天数 账号)指定账号的指定天数
 stats 格式(/stats 天数)所有账号的指定天数
 settime 格式(/settime 7:00)"""
-    await send_and_auto_delete(update.message.chat, text, 30, user_msg=update.message)
+    # 30秒后自动删除
+    # await send_and_auto_delete(update.message.chat, text, 30, user_msg=update.message)
+
+    # 不自动删除
+    await update.message.chat.send_message(text)
 
 # ========== /add ==========
 async def cmd_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -220,17 +232,17 @@ async def cmd_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # 限制只能私聊使用
     if chat_type != "private":
-        await send_and_auto_delete(update.message.chat, "🚨 安全警告：/add 功能只能在私聊中使用！", 10, user_msg=update.message)
+        await send_and_auto_delete(update.message.chat, "🚨 安全警告：/add 功能只能在私聊中使用！", 5, user_msg=update.message)
         return
 
     if not context.args or "@" not in context.args[0]:
-        await send_and_auto_delete(update.message.chat, "用法：/add 账号@密码", 10, user_msg=update.message)
+        await send_and_auto_delete(update.message.chat, "用法：/add 账号@密码", 5, user_msg=update.message)
         return
 
     try:
         account, password = context.args[0].split("@", 1)
     except ValueError:
-        await send_and_auto_delete(update.message.chat, "格式错误，应为：/add 账号@密码", 10, user_msg=update.message)
+        await send_and_auto_delete(update.message.chat, "格式错误，应为：/add 账号@密码", 3, user_msg=update.message)
         return
 
     account_name = account.strip()
@@ -243,7 +255,7 @@ async def cmd_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
     new_cookie = login_and_get_cookie(account_name, password)
     if not new_cookie:
         await temp_msg.delete()
-        await send_and_auto_delete(update.message.chat, "❌ 登录失败，请检查账号密码", 5, user_msg=update.message)
+        await send_and_auto_delete(update.message.chat, "❌ 登录失败，请检查账号密码", 3, user_msg=update.message)
         return
 
     # 读取 JSON 数据
@@ -281,7 +293,8 @@ async def cmd_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_and_auto_delete(
         update.message.chat,
         f"✅ 账号 {account_name} 成功获取 Cookie",
-        180
+        180,
+        user_msg=update.message
     )
 
     # 通知所有管理员成功情况
@@ -296,15 +309,17 @@ async def delete(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     args = " ".join(context.args)
     if not args:
-        return await send_and_auto_delete(update.message.chat, "⚠️ 格式错误: /del 账号 | /del -all", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, "⚠️ 格式错误: /del 账号 | /del -all", 5, user_msg=update.message)
 
     data = load_data()
+
+    tgUsername = data["users"].get(user_id, {}).get("tgUsername", user_id)  # 获取 tgUsername
 
     if is_admin(user_id):
         # 管理员 → 不管有没有账号，都能删任何账号
         if args.isdigit():  # 按用户 ID 删
             if args not in data["users"]:
-                return await send_and_auto_delete(update.message.chat, "⚠️ 未找到用户", 10, user_msg=update.message)
+                return await send_and_auto_delete(update.message.chat, "⚠️ 未找到用户", 3, user_msg=update.message)
             del data["users"][args]
             save_data(data)
             await post_init(context.application)
@@ -313,7 +328,7 @@ async def delete(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [BotCommand("start", "显示帮助"), BotCommand("add", "添加账号")],
                 scope=telegram.BotCommandScopeChat(int(args))
             )
-            return await send_and_auto_delete(update.message.chat, f"✅ 已删除用户 {args} 的所有账号", 300, user_msg=update.message)
+            return await send_and_auto_delete(update.message.chat, f"✅ 已删除用户 {args} 的所有账号", 15, user_msg=update.message)
         else:  # 按账号名删
             for uid, u in list(data["users"].items()):
                 if args in u["accounts"]:
@@ -329,12 +344,13 @@ async def delete(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         )
                     else:
                         save_data(data)
-                    return await send_and_auto_delete(update.message.chat, f"✅ 已删除账号: {args}", 300, user_msg=update.message)
-            return await send_and_auto_delete(update.message.chat, "⚠️ 未找到账号", 30)
+                    await notify_admins(context.application, f"管理员 {tgUsername} 删除了账号: {args}")
+                    return await send_and_auto_delete(update.message.chat, f"✅ 已删除账号: {args}", 15, user_msg=update.message)
+            return await send_and_auto_delete(update.message.chat, "⚠️ 未找到账号", 3)
     else:
         # 普通用户 → 必须先有账号
         if user_id not in data["users"] or not data["users"][user_id].get("accounts"):
-            return await send_and_auto_delete(update.message.chat, "⚠️ 无效指令，请添加账号后使用", 10, user_msg=update.message)
+            return await send_and_auto_delete(update.message.chat, "⚠️ 无效指令，请添加账号后使用", 5, user_msg=update.message)
 
         if args == "-all":
             deleted = list(data["users"][user_id]["accounts"].keys())
@@ -346,10 +362,15 @@ async def delete(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [BotCommand("start", "显示帮助"), BotCommand("add", "添加账号")],
                 scope=telegram.BotCommandScopeChat(int(user_id))
             )
-            return await send_and_auto_delete(update.message.chat, f"🗑 已删除所有账号: {', '.join(deleted)}", 300, user_msg=update.message)
+
+            # ✅ 通知管理员
+            await notify_admins(context.application, f"用户 {tgUsername} 删除了所有账号: {', '.join(deleted)}")
+            # 给用户反馈
+            return await send_and_auto_delete(update.message.chat, f"🗑 已删除所有账号: {', '.join(deleted)}", 15, user_msg=update.message)
+
         else:
             if args not in data["users"][user_id]["accounts"]:
-                return await send_and_auto_delete(update.message.chat, "⚠️ 未找到账号", 10, user_msg=update.message)
+                return await send_and_auto_delete(update.message.chat, "⚠️ 未找到账号", 3, user_msg=update.message)
             del data["users"][user_id]["accounts"][args]
             if not data["users"][user_id]["accounts"]:  # 最后一个账号删光
                 del data["users"][user_id]
@@ -362,8 +383,10 @@ async def delete(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             else:
                 save_data(data)
-            return await send_and_auto_delete(update.message.chat, f"🗑 已删除账号: {args}", 300, user_msg=update.message)
-
+            # ✅ 通知管理员
+            await notify_admins(context.application, f"用户 {tgUsername} 删除了账号: {args}")
+            # 给用户反馈
+            return await send_and_auto_delete(update.message.chat, f"🗑 已删除账号: {args}", 15, user_msg=update.message)
 
 # ========== /mode ==========
 @require_account
@@ -376,9 +399,9 @@ async def mode(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if args in ["true", "false"]:
         data["users"][user_id]["mode"] = args == "true"
         save_data(data)
-        await send_and_auto_delete(update.message.chat, f"✅ 签到模式: {mode_text(data['users'][user_id]['mode'])}", 180, user_msg=update.message)
+        await send_and_auto_delete(update.message.chat, f"✅ 签到模式: {mode_text(data['users'][user_id]['mode'])}", 5, user_msg=update.message)
     else:
-        await send_and_auto_delete(update.message.chat, "⚠️ 参数错误，应为 /mode true 或 /mode false", 10, user_msg=update.message)
+        await send_and_auto_delete(update.message.chat, "⚠️ 参数错误，应为 /mode true 或 /mode false", 5, user_msg=update.message)
 
 # ========== /list ==========
 async def list_accounts(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -392,15 +415,15 @@ async def list_accounts(update: Update, context: ContextTypes.DEFAULT_TYPE):
             accounts = list(u["accounts"].keys())
             if accounts:
                 text += f"\n👤 {u.get('tgUsername', uid)}【{mode_text(u['mode'])}】\n🆔 {uid}\n账号: {', '.join(accounts)}\n"
-        await send_and_auto_delete(update.message.chat, text or "📭 暂无用户账号", 30, user_msg=update.message)
+        await send_and_auto_delete(update.message.chat, text or "📭 暂无用户账号", 3, user_msg=update.message)
     else:
         # 普通用户 → 必须先有账号
         if user_id not in data["users"] or not data["users"][user_id].get("accounts"):
-            return await send_and_auto_delete(update.message.chat, "⚠️ 无效指令，请添加账号后使用", 10, user_msg=update.message)
+            return await send_and_auto_delete(update.message.chat, "⚠️ 无效指令，请添加账号后使用", 5, user_msg=update.message)
 
         accounts = "\n".join(data["users"][user_id]["accounts"].keys())
         mode = mode_text(data["users"][user_id]["mode"])
-        await send_and_auto_delete(update.message.chat, f"📋 你的账号:\n模式: {mode}\n{accounts}", 300, user_msg=update.message)
+        await send_and_auto_delete(update.message.chat, f"📋 你的账号:\n模式: {mode}\n{accounts}", 20, user_msg=update.message)
 
 # ================= 签到明细日志 =================
 @require_account
@@ -410,7 +433,7 @@ async def log(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = data.get("users", {}).get(user_id)
     if not user or not user.get("accounts"):
-        return await send_and_auto_delete(update.message.chat, "⚠️ 你还没有绑定账号，无法查询签到明细", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, "⚠️ 你还没有绑定账号，无法查询签到明细", 5, user_msg=update.message)
 
     days = 7
     filter_acc = None
@@ -436,8 +459,8 @@ async def log(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not targets[user_id]:
         if filter_acc:
-            return await send_and_auto_delete(update.message.chat, f"⚠️ 账号 {filter_acc} 没有找到或未绑定 Cookie", 10, user_msg=update.message)
-        return await send_and_auto_delete(update.message.chat, "⚠️ 你所有账号都没有绑定 Cookie，无法查询", 10, user_msg=update.message)
+            return await send_and_auto_delete(update.message.chat, f"⚠️ 账号 {filter_acc} 没有找到或未绑定 Cookie", 5, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, "⚠️ 你所有账号都没有绑定 Cookie，无法查询", 5, user_msg=update.message)
 
     payload = {"targets": targets, "days": days}
 
@@ -450,12 +473,12 @@ async def log(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         if res.returncode != 0:
             await waiting_msg.delete()
-            return await send_and_auto_delete(update.message.chat, f"⚠️ stats.js 执行失败: {res.stderr}", 10, user_msg=update.message)
+            return await send_and_auto_delete(update.message.chat, f"⚠️ stats.js 执行失败: {res.stderr}", 3, user_msg=update.message)
 
         results = json.loads(res.stdout)
     except Exception as e:
         await waiting_msg.delete()
-        return await send_and_auto_delete(update.message.chat, f"⚠️ 查询异常: {e}", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, f"⚠️ 查询异常: {e}", 3, user_msg=update.message)
 
     text = f"📜 签到明细（{days} 天）：\n"
     results_list = results.get(user_id, [])
@@ -479,7 +502,7 @@ async def log(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += "-----------------------\n"
 
     await waiting_msg.delete()
-    await send_and_auto_delete(update.message.chat, text, 180)
+    await send_and_auto_delete(update.message.chat, text, 20, user_msg=update.message)
     
 # ========== /txt ==========
 async def txt(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -489,13 +512,13 @@ async def txt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     args = " ".join(context.args)
     if not args:
-        return await send_and_auto_delete(update.message.chat, "⚠️ 格式错误: /txt 内容 或 /txt TGID,内容", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, "⚠️ 格式错误: /txt 内容 或 /txt TGID,内容", 5, user_msg=update.message)
 
     data = load_data()
     if "," in args and args.split(",")[0].isdigit():
         target, content = args.split(",", 1)
         if target not in data["users"]:
-            return await send_and_auto_delete(update.message.chat, "⚠️ 未找到用户", 10, user_msg=update.message)
+            return await send_and_auto_delete(update.message.chat, "⚠️ 未找到用户", 3, user_msg=update.message)
         keyboard = [[
             InlineKeyboardButton("去回复", url="https://t.me/SerokBot_bot"),
             InlineKeyboardButton("己知晓", callback_data=f"ack_{user_id}")
@@ -505,7 +528,7 @@ async def txt(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"📢 管理员 {admin_name} 喊话:\n{content}",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        return await send_and_auto_delete(update.message.chat, f"✅ 已向 {target} 发送喊话", 300, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, f"✅ 已向 {target} 发送喊话", 10, user_msg=update.message)
     else:
         sent = 0
         for uid in data["users"]:
@@ -524,7 +547,7 @@ async def txt(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 sent += 1
             except:
                 pass
-        await send_and_auto_delete(update.message.chat, f"✅ 已发送 {sent} 个用户", 300, user_msg=update.message)
+        await send_and_auto_delete(update.message.chat, f"✅ 已发送 {sent} 个用户", 10, user_msg=update.message)
 
 
 # 存放 每条喊话消息 -> 已确认的用户集合
@@ -639,11 +662,6 @@ async def run_sign_and_fix(targets, user_modes, data):
             mode = user_modes.get(uid, False)
 
             fixed_res = await retry_sign_if_invalid(uid, acc_name, res, data, mode)
-
-            # 🚫 跳过不需要写日志的（比如异常占位）
-            if fixed_res.get("no_log"):
-                continue
-
             # ✅ 正常签到结果（带 cookie_refreshed 标记）
             fixed_logs.append(fixed_res)
 
@@ -670,17 +688,17 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
             accounts = u.get("accounts", {})
             if accounts:
                 targets[uid] = accounts
-                user_modes[uid] = u.get("mode", False)
+                user_modes[uid] = u.get("mode")
     else:
         # 普通用户 → 只能跑自己
         u = data.get("users", {}).get(user_id)
         if not u or not u.get("accounts"):
-            return await send_and_auto_delete(update.message.chat, "⚠️ 你还没有绑定账号", 10, user_msg=update.message)
+            return await send_and_auto_delete(update.message.chat, "⚠️ 你还没有绑定账号", 3, user_msg=update.message)
         targets[user_id] = u["accounts"]
-        user_modes[user_id] = u.get("mode", False)
+        user_modes[user_id] = u.get("mode")
 
     if not targets:
-        return await send_and_auto_delete(update.message.chat, "⚠️ 没有可签到的账号", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, "⚠️ 没有可签到的账号", 3, user_msg=update.message)
 
     # 发送“签到中...”
     waiting_msg = await update.message.chat.send_message("⏳ 签到中...")
@@ -688,7 +706,7 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 执行签到
     results = await run_sign_and_fix(targets, user_modes, data)
 
-    # ✅ 写入日志（只保存非 no_log 的），并标记为【手动】
+    # ✅ 写入日志（只保存非 收益 的），并标记为【手动】
     manual_by = "admin" if is_admin(user_id) else "user"
 
     for uid, logs in results.items():
@@ -697,17 +715,13 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
         u = data["users"][uid]
         u.setdefault("logs", [])
         for r in logs:
-            if r.get("no_log"):
-                continue
-            if "收益" not in str(r.get("result", "")):
-                continue
-                    
-            u["logs"].append({
-                **r,
-                "source": "manual",
-                "time": now_str(),
-                "by": manual_by
-            })
+            if "收益" in str(r.get("result", "")):                  
+                u["logs"].append({
+                    **r,
+                    "source": "manual",
+                    "time": now_str(),
+                    "by": manual_by
+                })
         u["logs"] = u["logs"][-10:]  # 只保留 10 条
     save_data(data)
 
@@ -735,7 +749,7 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 line += " [♻️ Cookie]"
             text += line + "\n"
 
-    await send_and_auto_delete(update.message.chat, text, 300, user_msg=update.message)
+    await send_and_auto_delete(update.message.chat, text, 60, user_msg=update.message)
 
     # 删除“签到中...”提示
     try:
@@ -755,10 +769,15 @@ async def user_daily_check(app: Application, uid: str):
     delay = random.randint(0, 5 * 60)
     await asyncio.sleep(delay)
 
+    # 目标用户与模式
     targets = {uid: u["accounts"]}
-    user_modes = {uid: u.get("mode", False)}
+    user_modes = {uid: u.get("mode")}
 
+    # 执行签到逻辑
     results = await run_sign_and_fix(targets, user_modes, data)
+
+    # 🔥 确保 key 都是字符串，避免 uid 类型不匹配
+    results = {str(k): v for k, v in results.items()}
 
     # ✅ 写入日志（标记为自动，time 即含日期）
     for r in results.get(uid, []):
@@ -769,7 +788,11 @@ async def user_daily_check(app: Application, uid: str):
             "time": now_str(),
             "by": "system"
         })
+
+    # 只保留最近 10 条日志
     u["logs"] = u.get("logs", [])[-10:]
+
+    # 保存数据
     save_data(data)
 
     # 推送结果给用户
@@ -777,25 +800,27 @@ async def user_daily_check(app: Application, uid: str):
     for r in results.get(uid, []):
         text += f"{mask_username(r['name'])} - {r['result']}\n"
         if r.get("cookie_refreshed"):
-            text += "♻️ Cookie 刷新成功\n"
+            text += "[♻️ Cookie]\n"
+
     try:
         await app.bot.send_message(chat_id=uid, text=text)
     except Exception:
         pass
+
 
 # ================= 管理员手动汇总接口 =================
 async def hz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     # 只允许管理员用
     if not is_admin(user_id):
-        return await send_and_auto_delete(update.message.chat, "⚠️ 你没有权限使用此命令", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, "⚠️ 你没有权限使用此命令", 3, user_msg=update.message)
 
     # 限制时间：每天 10:10 ~ 23:59
     now = datetime.now().time()
     start = time(10, 10)  # 10:10
     end = time(23, 59)
     if not (start <= now <= end):
-        return await send_and_auto_delete(update.message.chat, "⚠️ 请在 10:10 后使用", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, "⚠️ 请在 10:10 后使用", 5, user_msg=update.message)
 
     # ✅ 直接调用每日汇总逻辑
     await admin_daily_summary(context.application)
@@ -824,7 +849,7 @@ async def admin_daily_summary(app: Application):
 
         for r in todays:
             tag = "[手动]" if r.get("source") == "manual" else "[自动]"
-            line = f"{mask_username(r['name'])} - ✅ {tag} {r['result']}"
+            line = f"{tag} {r['result']} - {mask_username(r['name'])}"
             if r.get("cookie_refreshed"):
                 line += "  ♻️"
             text += line + "\n"
@@ -842,31 +867,31 @@ async def settime(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = load_data()
 
     if user_id not in data.get("users", {}):
-        return await send_and_auto_delete(update.message.chat, "⚠️ 你还没有绑定账号，不能设置时间", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, "⚠️ 你还没有绑定账号，不能设置时间", 3, user_msg=update.message)
 
 
     if not context.args:
-        return await send_and_auto_delete(update.message.chat, "用法: /settime 小时:分钟 (0–10点)，例如: /settime 8:30", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, "用法: /settime 小时:分钟 (0–10点)，例如: /settime 8:30", 5, user_msg=update.message)
 
     try:
         parts = context.args[0].split(":")
         hour = int(parts[0])
         minute = int(parts[1]) if len(parts) > 1 else 0
     except ValueError:
-        return await send_and_auto_delete(update.message.chat,"⚠️ 时间格式错误，用法示例: /settime 8:30", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat,"⚠️ 时间格式错误，用法示例: /settime 8:30", 5, user_msg=update.message)
 
     # 校验范围：0–10 点
     if not (0 <= hour <= 9):
-        return await send_and_auto_delete(update.message.chat, "⚠️ 签到时间范围只能是 0–10 点", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, "⚠️ 签到时间范围只能是 0–10 点", 5, user_msg=update.message)
     if not (0 <= minute < 60):
-        return await send_and_auto_delete(update.message.chat, "⚠️ 分钟必须是 0–59", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, "⚠️ 分钟必须是 0–59", 3, user_msg=update.message)
 
     # 保存用户设置
     data["users"][user_id]["sign_hour"] = hour
     data["users"][user_id]["sign_minute"] = minute
     save_data(data)
 
-    await send_and_auto_delete(update.message.chat, f"✅ 已设置每日签到时间为 {hour:02d}:{minute:02d} (北京时间)", 180, user_msg=update.message)
+    await send_and_auto_delete(update.message.chat, f"✅ 已设置每日签到时间为 {hour:02d}:{minute:02d} (北京时间)", 10, user_msg=update.message)
 
     # ⚡️ 重新注册用户的定时任务
     app: Application = context.application
@@ -919,7 +944,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = data.get("users", {}).get(user_id)
     if not user or not user.get("accounts"):
-        return await send_and_auto_delete(update.message.chat, "⚠️ 你还没有绑定账号，无法查询签到收益", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, "⚠️ 你还没有绑定账号，无法查询签到收益", 3, user_msg=update.message)
 
     try:
         days = int(context.args[0]) if context.args else 30
@@ -933,7 +958,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             targets[user_id][acc_name] = ns_cookie
 
     if not targets[user_id]:
-        return await send_and_auto_delete(update.message.chat, "⚠️ 你所有账号都没有绑定 Cookie，无法查询", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, "⚠️ 你所有账号都没有绑定 Cookie，无法查询", 3, user_msg=update.message)
 
     payload = {"targets": targets, "days": days}
 
@@ -947,12 +972,12 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         if res.returncode != 0:
             await waiting_msg.delete()
-            return await send_and_auto_delete(update.message.chat, f"⚠️ stats.js 执行失败: {res.stderr}", 10, user_msg=update.message)
+            return await send_and_auto_delete(update.message.chat, f"⚠️ stats.js 执行失败: {res.stderr}", 3, user_msg=update.message)
 
         results = json.loads(res.stdout)
     except Exception as e:
         await waiting_msg.delete()
-        return await send_and_auto_delete(update.message.chat, f"⚠️ 查询异常: {e}", 10, user_msg=update.message)
+        return await send_and_auto_delete(update.message.chat, f"⚠️ 查询异常: {e}", 3, user_msg=update.message)
 
     text = f"📊 签到收益统计（{days} 天）：\n"
     results_list = results.get(user_id, [])
@@ -971,7 +996,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += f"\n🔸 {acc_name}\n   ⚠️ {r['result']}\n"
     
     await waiting_msg.delete()
-    await send_and_auto_delete(update.message.chat, text, 180, user_msg=update.message)
+    await send_and_auto_delete(update.message.chat, text, 20, user_msg=update.message)
 
 # ========== 设置命令菜单 ==========
 async def post_init(application: Application):
