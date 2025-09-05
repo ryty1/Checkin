@@ -1,7 +1,7 @@
 1、安装Docker
 
 
-2、Docker 安装 cloudflyer
+2、Docker 安装 cloudflyer，自由设置 秘钥，记下秘钥。
 
 docker run -itd \
   --name cloudflyer \
@@ -10,8 +10,6 @@ docker run -itd \
   jackzzs/cloudflyer \
   -K 你的客户端密钥 \
   -H 0.0.0.0
-
-秘钥随机生成，完成后输出到控制台，并且保存到/opt/NodeSeek目录下的cloudflyer_Key.txt，如果路径不存在就创建/opt/NodeSeek目录
 
 3、Docker 安装 flaresolverr，API 调用地址 http://127.0.0.1:8191/v1
 
